@@ -1,0 +1,235 @@
+name: NorseDemigods
+main: com.demigodsrpg.norsedemigods.NorseDemigods
+version: ${project.version}
+description: Ally yourself with mythical deities and battle in the name of the AEsir or Jotunn.
+authors: [marinating, HmmmQuestionMark]
+softdepend: [WorldGuard, WorldEdit]
+commands:
+    dg:
+        description: Important information.
+        aliases: demigods
+    check:
+        description: About the player.
+        aliases: [c]
+    claim:
+        description: Used to claim deities.
+    alliance:
+        description: Used to toggle alliance chat.
+        usage: /alliance
+        aliases: [a]
+    checkplayer:
+        description: View information about another player.
+        usage: /checkplayer <player>
+        permission: demigods.checkplayer
+    getfavor:
+        description: Console command to get a player's Favor.
+        usage: getfavor <player>
+    getdevotion:
+        description: Console command to get a player's devotion.
+        usage: getlevel <player> or getlevel <player> <deity>
+    getascensions:
+        description: Console command to get a player's ascensions.
+        usage: getascensions <player>
+    getmaxfavor:
+        description: Console command to get a player's max Favor.
+        usage: getmaxfavor <player>
+    addmaxfavor:
+        description: Console command to add to a player's max Favor.
+        usage: addmaxfavor <player> <amount>
+    addfavor:
+        description: Console command to add to a player's Favor.
+        usage: addfavor <player> <amount>
+    addunclaimeddevotion:
+        description: Console command to give a player unclaimed Devotion.
+        usage: addunclaimeddevotion <player> <amount>
+    adddevotion:
+        description: Console command to add to a player's level.
+        usage: adddevotion <player> <deity> <amount>
+    addhp:
+        description: Console command to recharge a players' hp.
+        usage: addhp <player> <amount>
+    addascensions:
+        description: Console command to add to a player's ascensions.
+        usage: addascensions <player> <amount>
+    debugplayer:
+        description: Console command to debug player files.
+        usage: debugplayer <player> <print|write|load>
+    exportdata:
+        description: Exports all data for importing into Demigods 3 or higher.
+        usage: exportdata
+    givedeity:
+        description: Gives a deity to a player.
+        usage: /givedeity <player> <deity>
+        permission: demigods.givedeity
+    removedeity:
+        description: Removes a deity from a player.
+        usage: /removedeity <player> <deity>
+        permission: demigods.removedeity
+    forsake:
+        description: Remove a deity from a player.
+        usage: /forsake <deity>
+        permission: demigods.forsake
+    setfavor:
+        description: Set a player's favor.
+        usage: /setfavor <player> <amount>
+        permission: demigods.setfavor
+    setmaxfavor:
+        description: Set a player's favor cap.
+        usage: /setfavor <player> <amount>
+        permission: demigods.setfavor
+    sethp:
+        description: Set a player's HP.
+        usage: /sethp <player> <amount>
+        permission: demigods.sethp
+    setmaxhp:
+        description: Set a player's max HP.
+        usage: /setmaxhp <player> <amount>
+        permission: demigods.setmaxhp
+    setallegiance:
+        description: Manually set a player's allegiance.
+        usage: /setallegiance <player> <allegiance>
+        aliases: setalliance
+        permission: demigods.setalliance
+    setdevotion:
+        description: Set a player's devotion for a deity.
+        usage: /setdevotion <player> <deity> <amount>
+        permission: demigods.setdevotion
+    getdevotion:
+        description: get a player's devotion for a deity.
+        usage: /getdevotion <player> <deity>
+        permission: demigods.getdevotion
+    setascensions:
+        description: Set a player's ascensions.
+        usage: /setascensions <player> <level>
+        permission: demigods.setascensions
+    setkills:
+        description: Set a player's kills.
+        usage: /setkills <player> <kills>
+        permission: demigods.setkills
+    setdeaths:
+        description: Set a player's deaths.
+        usage: /setdeaths <player> <deaths>
+        permission: demigods.setdeaths
+    removeplayer:
+        usage: /removeplayer <player>
+        description: Removes a player from the save.
+        permission: demigods.removeplayer
+    bindings:
+        usage: /bindings
+        description: Display what Materials are used for bindings.
+        permission: demigods.bindings
+        aliases: [b]
+    shrine:
+        description: Gives information about shrines.
+    shrinewarp:
+        usage: /shrinewarp <deity> or /shrinewarp <player> <deity> or /shrinewarp <shrine name>
+        description: Warps the user to the shrine.
+        permission: demigods.shrinewarp
+        aliases: [warpshrine, sw]
+    forceshrinewarp:
+        usage: /forceshrinewarp <deity> or /forceshrinewarp <player> <deity> or /forceshrinewarp <shrine name>
+        description: Warps the user to the shrine, even if it is blocked.
+        permission: demigods.shrinewarp
+        alias: forcewarpshrine
+    shrineowner:
+        usage: /shrineowner add <name> or /shrineowner remove <name> or /shrineowner set <name>  
+        description: Gives information about shrines.
+        permission: demigods.shrineowner
+    removeshrine:
+        usage: /removeshrine
+        description: Removes a shrine from the save.
+        permission: demigods.removeshrine
+    listshrines:
+        usage: /listshrines
+        description: Lists every shrine on the server.
+        permission: demigods.listshrines
+    fixshrine:
+        usage: /fixshrine
+        description: Fixes a shrine if the block is missing.
+    nameshrine:
+        usage: /nameshrine <new name>
+        description: Renames an existing shrine.
+        permission: demigods.nameshrine
+        alias: shrinename
+    value:
+        description: See Favor value of item in hand.
+        aliases: [v]
+    slam:
+        description: One of Thor's abilities.
+    lightning:
+        description: One of Thor's abilities.
+    storm:
+        description: Thor's ultimate.
+    strike:
+        description: One of Vidar's abilities.
+    bloodthirst:
+        description: One of Vidar's abilities.
+    crash:
+        description: Vidar's ultimate.
+    stab:
+        description: One of Odin's abilities.
+    slow:
+        description: One of Odin's abilities.
+    timestop:
+        description: Odin's ultimate.
+    fireball:
+        description: One of a fire giant's abilities.
+    blaze:
+        description: One of a fire giant's abilities.
+    firestorm:
+        description: A fire giant's ultimate.
+    poison:
+        description: One of Jord's abilities.
+    plant:
+        description: One of Jord's abilities.
+    detonate:
+        description: One of Jord's abilities.
+    entangle:
+        description: Jord's ultimate.
+    chain:
+        description: One of Hel's abilities.
+    entomb:
+        description: One of Hel's abilities.
+    curse:
+        description: Hel' ultimate.
+    reel:
+        description: One of Jormungand's abilities.
+    drown:
+        description: One of Jormungand's abilities.
+    unburden:
+        description: One of Thrymr' abilities.
+    invincible:
+        description: Thrymr' ultimate.
+    flash:
+        description: One of Heimdallr's abilities.
+    ceasefire:
+        description: Heimdallr's ultimate.
+    ice:
+        description: One of a frost giant's abilities.
+    chill:
+        description: A frost giant's ultimate.
+    starfall:
+        description: One of Baldr's abilities.
+    sprint:
+        description: One of Baldr's abilities.
+    smite:
+        description: Baldr's ultimate.
+    reforge:
+        description: One of a dwarf's abilities.
+    shatter:
+        description: A dwarf's ultimate.
+    cure:
+        description: One of Bragi's abilities.
+    finale:
+        description: Bragi's ultimate.
+    swap:
+        description: One of a dís' abilities.
+    congregate:
+        description: A dís' ultimate.
+    assemble:
+        description: A dís' ultimate.
+permissions:
+    demigods.bypassclaim:
+        default: false
+    demigods.bypasspvpdelay:
+        default: false
