@@ -229,7 +229,7 @@ public class Odin implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
 
     }
 

@@ -287,7 +287,7 @@ public class Vidar implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
     }
 
     @Override

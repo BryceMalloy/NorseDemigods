@@ -126,7 +126,7 @@ public class Dwarf implements Deity, Listener {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
     }
 
     @EventHandler

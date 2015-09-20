@@ -158,7 +158,7 @@ public class Dis implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
         if (timeSent > LASTCHECK + 1000) {
             LASTCHECK = timeSent;
         }

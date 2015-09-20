@@ -1,64 +1,19 @@
 package com.demigodsrpg.norsedemigods.deity;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
+import org.bukkit.event.Listener;
 
-import java.io.Serializable;
-import java.util.UUID;
+public interface Deity extends Listener {
 
-/*
- * Each Deity is attached to a player.
- * The Deity's abilities are activated by listeners, and
- * helper methods should only be used within the Deity.
- * Universal functions (finding blocks) will be called
- * statically.
- */
-public interface Deity extends Serializable {
-    /**
-     * Returns the name of this deity. Shouldn't be needed often.
-     *
-     * @return Deity name
-     */
     String getName();
 
-    /**
-     * Returns the name of the player this deity belongs to.
-     *
-     * @return Player name
-     */
-    UUID getPlayerId();
-
-    /**
-     * Returns the default alliance, either God or Titan.
-     *
-     * @return
-     */
     String getDefaultAlliance();
 
-    /**
-     * Prints info about the deity to the target player.
-     *
-     * @param p
-     */
-    void printInfo(Player p);
+    void printInfo(Player player);
 
-    /*
-     * Make sure to use helper methods and instanceof.
-     */
-    void onEvent(Event ee);
+    void onCommand(Player player, String label, String[] args, boolean bind);
 
-    /*
-     * Used for command handling
-     */
-    void onCommand(Player P, String str, String[] args, boolean bind);
+    void onSyncTick(long timeSent);
 
-    /*
-     * Used for events that execute repeatedly
-     */
-    void onTick(long timeSent);
-
-    /**
-     * Can this deity be tributed to?
-     */
     boolean canTribute();
 }

@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
-import com.demigodsrpg.norsedemigods.WriteLocation;
 import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import org.bukkit.ChatColor;
@@ -35,7 +35,7 @@ public class Jord implements Deity {
 
     /* Specific to owner */
     private final UUID PLAYER;
-    private final ArrayList<WriteLocation> TREES;
+    private final ArrayList<LocationSaveable> TREES;
     private boolean PLANT = false;
     private boolean POISON = false;
     private long PLANTTIME, POISONTIME, RHEAULTIMATETIME;
@@ -45,7 +45,7 @@ public class Jord implements Deity {
 
     public Jord(UUID name) {
         PLAYER = name;
-        TREES = new ArrayList<WriteLocation>();
+        TREES = new ArrayList<LocationSaveable>();
         PLANTTIME = System.currentTimeMillis();
         POISONTIME = System.currentTimeMillis();
         RHEAULTIMATETIME = System.currentTimeMillis();
@@ -311,7 +311,7 @@ public class Jord implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
 
     }
 
@@ -373,7 +373,7 @@ public class Jord implements Deity {
     private void detonate(Player player) {
         float explosionsize = (float) (Math.ceil(3 * Math.pow(DMiscUtil.getDevotion(player.getUniqueId(), getName()), 0.09)));
         if (TREES.size() > 0) {
-            for (WriteLocation w : TREES) {
+            for (LocationSaveable w : TREES) {
                 Location l = DMiscUtil.toLocation(w);
                 if (l.getBlock().getType() == Material.LOG) {
                     removelogs(l);

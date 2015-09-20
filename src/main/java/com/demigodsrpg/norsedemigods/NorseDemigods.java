@@ -1,15 +1,13 @@
 package com.demigodsrpg.norsedemigods;
 
+import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.deity.Deity;
-import com.demigodsrpg.norsedemigods.deity.aesir.*;
-import com.demigodsrpg.norsedemigods.deity.jotunn.*;
-import com.demigodsrpg.norsedemigods.deity.testing.Kvasir;
 import com.demigodsrpg.norsedemigods.listener.*;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
-import com.google.common.collect.ImmutableSet;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -23,48 +21,23 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 public class NorseDemigods extends JavaPlugin implements Listener {
-    // Define variables
-    private static final Logger log = Logger.getLogger("Minecraft");
-    public static File FILE;
 
-    public static final ImmutableSet<Deity> deities = ImmutableSet.copyOf(new HashSet<Deity>() {
-        {
-            UUID notchId = UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5");
-            add(new Odin(notchId));
-            add(new Jord(notchId));
-            add(new FireGiant(notchId));
-            add(new Thrymr(notchId));
-            add(new FrostGiant(notchId));
-            add(new Baldr(notchId));
-            add(new Dis(notchId));
-            add(new Thor(notchId));
-            add(new Jormungand(notchId));
-            add(new Hel(notchId));
-            add(new Vidar(notchId));
-            add(new Heimdallr(notchId));
-            add(new Bragi(notchId));
-            add(new Dwarf(notchId));
-            add(new Kvasir(notchId));
-        }
-    });
+    static NorseDemigods INST;
 
     @Override
     public void onEnable() {
         long firstTime = System.currentTimeMillis();
 
-        FILE = getFile();
+        INST = this;
 
-        log.info("[Demigods] Initializing.");
+        getLogger().info("Initializing.");
 
         new DSettings(); // #1 (needed for DMiscUtil to load)
         new DMiscUtil(); // #2 (needed for everything else to work)
@@ -78,13 +51,13 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         invalidShrines(); // #9
         levelPlayers(); // #10
 
-        log.info("[Demigods] Attempting to hook into WorldGuard.");
+        getLogger().info("Attempting to hook into WorldGuard.");
 
-        log.info("[Demigods] Attempting to load Metrics.");
+        getLogger().info("Attempting to load Metrics.");
 
         unstickFireball(); // #12
 
-        log.info("[Demigods] Preparation completed in " + ((double) (System.currentTimeMillis() - firstTime) / 1000) + " seconds.");
+        getLogger().info("Preparation completed in " + ((double) (System.currentTimeMillis() - firstTime) / 1000) + " seconds.");
     }
 
     @Override
@@ -94,10 +67,10 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             DSave.save();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            log.severe("[Demigods] Save location error. Screenshot the stack trace and send to us on BukketDev.");
+            getLogger().severe("Save location error.");
         } catch (IOException e) {
             e.printStackTrace();
-            log.severe("[Demigods] Save write error. Screenshot the stack trace and send to us on BukketDev.");
+            getLogger().severe("Save write error.");
         }
 
         // Cancel all tasks
@@ -108,7 +81,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             if (bt.getOwner().equals(this)) c++;
         this.getServer().getScheduler().cancelAllTasks();
 
-        log.info("[Demigods] Save completed and " + c + " tasks cancelled.");
+        getLogger().info("Save completed and " + c + " tasks cancelled.");
     }
 
     @EventHandler
@@ -118,22 +91,22 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             DSave.save();
         } catch (FileNotFoundException er) {
             er.printStackTrace();
-            log.severe("[Demigods] Save location error. Screenshot the stack trace and send to us on BukketDev.");
+            getLogger().severe("Save location error.");
         } catch (IOException er) {
             er.printStackTrace();
-            log.severe("[Demigods] Save write error. Screenshot the stack trace and send to us on BukketDev.");
+            getLogger().severe("Save write error.");
         }
     }
 
     void loadDependencies() {
-        log.info("[Demigods] Attempting to hook into WorldGuard.");
+        getLogger().info("Attempting to hook into WorldGuard.");
 
         // Init WorldGuard stuff # 11
         WorldGuardUtil.setWhenToOverridePVP(this, event -> event instanceof EntityDamageByEntityEvent &&
                 !DSettings.getEnabledWorlds().contains(((EntityDamageByEntityEvent) event).getEntity().getWorld()));
 
         if (WorldGuardUtil.worldGuardEnabled()) {
-            log.info("[Demigods] WorldGuard detected. Skills are disabled in no-PvP zones.");
+            getLogger().info("WorldGuard detected. Skills are disabled in no-PvP zones.");
         }
     }
 
@@ -275,7 +248,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new DShrines(), this);
         getServer().getPluginManager().registerEvents(new DDeities(), this);
         getServer().getPluginManager().registerEvents(new DBlockChangeListener(), this);
-        getServer().getPluginManager().registerEvents(new Dwarf(null), this);
+        for (Deity deity : Deities.values()) {
+            getServer().getPluginManager().registerEvents(deity, this);
+        }
     }
 
     private void initializeThreads() {
@@ -344,13 +319,13 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             public void run() {
                 try {
                     DSave.save();
-                    log.info("[Demigods] Saved data for " + DMiscUtil.getFullParticipants().size() + " Demigods players. " + DSave.getCompleteData().size() + " files total.");
+                    getLogger().info("Saved data for " + DMiscUtil.getFullParticipants().size() + " Demigods players. " + DSave.getCompleteData().size() + " files total.");
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                    log.severe("[Demigods] Save location error. Screenshot the stack trace and send to marinating.");
+                    getLogger().severe("Save location error.");
                 } catch (IOException e) {
                     e.printStackTrace();
-                    log.severe("[Demigods] Save write error. Screenshot the stack trace and send to marinating.");
+                    getLogger().severe("Save write error.");
                 }
             }
         }, startdelay, savefrequency);
@@ -423,7 +398,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     private void invalidShrines() {
         // Remove invalid shrines
-        Iterator<WriteLocation> i = DMiscUtil.getAllShrines().iterator();
+        Iterator<LocationSaveable> i = DMiscUtil.getAllShrines().iterator();
         ArrayList<String> worldnames = new ArrayList<String>();
         for (int j = 0; j < DSettings.getEnabledWorlds().size(); j++) {
             World w = DSettings.getEnabledWorlds().get(j);
@@ -432,13 +407,13 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         }
         int count = 0;
         while (i.hasNext()) {
-            WriteLocation n = i.next();
+            LocationSaveable n = i.next();
             if (!worldnames.contains(n.getWorld()) || (n.getY() < 0) || (n.getY() > 256)) {
                 count++;
                 DMiscUtil.removeShrine(n);
             }
         }
-        if (count > 0) log.info("[Demigods] Removed " + count + " invalid shrines.");
+        if (count > 0) getLogger().info("Removed " + count + " invalid shrines.");
     }
 
     private void levelPlayers() {

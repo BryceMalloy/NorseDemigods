@@ -314,7 +314,7 @@ public class Hel implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
 
     }
 

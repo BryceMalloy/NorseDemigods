@@ -4,14 +4,11 @@ import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEvent;
-
-import java.util.UUID;
 
 public class Template implements Deity {
     private static final long serialVersionUID = -2472769863144336856L;
-    private final UUID PLAYER;
 
     private static final int SKILLCOST = 120;
     private static final int SKILLDELAY = 1250; // milliseconds
@@ -26,23 +23,10 @@ public class Template implements Deity {
     private Material SKILLBIND = null;
     private long SKILLTIME;
     private long ULTIMATETIME;
-    private long LASTCHECK;
-
-    public Template(UUID player) {
-        PLAYER = player;
-        SKILLTIME = System.currentTimeMillis();
-        ULTIMATETIME = System.currentTimeMillis();
-        LASTCHECK = System.currentTimeMillis();
-    }
 
     @Override
     public String getName() {
         return "Name";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -64,24 +48,21 @@ public class Template implements Deity {
         p.sendMessage(ChatColor.YELLOW + "Select item: ");
     }
 
-    @Override
-    public void onEvent(Event ee) {
-        if (ee instanceof PlayerInteractEvent) {
-            PlayerInteractEvent e = (PlayerInteractEvent) ee;
-            Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
-            if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
-                if (SKILLTIME > System.currentTimeMillis()) return;
-                SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
-                if (DMiscUtil.getFavor(p) >= SKILLCOST) {
-                    /*
-                     * Skill
-					 */
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
-                } else {
-                    p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                    SKILL = false;
-                }
+    @EventHandler
+    public void onInteractEvent(PlayerInteractEvent e) {
+        Player p = e.getPlayer();
+        if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+        if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
+            if (SKILLTIME > System.currentTimeMillis()) return;
+            SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
+            if (DMiscUtil.getFavor(p) >= SKILLCOST) {
+                /*
+                 * Skill
+                 */
+                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+            } else {
+                p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
+                SKILL = false;
             }
         }
     }
@@ -136,10 +117,7 @@ public class Template implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
-        if (timeSent > LASTCHECK + 1000) {
-            LASTCHECK = timeSent;
-        }
+    public void onSyncTick(long timeSent) {
     }
 
     @Override

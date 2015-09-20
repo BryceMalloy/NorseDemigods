@@ -3,10 +3,10 @@ package com.demigodsrpg.norsedemigods.util;
 import com.demigodsrpg.norsedemigods.DCommandExecutor;
 import com.demigodsrpg.norsedemigods.DFixes;
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.WriteLocation;
 import com.demigodsrpg.norsedemigods.deity.Deity;
 import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
@@ -119,14 +119,14 @@ public class DMiscUtil {
     /**
      * Converts a Location to WriteLocation.
      */
-    public static WriteLocation toWriteLocation(Location l) {
-        return new WriteLocation(l.getWorld().getName(), l.getBlockX(), l.getBlockY(), l.getBlockZ());
+    public static LocationSaveable toWriteLocation(Location l) {
+        return new LocationSaveable(l.getWorld().getName(), l.getBlockX(), l.getBlockY(), l.getBlockZ());
     }
 
     /**
      * Converts a WriteLocation to Location.
      */
-    public static Location toLocation(WriteLocation l) {
+    public static Location toLocation(LocationSaveable l) {
         try {
             return new Location(plugin.getServer().getWorld(l.getWorld()), l.getX(), l.getY(), l.getZ());
         } catch (Exception er) {
@@ -1103,13 +1103,13 @@ public class DMiscUtil {
         setKills(player, 0);
         giveDeity(player, deity);
         setActiveEffects(player, new HashMap<String, Long>());
-        setShrines(player, new HashMap<String, WriteLocation>());
+        setShrines(player, new HashMap<String, LocationSaveable>());
     }
 
     /**
      * If the given location is a shrine, returns the deity the shrine is for
      */
-    public static String getDeityAtShrine(WriteLocation shrine) {
+    public static String getDeityAtShrine(LocationSaveable shrine) {
         for (UUID player : getFullParticipants()) {
             for (String shrinename : getShrines(player).keySet()) {
                 if (shrine.equalsApprox(getShrines(player).get(shrinename))) {
@@ -1120,9 +1120,9 @@ public class DMiscUtil {
         return null;
     }
 
-    public static WriteLocation getNearbyShrine(Location l) {
-        WriteLocation shrine = null;
-        for (WriteLocation w : getAllShrines()) {
+    public static LocationSaveable getNearbyShrine(Location l) {
+        LocationSaveable shrine = null;
+        for (LocationSaveable w : getAllShrines()) {
             if (!w.getWorld().equals(l.getWorld().getName())) continue;
             Location l1 = DMiscUtil.toLocation(w);
             if (l1.distance(l) < DShrines.RADIUS) {
@@ -1139,7 +1139,7 @@ public class DMiscUtil {
      * @param shrine
      * @return
      */
-    public static UUID getOwnerOfShrine(WriteLocation shrine) {
+    public static UUID getOwnerOfShrine(LocationSaveable shrine) {
         for (UUID player : getFullParticipants()) {
             for (String shrinename : getShrines(player).keySet()) {
                 if (shrine.equalsApprox(getShrines(player).get(shrinename))) {
@@ -1155,11 +1155,11 @@ public class DMiscUtil {
      * register the player as a guest
      */
     @SuppressWarnings("unchecked")
-    public static void addGuest(WriteLocation shrine, UUID guest) {
+    public static void addGuest(LocationSaveable shrine, UUID guest) {
         if (!isFullParticipant(guest)) return;
         if (!getAllegiance(guest).equalsIgnoreCase(getAllegiance(getOwnerOfShrine(shrine)))) return;
-        if (!DSave.hasData(guest, "S_GUESTAT")) DSave.saveData(guest, "S_GUESTAT", new ArrayList<WriteLocation>());
-        ArrayList<WriteLocation> list = ((ArrayList<WriteLocation>) DSave.getData(guest, "S_GUESTAT"));
+        if (!DSave.hasData(guest, "S_GUESTAT")) DSave.saveData(guest, "S_GUESTAT", new ArrayList<LocationSaveable>());
+        ArrayList<LocationSaveable> list = ((ArrayList<LocationSaveable>) DSave.getData(guest, "S_GUESTAT"));
         list.add(shrine);
         DSave.saveData(guest, "S_GUESTAT", list);
     }
@@ -1173,11 +1173,11 @@ public class DMiscUtil {
      * @return if the removal was successful
      */
     @SuppressWarnings("unchecked")
-    public static boolean removeGuest(WriteLocation shrine, UUID name) {
+    public static boolean removeGuest(LocationSaveable shrine, UUID name) {
         if (!isFullParticipant(name)) return false;
-        if (!DSave.hasData(name, "S_GUESTAT")) DSave.saveData(name, "S_GUESTAT", new ArrayList<WriteLocation>());
-        ArrayList<WriteLocation> list = (ArrayList<WriteLocation>) DSave.getData(name, "S_GUESTAT");
-        Iterator<WriteLocation> it = list.iterator();
+        if (!DSave.hasData(name, "S_GUESTAT")) DSave.saveData(name, "S_GUESTAT", new ArrayList<LocationSaveable>());
+        ArrayList<LocationSaveable> list = (ArrayList<LocationSaveable>) DSave.getData(name, "S_GUESTAT");
+        Iterator<LocationSaveable> it = list.iterator();
         boolean success = false;
         while (it.hasNext()) {
             if ((it.next()).equalsApprox(shrine)) {
@@ -1195,9 +1195,9 @@ public class DMiscUtil {
      * @param player
      * @return
      */
-    public static boolean isGuest(WriteLocation shrine, UUID player) {
+    public static boolean isGuest(LocationSaveable shrine, UUID player) {
         if (!isFullParticipant(player)) return false;
-        for (WriteLocation w : getAccessibleShrines(player)) {
+        for (LocationSaveable w : getAccessibleShrines(player)) {
             if (w.equalsApprox(shrine)) return true;
         }
         return false;
@@ -1210,10 +1210,10 @@ public class DMiscUtil {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static ArrayList<WriteLocation> getAccessibleShrines(UUID player) {
+    public static ArrayList<LocationSaveable> getAccessibleShrines(UUID player) {
         if (!isFullParticipant(player)) return null;
-        if (!DSave.hasData(player, "S_GUESTAT")) DSave.saveData(player, "S_GUESTAT", new ArrayList<WriteLocation>());
-        return (ArrayList<WriteLocation>) DSave.getData(player, "S_GUESTAT");
+        if (!DSave.hasData(player, "S_GUESTAT")) DSave.saveData(player, "S_GUESTAT", new ArrayList<LocationSaveable>());
+        return (ArrayList<LocationSaveable>) DSave.getData(player, "S_GUESTAT");
 
     }
 
@@ -1223,10 +1223,10 @@ public class DMiscUtil {
      * @param shrine
      * @return
      */
-    public static ArrayList<UUID> getShrineGuestlist(WriteLocation shrine) {
+    public static ArrayList<UUID> getShrineGuestlist(LocationSaveable shrine) {
         ArrayList<UUID> list = new ArrayList<UUID>();
         for (UUID p : getFullParticipants()) {
-            for (WriteLocation w : DMiscUtil.getAccessibleShrines(p)) {
+            for (LocationSaveable w : DMiscUtil.getAccessibleShrines(p)) {
                 if (w.equalsApprox(shrine)) list.add(p);
             }
         }
@@ -1239,14 +1239,14 @@ public class DMiscUtil {
      * @param shrine
      * @return the shrine that was removed
      */
-    public static void removeShrine(WriteLocation shrine) {
+    public static void removeShrine(LocationSaveable shrine) {
         try {
             toLocation(shrine).getBlock().setType(Material.AIR);
         } catch (NullPointerException ignored) {
         }
         for (UUID p : getFullParticipants()) {
             // remove from main lists
-            HashMap<String, WriteLocation> replace = new HashMap<String, WriteLocation>();
+            HashMap<String, LocationSaveable> replace = new HashMap<String, LocationSaveable>();
             for (String key : getShrines(p).keySet()) {
                 if (!getShrines(p).get(key).equalsApprox(shrine)) replace.put(key, getShrines(p).get(key));
             }
@@ -1263,7 +1263,7 @@ public class DMiscUtil {
      * @param shrinename
      * @return
      */
-    public static WriteLocation getShrineByKey(String shrinename) {
+    public static LocationSaveable getShrineByKey(String shrinename) {
         for (UUID p : getFullParticipants()) {
             if (getShrines(p).containsKey(shrinename)) return getShrines(p).get(shrinename);
         }
@@ -1277,7 +1277,7 @@ public class DMiscUtil {
      * @param newname
      * @return if it worked (cannot begin with "#", name cannot already be used)
      */
-    public static boolean renameShrine(WriteLocation shrine, String newname) {
+    public static boolean renameShrine(LocationSaveable shrine, String newname) {
         if (newname.charAt(0) == '#') return false;
         for (UUID p : getFullParticipants()) {
             if (getShrines(p).containsKey(newname)) return false;
@@ -1302,7 +1302,7 @@ public class DMiscUtil {
      * @param shrine
      * @return
      */
-    public static String getShrineName(WriteLocation shrine) {
+    public static String getShrineName(LocationSaveable shrine) {
         UUID owner = getOwnerOfShrine(shrine);
         if ((shrine == null) || (owner == null)) return null;
         for (String shrinename : getShrines(owner).keySet()) {
@@ -1313,29 +1313,29 @@ public class DMiscUtil {
         return "[" + owner + " " + getDeityAtShrine(shrine) + "]";
     }
 
-    private static void setShrines(UUID p, HashMap<String, WriteLocation> data) {
+    private static void setShrines(UUID p, HashMap<String, LocationSaveable> data) {
         DSave.saveData(p, "P_SHRINES", data);
     }
 
     @SuppressWarnings("unchecked")
-    public static void addShrine(UUID p, String deityname, WriteLocation loc) {
+    public static void addShrine(UUID p, String deityname, LocationSaveable loc) {
         if (DSave.hasData(p, "P_SHRINES")) {
-            ((HashMap<String, WriteLocation>) DSave.getData(p, "P_SHRINES")).put(deityname, loc);
+            ((HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES")).put(deityname, loc);
             return;
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static HashMap<String, WriteLocation> getShrines(UUID p) {
-        if (DSave.hasData(p, "P_SHRINES")) return (HashMap<String, WriteLocation>) DSave.getData(p, "P_SHRINES");
+    public static HashMap<String, LocationSaveable> getShrines(UUID p) {
+        if (DSave.hasData(p, "P_SHRINES")) return (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
         return null;
     }
 
     @SuppressWarnings("unchecked")
-    public static WriteLocation getShrine(UUID p, String deityname) {
+    public static LocationSaveable getShrine(UUID p, String deityname) {
         if (DSave.hasData(p, "P_SHRINES")) {
-            HashMap<String, WriteLocation> original = (HashMap<String, WriteLocation>) DSave.getData(p, "P_SHRINES");
-            for (Map.Entry<String, WriteLocation> s : original.entrySet()) {
+            HashMap<String, LocationSaveable> original = (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
+            for (Map.Entry<String, LocationSaveable> s : original.entrySet()) {
                 if (s.getKey().equalsIgnoreCase(deityname)) return s.getValue();
             }
         }
@@ -1409,11 +1409,11 @@ public class DMiscUtil {
      *
      * @return
      */
-    public static List<WriteLocation> getAllShrines() {
-        return new ArrayList<WriteLocation>() {
+    public static List<LocationSaveable> getAllShrines() {
+        return new ArrayList<LocationSaveable>() {
             {
                 for (UUID player : getFullParticipants())
-                    for (WriteLocation w : getShrines(player).values())
+                    for (LocationSaveable w : getShrines(player).values())
                         add(w);
             }
         };

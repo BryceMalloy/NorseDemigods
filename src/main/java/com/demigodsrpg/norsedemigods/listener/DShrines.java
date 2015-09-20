@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.listener;
 
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.WriteLocation;
 import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
@@ -75,7 +75,7 @@ public class DShrines implements Listener {
                     return;
                 }
             }
-            for (WriteLocation w : DMiscUtil.getAllShrines()) {
+            for (LocationSaveable w : DMiscUtil.getAllShrines()) {
                 if (DMiscUtil.getShrineName(w).equals(s.getLines()[3].trim())) {
                     p.sendMessage(ChatColor.YELLOW + "A shrine with that name already exists.");
                     return;
@@ -83,7 +83,7 @@ public class DShrines implements Listener {
             }
             shrinename = "#" + s.getLines()[3].trim();
         }
-        for (WriteLocation center : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable center : DMiscUtil.getAllShrines()) {
             if (DMiscUtil.toLocation(center).getWorld().equals(e.getClickedBlock().getWorld()))
                 if (e.getClickedBlock().getLocation().distance(DMiscUtil.toLocation(center)) < (RADIUS + 1)) {
                     p.sendMessage(ChatColor.YELLOW + "Too close to an existing shrine.");
@@ -106,7 +106,7 @@ public class DShrines implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public static void destroyShrine(BlockBreakEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
-        for (WriteLocation center : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable center : DMiscUtil.getAllShrines()) {
             if ((DMiscUtil.toWriteLocation(e.getBlock().getLocation())).equalsApprox(center)) {
                 e.getPlayer().sendMessage(ChatColor.YELLOW + "Shrines cannot be broken by hand.");
                 e.setCancelled(true);
@@ -118,7 +118,7 @@ public class DShrines implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void stopShrineDamage(BlockDamageEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
-        for (WriteLocation center : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable center : DMiscUtil.getAllShrines()) {
             if ((DMiscUtil.toWriteLocation(e.getBlock().getLocation())).equalsApprox(center)) {
                 e.setCancelled(true);
             }
@@ -128,7 +128,7 @@ public class DShrines implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void stopShrineIgnite(BlockIgniteEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
-        for (WriteLocation center : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable center : DMiscUtil.getAllShrines()) {
             if ((DMiscUtil.toWriteLocation(e.getBlock().getLocation())).equalsApprox(center)) {
                 e.setCancelled(true);
             }
@@ -138,7 +138,7 @@ public class DShrines implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void stopShrineBurn(BlockBurnEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
-        for (WriteLocation center : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable center : DMiscUtil.getAllShrines()) {
             if ((DMiscUtil.toWriteLocation(e.getBlock().getLocation())).equalsApprox(center)) {
                 e.setCancelled(true);
             }
@@ -154,7 +154,7 @@ public class DShrines implements Listener {
             if (!DSettings.getEnabledWorlds().contains(b.getWorld())) {
                 return;
             }
-            for (WriteLocation center : DMiscUtil.getAllShrines()) {
+            for (LocationSaveable center : DMiscUtil.getAllShrines()) {
                 if ((DMiscUtil.toWriteLocation(b.getLocation())).equalsApprox(center)) {
                     e.setCancelled(true);
                     break CHECKBLOCKS;
@@ -169,7 +169,7 @@ public class DShrines implements Listener {
         final Block b = e.getBlock().getRelative(e.getDirection(), 2);
 
         if (!DSettings.getEnabledWorlds().contains(b.getWorld())) return;
-        for (WriteLocation shrine : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable shrine : DMiscUtil.getAllShrines()) {
             if ((DMiscUtil.toWriteLocation(b.getLocation())).equalsApprox((shrine)) && e.isSticky()) {
                 e.setCancelled(true);
                 break;
@@ -186,7 +186,7 @@ public class DShrines implements Listener {
             while (i.hasNext()) {
                 Block b = i.next();
                 if (!DMiscUtil.canLocationPVP(b.getLocation())) i.remove();
-                for (WriteLocation center : DMiscUtil.getAllShrines()) {
+                for (LocationSaveable center : DMiscUtil.getAllShrines()) {
                     if ((DMiscUtil.toWriteLocation(b.getLocation())).equalsApprox(center)) i.remove();
                 }
             }
@@ -224,7 +224,7 @@ public class DShrines implements Listener {
         if (e.getFrom().distance(e.getTo()) < 0.1) return;
         for (UUID player : DMiscUtil.getFullParticipants()) {
             if (DMiscUtil.getShrines(player) != null)
-                for (WriteLocation center : DMiscUtil.getShrines(player).values()) {
+                for (LocationSaveable center : DMiscUtil.getShrines(player).values()) {
                     // Check for world errors
                     if (!DMiscUtil.toLocation(center).getWorld().equals(e.getPlayer().getWorld())) return;
                     if (e.getFrom().getWorld() != DMiscUtil.toLocation(center).getWorld()) return;

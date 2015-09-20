@@ -6,6 +6,7 @@ import com.demigodsrpg.norsedemigods.deity.jotunn.*;
 import com.demigodsrpg.norsedemigods.deity.testing.Kvasir;
 import com.demigodsrpg.norsedemigods.listener.DLevels;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
@@ -1004,7 +1005,7 @@ public class DCommandExecutor implements CommandExecutor {
         }
         // player can warp to these shrines
         String str3 = "Other shrines you may warp to:";
-        for (WriteLocation shrine : DMiscUtil.getAccessibleShrines(p.getUniqueId())) {
+        for (LocationSaveable shrine : DMiscUtil.getAccessibleShrines(p.getUniqueId())) {
             str3 += " " + DMiscUtil.getShrineName(shrine);
         }
         p.sendMessage(ChatColor.YELLOW + str1);
@@ -1016,7 +1017,7 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean shrineWarp(Player p, String[] args) {
         if (!(DMiscUtil.hasPermission(p, "demigods.shrinewarp") || DMiscUtil.hasPermission(p, "demigods.admin")))
             return true;
-        WriteLocation target = null;
+        LocationSaveable target = null;
         if ((args.length != 1) && (args.length != 2)) return false;
         if (args.length == 1)
             // try matching the name to deities the player has
@@ -1053,12 +1054,12 @@ public class DCommandExecutor implements CommandExecutor {
         }
         // warp code
         target = DMiscUtil.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
-        final WriteLocation current = DMiscUtil.toWriteLocation(p.getLocation());
+        final LocationSaveable current = DMiscUtil.toWriteLocation(p.getLocation());
         final double hp = DMiscUtil.getHP(p);
         final float pitch = p.getLocation().getPitch();
         final float yaw = p.getLocation().getYaw();
         final Player pt = p;
-        final WriteLocation TARGET = target;
+        final LocationSaveable TARGET = target;
         DMiscUtil.addActiveEffect(p.getUniqueId(), "Warping", 1000);
         p.sendMessage(ChatColor.YELLOW + "Don't move, warping in progress...");
         DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
@@ -1142,7 +1143,7 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean forceShrineWarp(Player p, String[] args) {
         if (!(DMiscUtil.hasPermission(p, "demigods.shrinewarp") || DMiscUtil.hasPermission(p, "demigods.admin")))
             return true;
-        WriteLocation target = null;
+        LocationSaveable target = null;
         if ((args.length != 1) && (args.length != 2)) return false;
         if (args.length == 1)
             // try matching the name to deities the player has
@@ -1178,12 +1179,12 @@ public class DCommandExecutor implements CommandExecutor {
         }
         // warp code
         target = DMiscUtil.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
-        final WriteLocation current = DMiscUtil.toWriteLocation(p.getLocation());
+        final LocationSaveable current = DMiscUtil.toWriteLocation(p.getLocation());
         final double hp = DMiscUtil.getHP(p);
         final float pitch = p.getLocation().getPitch();
         final float yaw = p.getLocation().getYaw();
         final Player pt = p;
-        final WriteLocation TARGET = target;
+        final LocationSaveable TARGET = target;
         DMiscUtil.addActiveEffect(p.getUniqueId(), "Warping", 1000);
         p.sendMessage(ChatColor.YELLOW + "Don't move, warping in progress...");
         DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
@@ -1343,7 +1344,7 @@ public class DCommandExecutor implements CommandExecutor {
         if (!(DMiscUtil.hasPermission(p, "demigods.shrineowner") || DMiscUtil.hasPermission(p, "demigods.admin")))
             return true;
         if (args.length != 2) return false;
-        WriteLocation shrine = DMiscUtil.getNearbyShrine(p.getLocation());
+        LocationSaveable shrine = DMiscUtil.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
@@ -1403,7 +1404,7 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean fixShrine(Player p) {
-        WriteLocation shrine = DMiscUtil.getNearbyShrine(p.getLocation());
+        LocationSaveable shrine = DMiscUtil.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
@@ -1423,7 +1424,7 @@ public class DCommandExecutor implements CommandExecutor {
         if (!(DMiscUtil.hasPermission(p, "demigods.listshrines") || DMiscUtil.hasPermission(p, "demigods.admin")))
             return true;
         String str = "";
-        for (WriteLocation w : DMiscUtil.getAllShrines()) {
+        for (LocationSaveable w : DMiscUtil.getAllShrines()) {
             String toadd = DMiscUtil.getShrineName(w);
             if (!str.contains(toadd)) str += toadd + ", ";
         }
@@ -1437,7 +1438,7 @@ public class DCommandExecutor implements CommandExecutor {
         if (!(DMiscUtil.hasPermission(p, "demigods.removeshrine") || DMiscUtil.hasPermission(p, "demigods.admin")))
             return true;
         if ((args.length == 1) && DMiscUtil.hasPermission(p, "demigods.admin") && args[0].equals("all")) {
-            for (WriteLocation w : DMiscUtil.getAllShrines()) {
+            for (LocationSaveable w : DMiscUtil.getAllShrines()) {
                 p.sendMessage("Deleting " + DMiscUtil.getShrineName(w));
                 DMiscUtil.toLocation(w).getBlock().setType(Material.AIR);
                 DMiscUtil.removeShrine(w);
@@ -1446,7 +1447,7 @@ public class DCommandExecutor implements CommandExecutor {
         }
         if (args.length != 0) return false;
         // find nearby shrine
-        WriteLocation shrine = DMiscUtil.getNearbyShrine(p.getLocation());
+        LocationSaveable shrine = DMiscUtil.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
@@ -1474,7 +1475,7 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         if (args.length != 1) return false;
         // find nearby shrine
-        WriteLocation shrine = DMiscUtil.getNearbyShrine(p.getLocation());
+        LocationSaveable shrine = DMiscUtil.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
@@ -1621,7 +1622,7 @@ public class DCommandExecutor implements CommandExecutor {
             if (args[0].equalsIgnoreCase("all")) {
                 DMiscUtil.getPlugin().getServer().broadcastMessage(ChatColor.RED + p.getName() + " has forsaken their deities.");
                 p.kickPlayer(ChatColor.RED + "You are mortal.");
-                for (WriteLocation w : DMiscUtil.getShrines(p.getUniqueId()).values())
+                for (LocationSaveable w : DMiscUtil.getShrines(p.getUniqueId()).values())
                     DMiscUtil.removeShrine(w);
                 DSave.removePlayer(p);
                 DSave.addPlayer(p);
@@ -2125,7 +2126,7 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 cm.sendMessage("Accessible:");
-                for (WriteLocation w : DMiscUtil.getAccessibleShrines(p)) {
+                for (LocationSaveable w : DMiscUtil.getAccessibleShrines(p)) {
                     String name = DMiscUtil.getShrineName(w);
                     try {
                         cm.sendMessage(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld());
@@ -2142,7 +2143,7 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.sendMessage("Shrines:");
                 for (String name : DMiscUtil.getShrines(p).keySet()) {
                     try {
-                        WriteLocation w = DMiscUtil.getShrines(p).get(name);
+                        LocationSaveable w = DMiscUtil.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
                         for (UUID player : DMiscUtil.getShrineGuestlist(w))
                             names.append(player).append(" ");
@@ -2230,7 +2231,7 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 cm.info("Accessible:");
-                for (WriteLocation w : DMiscUtil.getAccessibleShrines(p)) {
+                for (LocationSaveable w : DMiscUtil.getAccessibleShrines(p)) {
                     String name = DMiscUtil.getShrineName(w);
                     try {
                         cm.info(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld());
@@ -2247,7 +2248,7 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.info("Shrines:");
                 for (String name : DMiscUtil.getShrines(p).keySet()) {
                     try {
-                        WriteLocation w = DMiscUtil.getShrines(p).get(name);
+                        LocationSaveable w = DMiscUtil.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
                         for (UUID player : DMiscUtil.getShrineGuestlist(w))
                             names.append(DMiscUtil.getLastKnownName(player)).append(" ");
@@ -2337,7 +2338,7 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 String s = "Accessible:\r\n";
-                for (WriteLocation wr : DMiscUtil.getAccessibleShrines(p)) {
+                for (LocationSaveable wr : DMiscUtil.getAccessibleShrines(p)) {
                     String name = DMiscUtil.getShrineName(wr);
                     try {
                         s += name + " " + wr.getX() + " " + wr.getY() + " " + wr.getZ() + " " + wr.getWorld() + "\r\n";
@@ -2355,7 +2356,7 @@ public class DCommandExecutor implements CommandExecutor {
                 String s = "Shrines:\r\n";
                 for (String name : DMiscUtil.getShrines(p).keySet()) {
                     try {
-                        WriteLocation w = DMiscUtil.getShrines(p).get(name);
+                        LocationSaveable w = DMiscUtil.getShrines(p).get(name);
                         String names = "";
                         for (UUID player : DMiscUtil.getShrineGuestlist(w))
                             names += player + " ";
@@ -2450,7 +2451,7 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 String s = "Accessible:\r\n";
-                for (WriteLocation wr : DMiscUtil.getAccessibleShrines(p)) {
+                for (LocationSaveable wr : DMiscUtil.getAccessibleShrines(p)) {
                     String name = DMiscUtil.getShrineName(wr);
                     try {
                         s += name + " " + wr.getX() + " " + wr.getY() + " " + wr.getZ() + " " + wr.getWorld() + "\r\n";
@@ -2468,7 +2469,7 @@ public class DCommandExecutor implements CommandExecutor {
                 String s = "Shrines:\r\n";
                 for (String name : DMiscUtil.getShrines(p).keySet()) {
                     try {
-                        WriteLocation w = DMiscUtil.getShrines(p).get(name);
+                        LocationSaveable w = DMiscUtil.getShrines(p).get(name);
                         String names = "";
                         for (UUID player : DMiscUtil.getShrineGuestlist(w))
                             names += player + " ";

@@ -218,7 +218,7 @@ public class Jormungand implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
         int healinterval = 10 - (int) (Math.round(Math.pow(DMiscUtil.getDevotion(getPlayerId(), getName()), 0.125))); // seconds
         if (healinterval < 1) healinterval = 1;
         if (timeSent > LASTCHECK + (healinterval * 1000)) {

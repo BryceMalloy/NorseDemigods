@@ -210,7 +210,7 @@ public class Bragi implements Deity {
     }
 
     @Override
-    public void onTick(long timeSent) {
+    public void onSyncTick(long timeSent) {
         if (timeSent > LASTCHECK + 10000) {
             LASTCHECK = timeSent;
             if ((DMiscUtil.getOnlinePlayer(getPlayerId()) != null) && !DMiscUtil.getOnlinePlayer(getPlayerId()).isDead()) {

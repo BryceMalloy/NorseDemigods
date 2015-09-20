@@ -31,7 +31,7 @@ public class DDeities implements Listener {
                     if ((p != null) && p.isOnline()) {
                         if (DSettings.getEnabledWorlds().contains(p.getWorld())) {
                             for (Deity d : DMiscUtil.getDeities(p))
-                                d.onTick(System.currentTimeMillis());
+                                d.onSyncTick(System.currentTimeMillis());
                         }
                     }
                 }
