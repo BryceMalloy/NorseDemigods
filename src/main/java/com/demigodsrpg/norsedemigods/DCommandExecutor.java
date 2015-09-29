@@ -1,6 +1,5 @@
 package com.demigodsrpg.norsedemigods;
 
-import com.demigodsrpg.norsedemigods.deity.Deity;
 import com.demigodsrpg.norsedemigods.deity.aesir.*;
 import com.demigodsrpg.norsedemigods.deity.jotunn.*;
 import com.demigodsrpg.norsedemigods.deity.testing.Kvasir;

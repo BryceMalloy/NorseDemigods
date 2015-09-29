@@ -1,12 +1,10 @@
 package com.demigodsrpg.norsedemigods.util;
 
-import com.demigodsrpg.norsedemigods.DCommandExecutor;
-import com.demigodsrpg.norsedemigods.DFixes;
-import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.*;
 import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
@@ -27,61 +25,17 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class DMiscUtil {
-    private static final NorseDemigods plugin = (NorseDemigods) Bukkit.getServer().getPluginManager().getPlugin("NorseDemigods"); // obviously needed
-    private static final int dist = DSettings.getSettingInt("max_target_range"); // maximum range on targeting
-    private static final int MAXIMUMHP = DSettings.getSettingInt("max_hp"); // max hp a player can have
-    public static final int ASCENSIONCAP = DSettings.getSettingInt("ascension_cap"); // max levels
-    private static final int FAVORCAP = DSettings.getSettingInt("globalfavorcap"); // max favor
-    private static final boolean BROADCASTNEWDEITY = DSettings.getSettingBoolean("broadcast_new_deities"); // tell server when a player gets a deity
-    private static final boolean ALLOWPVPEVERYWHERE = DSettings.getSettingBoolean("allow_skills_everywhere");
-    private static final boolean USENEWPVP = DSettings.getSettingBoolean("use_new_pvp_zones");
-
-    public static void consoleMSG(String level, String msg) {
-        // Define variables
-        Logger log = Logger.getLogger("Minecraft");
-
-        if (level.equalsIgnoreCase("info")) log.info("[Demigods] " + msg);
-        if (level.equalsIgnoreCase("warning")) log.warning("[Demigods] " + msg);
-        if (level.equalsIgnoreCase("severe")) log.severe("[Demigods] " + msg);
-    }
-
-    public static Player getOnlinePlayer(String name) {
-        return plugin.getServer().getPlayer(name);
-    }
-
-    public static Player getOnlinePlayer(UUID id) {
-        return plugin.getServer().getPlayer(id);
-    }
-
-    public static UUID getDemigodsPlayerId(String name) {
-        UUID found = null;
-        String lowerName = name.toLowerCase();
-        int delta = Integer.MAX_VALUE;
-        for (UUID player : DSave.getCompleteData().keySet()) {
-            String playername = getLastKnownName(player);
-            if (playername.toLowerCase().startsWith(lowerName)) {
-                int curDelta = playername.length() - lowerName.length();
-                if (curDelta < delta) {
-                    found = player;
-                    delta = curDelta;
-                }
-                if (curDelta == 0) break;
-            }
-        }
-        return found;
-    }
-
     @Deprecated
-    public static String getDemigodsPlayer(String name) {
-        String found = null;
+    public static PlayerDataSaveable getDemigodsPlayer(String name) {
+        PlayerDataSaveable found = null;
         String lowerName = name.toLowerCase();
         int delta = Integer.MAX_VALUE;
-        for (UUID player : DSave.getCompleteData().keySet()) {
-            String playername = getLastKnownName(player);
+        for (PlayerDataSaveable data : getPlugin().getPlayerDataRegistry().getFromDb().values()) {
+            String playername = data.getLastKnownName();
             if (playername.toLowerCase().startsWith(lowerName)) {
                 int curDelta = playername.length() - lowerName.length();
                 if (curDelta < delta) {
-                    found = playername;
+                    found = data;
                     delta = curDelta;
                 }
                 if (curDelta == 0) break;
@@ -91,14 +45,18 @@ public class DMiscUtil {
     }
 
     public static String getLastKnownName(UUID p) {
-        return DSave.getData(p, "LASTKNOWNNAME").toString();
+        Optional<PlayerDataSaveable> opData = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opData.isPresent()) {
+            return opData.get().getLastKnownName();
+        }
+        return "";
     }
 
     /**
      * Gets the Location a Player is looking at.
      */
     public static Location getTargetLocation(Player p) {
-        return p.getTargetBlock((Set) null, dist).getLocation();
+        return p.getTargetBlock((Set) null, Setting.MAX_TARGET_RANGE).getLocation();
     }
 
     /**
@@ -106,7 +64,7 @@ public class DMiscUtil {
      */
     public static LivingEntity getTargetLivingEntity(Player p, int offset) {
         LivingEntity e = null;
-        for (Block b : p.getLineOfSight((Set) null, dist)) {
+        for (Block b : p.getLineOfSight((Set) null, Setting.MAX_TARGET_RANGE)) {
             for (Entity t : b.getChunk().getEntities()) {
                 if (t.getWorld() != b.getWorld()) continue;
                 if (t instanceof LivingEntity)
@@ -127,11 +85,7 @@ public class DMiscUtil {
      * Converts a WriteLocation to Location.
      */
     public static Location toLocation(LocationSaveable l) {
-        try {
-            return new Location(plugin.getServer().getWorld(l.getWorld()), l.getX(), l.getY(), l.getZ());
-        } catch (Exception er) {
-            return null;
-        }
+        return l.toLocation(getPlugin());
     }
 
     /**
@@ -148,16 +102,16 @@ public class DMiscUtil {
         return p.hasPermission(pe);
     }
 
-    public static void setJotunn(UUID p) {
-        DSave.saveData(p, "ALLEGIANCE", "jotunn");
+    public static void setJotunn(Player p) {
+        getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance("jotunn");
     }
 
-    public static void setAEsir(UUID p) {
-        DSave.saveData(p, "ALLEGIANCE", "aesir");
+    public static void setAEsir(Player p) {
+        getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance("aesir");
     }
 
-    public static void setAllegiance(UUID p, String allegiance) {
-        DSave.saveData(p, "ALLEGIANCE", allegiance);
+    public static void setAllegiance(Player p, String allegiance) {
+        getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance(allegiance);
     }
 
     public static boolean areAllied(Player p1, Player p2) {
@@ -1505,7 +1459,7 @@ public class DMiscUtil {
 
     public static Plugin getPlugin(final String p) {
         try {
-            return Iterators.find(Sets.newHashSet(plugin.getServer().getPluginManager().getPlugins()).iterator(), new Predicate<Plugin>() {
+            return Iterators.find(Sets.newHashSet(getPlugin().getServer().getPluginManager().getPlugins()).iterator(), new Predicate<Plugin>() {
                 @Override
                 public boolean apply(Plugin pl) {
                     return pl.getDescription().getName().equalsIgnoreCase(p);

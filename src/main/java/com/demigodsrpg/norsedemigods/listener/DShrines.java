@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.listener;
 
+import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.deity.Deity;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;

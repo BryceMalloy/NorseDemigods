@@ -1,9 +1,14 @@
 package com.demigodsrpg.norsedemigods.deity;
 
+import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.deity.aesir.*;
 import com.demigodsrpg.norsedemigods.deity.jotunn.*;
 
 public class Deities {
+
+    // -- TEMPLATE/EXAMPLE -- //
+
+    private static final Template TEMPLATE = new Template(); // EXAMPLE
 
     // -- AESIR -- //
 
@@ -28,8 +33,8 @@ public class Deities {
     // -- MOB LIST -- //
 
     private static final Deity[] deityList = new Deity[]{
-            BALDR, BRAGI, DWARF, HEIMDALLR, ODIN, THOR, VIDAR,
-            DIS, FIRE_GIANT, FROST_GIANT, HEL, JORD, JORMUNGAND, THRYMR
+            BALDR, BRAGI, DWARF, HEIMDALLR, ODIN, THOR, VIDAR, // AESIR
+            DIS, FIRE_GIANT, FROST_GIANT, HEL, JORD, JORMUNGAND, THRYMR // JOTUNN
     };
 
     // -- PRIVATE CONSTRUCTOR -- //

@@ -1,6 +1,6 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
-import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import org.bukkit.ChatColor;

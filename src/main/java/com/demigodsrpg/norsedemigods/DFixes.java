@@ -4,7 +4,6 @@ import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DDeities;
 import com.demigodsrpg.norsedemigods.listener.DPvP;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
-import com.demigodsrpg.norsedemigods.util.DSettings;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,8 +16,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DFixes implements Listener {
-    private static final Set<EntityDamageEvent> important = Collections.synchronizedSet(new HashSet<EntityDamageEvent>());
-    public static final Set<EntityDamageEvent> processed = Collections.synchronizedSet(new HashSet<EntityDamageEvent>());
+    private static final Set<EntityDamageEvent> important = Collections.synchronizedSet(new HashSet<>());
+    public static final Set<EntityDamageEvent> processed = Collections.synchronizedSet(new HashSet<>());
 
     @EventHandler(priority = EventPriority.HIGH)
     private void onImportantDamage(EntityDamageEvent event) {
@@ -117,6 +116,6 @@ public class DFixes implements Listener {
     }
 
     public static boolean isNoob(Player player) {
-        return DMiscUtil.getDevotion(player) <= DSettings.getSettingInt("noob_level");
+        return DMiscUtil.getDevotion(player) <= Setting.NOOB_LEVEL;
     }
 }

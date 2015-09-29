@@ -5,7 +5,7 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
  */
 
 import com.demigodsrpg.norsedemigods.DFixes;
-import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import org.bukkit.ChatColor;

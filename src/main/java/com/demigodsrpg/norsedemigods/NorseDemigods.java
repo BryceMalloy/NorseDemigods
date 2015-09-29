@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods;
 
 import com.demigodsrpg.norsedemigods.deity.Deities;
-import com.demigodsrpg.norsedemigods.deity.Deity;
 import com.demigodsrpg.norsedemigods.listener.*;
+import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
@@ -31,6 +31,8 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     static NorseDemigods INST;
 
+    PlayerDataRegistry PLAYER_DATA;
+
     @Override
     public void onEnable() {
         long firstTime = System.currentTimeMillis();
@@ -41,7 +43,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
         new DSettings(); // #1 (needed for DMiscUtil to load)
         new DMiscUtil(); // #2 (needed for everything else to work)
-        new DSave(); // #3 (needed to start save system)
+
+        PLAYER_DATA = new PlayerDataRegistry(this);
+
         loadFixes(); // #3.5
         loadListeners(); // #4
         loadCommands(); // #5 (needed)
@@ -84,8 +88,12 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getLogger().info("Save completed and " + c + " tasks cancelled.");
     }
 
+    public PlayerDataRegistry getPlayerDataRegistry() {
+        return PLAYER_DATA;
+    }
+
     @EventHandler
-    public void saveOnExit(PlayerQuitEvent e) {
+    void saveOnExit(PlayerQuitEvent e) {
         // Save a player file when they exit, if it can't, let the Administrator know
         if (DMiscUtil.isFullParticipant(e.getPlayer())) try {
             DSave.save();

@@ -1,6 +1,6 @@
 package com.demigodsrpg.norsedemigods.listener;
 
-import com.demigodsrpg.norsedemigods.deity.Deity;
+import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
