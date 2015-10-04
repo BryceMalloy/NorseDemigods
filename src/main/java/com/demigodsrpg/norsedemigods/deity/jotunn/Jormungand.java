@@ -5,8 +5,8 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
  */
 
 import com.demigodsrpg.norsedemigods.DFixes;
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -66,8 +66,8 @@ public class Jormungand implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Jormungand") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.hasDeity(p, "Jormungand") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
 			 */
@@ -94,13 +94,13 @@ public class Jormungand implements Deity {
             p.sendMessage("Immune to drowning, sneak while in water to swim very fast!");
             p.sendMessage(":Deal " + damage + " damage and soak an enemy from a distance. " + ChatColor.GREEN + "/reel");
             p.sendMessage(ChatColor.YELLOW + "Costs " + REELCOST + " Favor. Must have fishing rod in hand.");
-            if (((Jormungand) (DMiscUtil.getDeity(p, "Jormungand"))).REEL)
+            if (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).REEL)
                 p.sendMessage(ChatColor.AQUA + "    Reel is active.");
             p.sendMessage(":Create a temporary flood of water. " + ChatColor.GREEN + "/drown");
             p.sendMessage(ChatColor.YELLOW + "Costs " + drownCOST + " Favor.");
             p.sendMessage("Water has radius of " + radius + " for " + duration + " seconds.");
-            if (((Jormungand) (DMiscUtil.getDeity(p, "Jormungand"))).drownBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    drown bound to " + (((Jormungand) (DMiscUtil.getDeity(p, "Jormungand"))).drownBIND).name());
+            if (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).drownBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    drown bound to " + (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).drownBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             return;
         }
@@ -119,8 +119,8 @@ public class Jormungand implements Deity {
         if (ee instanceof PlayerMoveEvent) {
             PlayerMoveEvent move = (PlayerMoveEvent) ee;
             Player p = move.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p)) return;
-            if (!DMiscUtil.hasDeity(p, "Jormungand")) return;
+            if (!DMisc.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Jormungand")) return;
             // PHELPS SWIMMING
             if (p.getLocation().getBlock().getType().equals(Material.STATIONARY_WATER) || p.getLocation().getBlock().getType().equals(Material.WATER)) {
                 Vector dir = p.getLocation().getDirection().normalize().multiply(1.3D);
@@ -131,21 +131,21 @@ public class Jormungand implements Deity {
         if (ee instanceof EntityDamageEvent) {
             if (((EntityDamageEvent) ee).getCause().equals(DamageCause.DROWNING) && ((EntityDamageEvent) ee).getEntity() instanceof Player) {
                 Player p = (Player) ((EntityDamageEvent) ee).getEntity();
-                if (!DMiscUtil.isFullParticipant(p)) return;
-                if (!DMiscUtil.hasDeity(p, "Jormungand")) return;
+                if (!DMisc.isFullParticipant(p)) return;
+                if (!DMisc.hasDeity(p, "Jormungand")) return;
                 DFixes.checkAndCancel((EntityDamageEvent) ee);
             }
         } else if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p)) return;
-            if (!DMiscUtil.hasDeity(p, "Jormungand")) return;
+            if (!DMisc.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Jormungand")) return;
             if (REEL) {
                 if (p.getItemInHand().getType() == Material.FISHING_ROD) {
                     if (REELTIME > System.currentTimeMillis()) return;
-                    if (DMiscUtil.getFavor(p) > REELCOST) {
+                    if (DMisc.getFavor(p) > REELCOST) {
                         if (reel(p)) {
-                            DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - REELCOST);
+                            DMisc.setFavor(p, DMisc.getFavor(p) - REELCOST);
                             int REELDELAY = 1100;
                             REELTIME = System.currentTimeMillis() + REELDELAY;
                         }
@@ -160,9 +160,9 @@ public class Jormungand implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "You may not use this skill yet.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) > drownCOST) {
+                if (DMisc.getFavor(p) > drownCOST) {
                     if (drown(p)) {
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - drownCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - drownCOST);
                         int DROWNDELAY = 15000;
                         drownTIME = System.currentTimeMillis() + DROWNDELAY;
                     }
@@ -176,8 +176,8 @@ public class Jormungand implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        if (!DMiscUtil.isFullParticipant(P)) return;
-        if (!DMiscUtil.hasDeity(P, "Jormungand")) return;
+        if (!DMisc.isFullParticipant(P)) return;
+        if (!DMisc.hasDeity(P, "Jormungand")) return;
         if (str.equalsIgnoreCase("reel")) {
             if (REEL) {
                 REEL = false;
@@ -190,17 +190,17 @@ public class Jormungand implements Deity {
         } else if (str.equalsIgnoreCase("drown")) {
             if (bind) {
                 if (drownBIND == null) {
-                    if (DMiscUtil.isBound(P, P.getItemInHand().getType()))
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
                         P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (P.getItemInHand().getType() == Material.AIR)
                         P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(P, P.getItemInHand().getType());
+                        DMisc.registerBind(P, P.getItemInHand().getType());
                         drownBIND = P.getItemInHand().getType();
                         P.sendMessage(ChatColor.YELLOW + "Drown is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(P, drownBIND);
+                    DMisc.removeBind(P, drownBIND);
                     P.sendMessage(ChatColor.YELLOW + "Drown is no longer bound to " + drownBIND.name() + ".");
                     drownBIND = null;
                 }
@@ -219,55 +219,55 @@ public class Jormungand implements Deity {
 
     @Override
     public void onSyncTick(long timeSent) {
-        int healinterval = 10 - (int) (Math.round(Math.pow(DMiscUtil.getDevotion(getPlayerId(), getName()), 0.125))); // seconds
+        int healinterval = 10 - (int) (Math.round(Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.125))); // seconds
         if (healinterval < 1) healinterval = 1;
         if (timeSent > LASTCHECK + (healinterval * 1000)) {
             LASTCHECK = timeSent;
-            Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
+            Player p = DMisc.getOnlinePlayer(getPlayerId());
             if ((p != null) && p.isOnline()) {
                 if ((p.getLocation().getBlock().getType() == Material.WATER) || (p.getEyeLocation().getBlock().getType() == Material.WATER)) {
-                    double healamt = Math.ceil(0.1 * Math.pow(DMiscUtil.getDevotion(getPlayerId(), getName()), 0.297));
-                    if (DMiscUtil.getHP(getPlayerId()) + healamt > DMiscUtil.getMaxHP(getPlayerId()))
-                        healamt = DMiscUtil.getMaxHP(getPlayerId()) - DMiscUtil.getHP(getPlayerId());
-                    DMiscUtil.setHP(getPlayerId(), DMiscUtil.getHP(getPlayerId()) + healamt);
+                    double healamt = Math.ceil(0.1 * Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.297));
+                    if (DMisc.getHP(getPlayerId()) + healamt > DMisc.getMaxHP(getPlayerId()))
+                        healamt = DMisc.getMaxHP(getPlayerId()) - DMisc.getHP(getPlayerId());
+                    DMisc.setHP(getPlayerId(), DMisc.getHP(getPlayerId()) + healamt);
                 }
             }
         }
     }
 
     private boolean reel(Player p) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             return false;
         }
-        LivingEntity le = DMiscUtil.getTargetLivingEntity(p, 3);
+        LivingEntity le = DMisc.getTargetLivingEntity(p, 3);
         if ((le == null) || le.isDead()) return false;
-        if (!DMiscUtil.canTarget(le, le.getLocation())) return false;
+        if (!DMisc.canTarget(le, le.getLocation())) return false;
         if (le.getLocation().getBlock().getType() == Material.AIR) {
             le.getLocation().getBlock().setType(Material.WATER);
             le.getLocation().getBlock().setData((byte) 0x8);
         }
-        int damage = (int) Math.ceil(0.37286 * Math.pow(DMiscUtil.getDevotion(p, getName()), 0.371238));
+        int damage = (int) Math.ceil(0.37286 * Math.pow(DMisc.getDevotion(p, getName()), 0.371238));
         if (le instanceof Player) {
-            if (DMiscUtil.isFullParticipant((Player) le))
-                if (DMiscUtil.getAllegiance((Player) le).equalsIgnoreCase(DMiscUtil.getAllegiance(p))) return false;
+            if (DMisc.isFullParticipant((Player) le))
+                if (DMisc.getAllegiance((Player) le).equalsIgnoreCase(DMisc.getAllegiance(p))) return false;
         }
-        DMiscUtil.damageDemigods(p, le, damage, DamageCause.ENTITY_ATTACK);
+        DMisc.damageDemigods(p, le, damage, DamageCause.ENTITY_ATTACK);
         REELTIME = System.currentTimeMillis();
         return true;
     }
 
     private boolean drown(Player p) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
         // special values
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int radius = (int) (Math.ceil(1.6955424 * Math.pow(devotion, 0.129349)));
         int duration = (int) Math.ceil(2.80488 * Math.pow(devotion, 0.2689)); // seconds
         //
-        Location target = DMiscUtil.getTargetLocation(p);
-        if (!DMiscUtil.canLocationPVP(target) || !DMiscUtil.canWorldGuardBuild(p, target)) {
+        Location target = DMisc.getTargetLocation(p);
+        if (!DMisc.canLocationPVP(target) || !DMisc.canWorldGuardBuild(p, target)) {
             p.sendMessage(ChatColor.YELLOW + "That is a no-PVP zone.");
             return false;
         }
@@ -288,7 +288,7 @@ public class Jormungand implements Deity {
                 for (int z = -radius; z <= radius; z++) {
                     Block block = target.getWorld().getBlockAt(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
                     if (block.getLocation().distance(target) <= radius) {
-                        if (DMiscUtil.canLocationPVP(block.getLocation())) if (block.getType() == Material.AIR) {
+                        if (DMisc.canLocationPVP(block.getLocation())) if (block.getType() == Material.AIR) {
                             block.setType(Material.WATER);
                             block.setData((byte) (0x8));
                             toreset.add(block);
@@ -297,7 +297,7 @@ public class Jormungand implements Deity {
                 }
             }
         }
-        DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
             @Override
             public void run() {
                 for (Block b : toreset)

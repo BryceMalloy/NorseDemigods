@@ -1,7 +1,8 @@
 package com.demigodsrpg.norsedemigods.listener;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import com.google.common.collect.Lists;
 import org.bukkit.ChatColor;
@@ -14,7 +15,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
 import java.util.List;
-import java.util.UUID;
 
 public class DLevels implements Listener {
     static final double MULTIPLIER = DSettings.getSettingDouble("globalexpmultiplier"); // can be modified
@@ -26,11 +26,11 @@ public class DLevels implements Listener {
         if (e.getPlayer() != null) {
             Player p = e.getPlayer();
             try {
-                if (!DMiscUtil.canWorldGuardBuild(p, e.getBlock().getLocation())) return;
+                if (!DMisc.canWorldGuardBuild(p, e.getBlock().getLocation())) return;
             } catch (Exception ignored) {
             }
             if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-            if (!DMiscUtil.isFullParticipant(p)) return;
+            if (!DMisc.isFullParticipant(p)) return;
             int value = 0;
             switch (e.getBlock().getType()) {
                 case DIAMOND_ORE:
@@ -51,10 +51,10 @@ public class DLevels implements Listener {
             }
             value *= MULTIPLIER;
 
-            List<Deity> deities = Lists.newArrayList(DMiscUtil.getTributeableDeities(p));
+            List<Deity> deities = Lists.newArrayList(DMisc.getTributeableDeities(p));
             if (!deities.isEmpty()) {
                 Deity d = deities.get((int) Math.floor(Math.random() * deities.size()));
-                DMiscUtil.setDevotion(p, d, DMiscUtil.getDevotion(p, d) + value);
+                DMisc.setDevotion(p, d, DMisc.getDevotion(p, d) + value);
                 levelProcedure(p);
             }
         }
@@ -65,23 +65,23 @@ public class DLevels implements Listener {
         if (e.getDamager() instanceof Player) {
             Player p = (Player) e.getDamager();
             try {
-                if (!DMiscUtil.canWorldGuardBuild(p, e.getEntity().getLocation())) return;
+                if (!DMisc.canWorldGuardBuild(p, e.getEntity().getLocation())) return;
             } catch (Exception ex) {
                 // Do nothing
             }
-            if (!DMiscUtil.isFullParticipant(p)) return;
+            if (!DMisc.isFullParticipant(p)) return;
             if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-            if (!DMiscUtil.canTarget(e.getEntity(), e.getEntity().getLocation())) {
+            if (!DMisc.canTarget(e.getEntity(), e.getEntity().getLocation())) {
                 return;
             }
-            List<Deity> deities = Lists.newArrayList(DMiscUtil.getTributeableDeities(p));
+            List<Deity> deities = Lists.newArrayList(DMisc.getTributeableDeities(p));
             if (!deities.isEmpty()) {
                 Deity d = deities.get((int) Math.floor(Math.random() * deities.size()));
-                DMiscUtil.setDevotion(p, d, (int) (DMiscUtil.getDevotion(p, d) + e.getDamage() * MULTIPLIER));
+                DMisc.setDevotion(p, d, (int) (DMisc.getDevotion(p, d) + e.getDamage() * MULTIPLIER));
                 levelProcedure(p);
-            } else if (!DMiscUtil.getDeities(p).isEmpty()) {
-                Deity d = deities.get((int) Math.floor(Math.random() * DMiscUtil.getDeities(p).size()));
-                DMiscUtil.setDevotion(p, d, (int) (DMiscUtil.getDevotion(p, d) + e.getDamage() * MULTIPLIER));
+            } else if (!DMisc.getDeities(p).isEmpty()) {
+                Deity d = deities.get((int) Math.floor(Math.random() * DMisc.getDeities(p).size()));
+                DMisc.setDevotion(p, d, (int) (DMisc.getDevotion(p, d) + e.getDamage() * MULTIPLIER));
                 levelProcedure(p);
             }
         }
@@ -91,38 +91,38 @@ public class DLevels implements Listener {
     public void deathPenalty(EntityDeathEvent e) {
         if (!(e.getEntity() instanceof Player)) return;
         Player p = (Player) e.getEntity();
-        if (!DMiscUtil.isFullParticipant(p)) return;
+        if (!DMisc.isFullParticipant(p)) return;
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
         double reduced = 0.1; // TODO
-        long before = DMiscUtil.getDevotion(p);
-        List<Deity> deities = Lists.newArrayList(DMiscUtil.getTributeableDeities(p));
+        long before = DMisc.getDevotion(p);
+        List<Deity> deities = Lists.newArrayList(DMisc.getTributeableDeities(p));
         for (Deity d : deities) {
-            int reduceamt = (int) Math.round(DMiscUtil.getDevotion(p, d) * reduced * MULTIPLIER);
+            int reduceamt = (int) Math.round(DMisc.getDevotion(p, d) * reduced * MULTIPLIER);
             if (reduceamt > LOSSLIMIT) reduceamt = LOSSLIMIT;
-            DMiscUtil.setDevotion(p, d, DMiscUtil.getDevotion(p, d) - reduceamt);
+            DMisc.setDevotion(p, d, DMisc.getDevotion(p, d) - reduceamt);
         }
         if (deities.size() == 1)
             p.sendMessage(ChatColor.DARK_RED + "You have failed in your service to " + deities.get(0).getName() + ".");
         else p.sendMessage(ChatColor.DARK_RED + "You have failed in your service to your deities.");
-        if (before != DMiscUtil.getDevotion(p))
-            p.sendMessage(ChatColor.DARK_RED + "Your Devotion has been reduced by " + (before - DMiscUtil.getDevotion(p)) + ".");
-        DMiscUtil.setHP(p, 0);
+        if (before != DMisc.getDevotion(p))
+            p.sendMessage(ChatColor.DARK_RED + "Your Devotion has been reduced by " + (before - DMisc.getDevotion(p)) + ".");
+        DMisc.setHP(p, 0);
     }
 
     public static void levelProcedure(Player p) {
         levelProcedure(p.getUniqueId());
     }
 
-    public static void levelProcedure(UUID p) {
-        if (DMiscUtil.isFullParticipant(p)) if (DMiscUtil.getAscensions(p) >= DMiscUtil.ASCENSIONCAP) return;
-        while ((DMiscUtil.getDevotion(p) >= DMiscUtil.costForNextAscension(p)) && (DMiscUtil.getAscensions(p) < DMiscUtil.ASCENSIONCAP)) {
-            DMiscUtil.setMaxHP(p, DMiscUtil.getMaxHP(p) + 10);
-            DMiscUtil.setHP(p, DMiscUtil.getMaxHP(p));
-            DMiscUtil.setAscensions(p, DMiscUtil.getAscensions(p) + 1);
+    public static void levelProcedure(PlayerDataSaveable saveable) {
+        if (DMisc.isFullParticipant(p)) if (DMisc.getAscensions(p) >= DMisc.ASCENSIONCAP) return;
+        while ((DMisc.getDevotion(p) >= DMisc.costForNextAscension(p)) && (DMisc.getAscensions(p) < DMisc.ASCENSIONCAP)) {
+            DMisc.setMaxHP(p, DMisc.getMaxHP(p) + 10);
+            DMisc.setHP(p, DMisc.getMaxHP(p));
+            DMisc.setAscensions(p, DMisc.getAscensions(p) + 1);
 
-            if (DMiscUtil.getOnlinePlayer(p) != null) {
-                DMiscUtil.getOnlinePlayer(p).sendMessage(ChatColor.AQUA + "Congratulations! Your Ascensions increased to " + DMiscUtil.getAscensions(p) + ".");
-                DMiscUtil.getOnlinePlayer(p).sendMessage(ChatColor.YELLOW + "Your maximum HP has increased to " + DMiscUtil.getMaxHP(p) + ".");
+            if (DMisc.getOnlinePlayer(p) != null) {
+                DMisc.getOnlinePlayer(p).sendMessage(ChatColor.AQUA + "Congratulations! Your Ascensions increased to " + DMisc.getAscensions(p) + ".");
+                DMisc.getOnlinePlayer(p).sendMessage(ChatColor.YELLOW + "Your maximum HP has increased to " + DMisc.getMaxHP(p) + ".");
             }
         }
     }

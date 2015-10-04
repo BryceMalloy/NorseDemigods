@@ -1,10 +1,11 @@
-package com.demigodsrpg.norsedemigods.util;
+package com.demigodsrpg.norsedemigods;
 
-import com.demigodsrpg.norsedemigods.*;
+import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
@@ -22,9 +23,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.util.*;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-public class DMiscUtil {
+public class DMisc {
     @Deprecated
     public static PlayerDataSaveable getDemigodsPlayer(String name) {
         PlayerDataSaveable found = null;
@@ -95,13 +96,6 @@ public class DMiscUtil {
         return p.isOp() || p.hasPermission("demigods.admin");
     }
 
-    /**
-     * Checks is a player has the given permission.
-     */
-    public static boolean hasPermission(Player p, String pe) {// convenience method for permissions
-        return p.hasPermission(pe);
-    }
-
     public static void setJotunn(Player p) {
         getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance("jotunn");
     }
@@ -126,22 +120,22 @@ public class DMiscUtil {
      * Gets the String representation of a player's allegiance.
      */
     public static String getAllegiance(Player p) {
-        return getAllegiance(p.getUniqueId());
+        PlayerDataSaveable player = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        if (player.getAlliance() != null) {
+            return player.getAlliance();
+        }
+        return "Human";
     }
 
     /**
      * Gets the String representation of a player's allegiance.
      */
-    public static String getAllegiance(UUID p) {
-        if (DSave.hasData(p, "ALLEGIANCE")) return ((String) DSave.getData(p, "ALLEGIANCE"));
+    public static String getAllegiance(UUID id) {
+        Optional<PlayerDataSaveable> opPlayer = getPlugin().getPlayerDataRegistry().fromKey(id.toString());
+        if (opPlayer.isPresent() && opPlayer.get().getAlliance() != null) {
+            return opPlayer.get().getAlliance();
+        }
         return "Human";
-    }
-
-    /**
-     * Checks if a player is in a certain allegiance.
-     */
-    private static boolean is(Player p) {
-        return DSave.hasData(p, "ALLEGIANCE") && DSave.getData(p, "ALLEGIANCE").equals("omni");
     }
 
     /**
@@ -152,12 +146,17 @@ public class DMiscUtil {
     }
 
     public static void giveDeity(UUID p, Deity d) {
-        if (!hasPermission(getOnlinePlayer(p), d.getDefaultAlliance().toLowerCase() + "." + d.getName().toLowerCase()) && (!hasPermission(getOnlinePlayer(p), d.getDefaultAlliance().toLowerCase() + ".all"))) {
-            consoleMSG("info", p + " does not have permission to get this deity.");
+        Player player = Bukkit.getPlayer(p);
+        if (player == null) {
+            getPlugin().getLogger().info(p + " is not currently online.");
+            return;
+        } else if (!player.hasPermission(d.getDefaultAlliance().toLowerCase() + "." + d.getName().toLowerCase()) &&
+                (!player.hasPermission(d.getDefaultAlliance().toLowerCase() + ".all"))) {
+            getPlugin().getLogger().info(p + " does not have permission to get this deity.");
             return;
         }
 
-        if (BROADCASTNEWDEITY) {
+        if (Setting.BROADCAST_NEW_DEITY) {
             String message;
             switch (d.getName().toLowerCase()) {
                 case "frost giant":
@@ -175,40 +174,11 @@ public class DMiscUtil {
                 default:
                     message = ChatColor.YELLOW + getLastKnownName(p) + " has joined the lineage of " + d.getName() + ".";
             }
-            plugin.getServer().broadcastMessage(message);
+            getPlugin().getServer().broadcastMessage(message);
         }
-        if (DSave.hasData(p, "DEITIES")) getDeities(p).add(d);
-        else {
-            ArrayList<Deity> ad = new ArrayList<Deity>();
-            ad.add(d);
-            DSave.saveData(p, "DEITIES", ad);
-        }
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(player);
+        saveable.addDeity(d.getName());
         setDevotion(p, d, 1);
-    }
-
-    public static void giveDeitySilent(UUID p, Deity d) {
-        if (!d.getName().equals("?????") && !hasPermission(getOnlinePlayer(p), d.getDefaultAlliance().toLowerCase() + "." + d.getName().toLowerCase()) && (!hasPermission(getOnlinePlayer(p), d.getDefaultAlliance().toLowerCase() + ".all"))) {
-            consoleMSG("info", p + " does not have permission to get this deity.");
-            return;
-        }
-        if (DSave.hasData(p, "DEITIES")) getDeities(p).add(d);
-        else {
-            ArrayList<Deity> ad = new ArrayList<Deity>();
-            ad.add(d);
-            DSave.saveData(p, "DEITIES", ad);
-        }
-        setDevotion(p, d, 1);
-    }
-
-    public static void removeDeity(UUID p, String name) {
-        ArrayList<Deity> temp = getDeities(p);
-        if (DSave.hasData(p, "DEITIES")) {
-            for (Deity de : getDeities(p)) {
-                if (de.getName().equalsIgnoreCase(name)) temp.remove(getDeities(p).indexOf(de));
-            }
-        }
-        DSave.removeData(p, name + "_dvt");
-        DSave.saveData(p, "DEITIES", temp);
     }
 
     /**
@@ -219,43 +189,20 @@ public class DMiscUtil {
      * @return
      */
     public static boolean hasDeity(Player p, String name) {
-        return hasDeity(p.getUniqueId(), name);
+        return getPlugin().getPlayerDataRegistry().fromPlayer(p).getDeityList().contains(name);
     }
 
     public static boolean hasDeity(UUID p, String name) {
-        if (DSave.hasData(p, "DEITIES")) {
-            for (Deity de : getDeities(p)) {
-                if (de.getName().equalsIgnoreCase(name)) return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns the deity named if the player has it, otherwise null.
-     *
-     * @param p
-     * @param deityname
-     * @return
-     */
-    public static Deity getDeity(Player p, String deityname) {
-        return getDeity(p.getUniqueId(), deityname);
-    }
-
-    public static Deity getDeity(UUID p, String deityname) {
-        if (DSave.hasData(p, "DEITIES")) {
-            for (Deity de : getDeities(p)) {
-                if (de.getName().equalsIgnoreCase(deityname)) return de;
-            }
-        }
-        return null;
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        return opSave.isPresent() && opSave.get().getDeityList().contains(name);
     }
 
     /**
      * Gives the list of all the player's deities.
      */
-    public static ArrayList<Deity> getDeities(Player p) {
-        return getDeities(p.getUniqueId());
+    public static List<Deity> getDeities(Player p) {
+        return getPlugin().getPlayerDataRegistry().fromPlayer(p).getDeityList().stream().map(Deities::valueOf).
+                collect(Collectors.toList());
     }
 
     public static Collection<Deity> getTributeableDeities(Player p) {
@@ -265,31 +212,19 @@ public class DMiscUtil {
     /**
      * Gives the list of all the player's deities.
      */
-    public static ArrayList<Deity> getDeities(UUID p) throws NullPointerException {
-        if (DSave.hasData(p, "DEITIES")) {
-            try {
-                return (ArrayList<Deity>) DSave.getData(p, "DEITIES");
-            } catch (Throwable e) {
-                throw new NullPointerException("Deity saves are missing for player " + p + ".");
-            }
+    public static List<Deity> getDeities(UUID p) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getDeityList().stream().map(Deities::valueOf).collect(Collectors.toList());
         }
-        return null;
+        return new ArrayList<>();
     }
 
     /**
      * Gives the list of all the player's deities.
      */
-    public static Collection<Deity> getTributeableDeities(UUID p) throws NullPointerException {
-        Collection<Deity> deities = getDeities(p);
-        if (deities != null) {
-            deities = Collections2.filter(deities, new Predicate<Deity>() {
-                @Override
-                public boolean apply(Deity deity) {
-                    return deity.canTribute();
-                }
-            });
-        }
-        return deities;
+    public static List<Deity> getTributeableDeities(UUID p) {
+        return getDeities(p).stream().filter(Deity::canTribute).collect(Collectors.toList());
     }
 
     /**
@@ -324,7 +259,9 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setFavor(Player p, int amt) {
-        setFavor(p.getUniqueId(), amt);
+        if (amt > getFavorCap(p)) amt = getFavorCap(p);
+        int c = amt - getFavor(p);
+        getPlugin().getPlayerDataRegistry().fromPlayer(p).setFavor(amt);
     }
 
     /**
@@ -335,13 +272,19 @@ public class DMiscUtil {
      */
     public static void setFavor(UUID p, int amt) {
         if (amt > getFavorCap(p)) amt = getFavorCap(p);
-        int c = amt - getFavor(p);
-        DSave.saveData(p, "FAVOR", amt);
+        // int c = amt - getFavor(p);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setFavor(amt);
+        }
     }
 
     public static void setFavorQuiet(UUID p, int amt) {
         if (amt > getFavorCap(p)) amt = getFavorCap(p);
-        DSave.saveData(p, "FAVOR", amt);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setFavor(amt);
+        }
     }
 
     /**
@@ -355,7 +298,10 @@ public class DMiscUtil {
      * Get a player's favor.
      */
     public static int getFavor(UUID p) {
-        if (DSave.hasData(p, "FAVOR")) return (Integer) DSave.getData(p, "FAVOR");
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getFavor();
+        }
         return -1;
     }
 
@@ -366,124 +312,85 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setHP(Player p, double amt) {
-        setHP(p.getUniqueId(), amt);
-    }
-
-    /**
-     * Set a player's HP.
-     *
-     * @param p
-     * @param amt
-     */
-    public static void setHP(UUID p, double amt) {
-        if (amt > getMaxHP(p)) amt = getMaxHP(p);
+        if (amt > p.getMaxHealth()) amt = p.getMaxHealth();
         if (amt < 0) amt = 0;
-        double c = amt - getHP(p);
-        DSave.saveData(p, "dHP", amt);
-        if ((c != 0) && (DMiscUtil.getOnlinePlayer(p) != null)) {
+        double c = amt - p.getHealth();
+        p.setHealth(amt);
+        if ((c != 0)) {
             ChatColor color = ChatColor.GREEN;
-            if ((DMiscUtil.getHP(p) / DMiscUtil.getMaxHP(p)) < 0.25) color = ChatColor.RED;
-            else if ((DMiscUtil.getHP(p) / DMiscUtil.getMaxHP(p)) < 0.5) color = ChatColor.YELLOW;
+            if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
+            else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
             String disp = "";
             if (c > 0) disp = "+" + c;
             else disp += c;
-            String str = color + "HP: " + DMiscUtil.getHP(p) + "/" + DMiscUtil.getMaxHP(p) + " (" + disp + ")";
+            String str = color + "HP: " + p.getHealth() + "/" + p.getMaxHealth() + " (" + disp + ")";
         }
     }
 
-    public static void setHPQuiet(UUID p, double amt) {
-        if (amt > getMaxHP(p)) amt = getMaxHP(p);
-        DSave.saveData(p, "dHP", amt);
+    public static void setHPQuiet(Player p, double amt) {
+        if (amt > p.getHealth()) amt = p.getMaxHealth();
+        p.setHealth(amt);
     }
 
     /**
      * Set a player's max HP.
      */
-    public static void setMaxHP(UUID p, double amt) {
-        if (amt > MAXIMUMHP) amt = MAXIMUMHP;
-        DSave.saveData(p, "dmaxHP", amt);
-    }
-
-    /**
-     * Get a player's scaled-up HP.
-     */
-    public static double getHP(Player p) {
-        return getHP(p.getUniqueId());
-    }
-
-    /**
-     * Get a player's scaled-up HP.
-     */
-    public static double getHP(UUID p) {
-        if (DSave.hasData(p, "dHP")) return Double.valueOf(DSave.getData(p, "dHP").toString());
-        return -1.0;
-    }
-
-    /**
-     * Get a player's maximum scaled-up HP.
-     */
-    public static double getMaxHP(Player p) {
-        return getMaxHP(p.getUniqueId());
-    }
-
-    /**
-     * Get a player's maximum scaled-up HP.
-     */
-    public static double getMaxHP(UUID p) {
-        if (DSave.hasData(p, "dmaxHP")) return Double.valueOf(DSave.getData(p, "dmaxHP").toString());
-        return -1.0;
+    public static void setMaxHP(Player p, double amt) {
+        if (amt > Setting.MAXIMUM_HP) amt = Setting.MAXIMUM_HP;
+        p.setHealthScale(amt);
+        p.setMaxHealth(amt);
     }
 
     /**
      * Set a player's devotion for a specific deity.
      */
     public static boolean setDevotion(UUID p, String deityname, int amt) {
-        try {
-            int c = amt - getDevotion(p, deityname);
-            DSave.saveData(p, deityname + "_dvt", amt);
-            if ((c != 0) && (getOnlinePlayer(p) != null)) {
-                String disp = "";
-                if (c > 0) disp = "+" + c;
-                else disp += c;
-                // TODO Does this do anything?
-            }
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setDevotion(deityname, amt);
             return true;
-        } catch (NullPointerException ne) {
-            return false;
         }
+        return false;
+    }
+
+    public static void setDevotion(Player p, String deityname, int amt) {
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        saveable.setDevotion(deityname, amt);
     }
 
     public static void setDevotion(Player p, Deity d, int amt) {
-        setDevotion(p.getUniqueId(), d.getName(), amt);
+        setDevotion(p, d.getName(), amt);
     }
 
     public static void setDevotion(UUID p, Deity d, int amt) {
         setDevotion(p, d.getName(), amt);
     }
 
-    public static void setDevotion(Player p, String deityname, int amt) {
-        setDevotion(p.getUniqueId(), deityname, amt);
-    }
-
     /**
      * Get a player's devotion for a specific deity.
      */
     public static int getDevotion(Player p, String deityname) {
-        return getDevotion(p.getUniqueId(), deityname);
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getDevotion(deityname);
+    }
+
+    public static int getDevotion(UUID p, String deityname) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getDevotion(deityname);
+        }
+        return -1;
     }
 
     public static int getDevotion(Player p, Deity d) {
-        return getDevotion(p.getUniqueId(), d.getName());
+        return getDevotion(p, d.getName());
     }
 
     public static int getDevotion(UUID p, Deity d) {
         return getDevotion(p, d.getName());
     }
 
-    public static int getDevotion(UUID p, String deityname) {
-        if (DSave.hasData(p, deityname + "_dvt")) return (Integer) DSave.getData(p, deityname + "_dvt");
-        return -1;
-    }
+
 
     /**
      * Get a player's total Devotion
@@ -505,18 +412,16 @@ public class DMiscUtil {
      * Get the unclaimed devotion a player has been given.
      */
     public static int getUnclaimedDevotion(Player p) {
-        return getUnclaimedDevotion(p.getUniqueId());
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getUnclamedDevotion();
     }
 
     public static int getUnclaimedDevotion(UUID p) {
-        if (!DSave.hasData(p, "U_DVT")) {
-            DSave.saveData(p, "U_DVT", 0);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getUnclamedDevotion();
         }
-        try {
-            return (Integer) DSave.getData(p, "U_DVT");
-        } catch (Exception e) {
-            return -1;
-        }
+        return -1;
     }
 
     /**
@@ -526,11 +431,15 @@ public class DMiscUtil {
      * @param amount
      */
     public static void setUnclaimedDevotion(Player p, int amount) {
-        setUnclaimedDevotion(p.getUniqueId(), amount);
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        saveable.setUnclamedDevotion(amount);
     }
 
     public static void setUnclaimedDevotion(UUID p, int amount) {
-        DSave.saveData(p, "U_DVT", amount);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setUnclamedDevotion(amount);
+        }
     }
 
     /**
@@ -540,8 +449,11 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setAscensions(UUID p, int amt) {
-        if (amt > ASCENSIONCAP) amt = ASCENSIONCAP;
-        DSave.saveData(p, "ASCENSIONS", amt);
+        if (amt > Setting.ASCENSION_CAP) amt = Setting.ASCENSION_CAP;
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setAscensions(amt);
+        }
     }
 
     public static int costForNextAscension(UUID p) {
@@ -556,12 +468,16 @@ public class DMiscUtil {
      * Get a player's ascensions.
      */
     public static int getAscensions(UUID p) {
-        if (DSave.hasData(p, "ASCENSIONS")) return (Integer) DSave.getData(p, "ASCENSIONS");
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getAscensions();
+        }
         return -1;
     }
 
     public static int getAscensions(Player p) {
-        return getAscensions(p.getUniqueId());
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getAscensions();
     }
 
     /**
@@ -571,11 +487,15 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setKills(Player p, int amt) {
-        DSave.saveData(p, "KILLS", amt);
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        saveable.setKills(amt);
     }
 
     public static void setKills(UUID p, int amt) {
-        DSave.saveData(p, "KILLS", amt);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setKills(amt);
+        }
     }
 
     /**
@@ -585,26 +505,33 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setDeaths(Player p, int amt) {
-        DSave.saveData(p, "DEATHS", amt);
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        saveable.setDeaths(amt);
     }
 
     public static void setDeaths(UUID p, int amt) {
-        DSave.saveData(p, "DEATHS", amt);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setDeaths(amt);
+        }
     }
 
     /**
      * Get the number of kills a player has.
      */
     public static int getKills(Player p) {
-        if (DSave.hasData(p, "KILLS")) return (Integer) DSave.getData(p, "KILLS");
-        return -1;
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getKills();
     }
 
     /**
      * Get the number of kills a player has.
      */
     public static int getKills(UUID p) {
-        if (DSave.hasData(p, "KILLS")) return (Integer) DSave.getData(p, "KILLS");
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getKills();
+        }
         return -1;
     }
 
@@ -612,15 +539,18 @@ public class DMiscUtil {
      * Get the number of deaths a player has.
      */
     public static int getDeaths(Player p) {
-        if (DSave.hasData(p, "DEATHS")) return (Integer) DSave.getData(p, "DEATHS");
-        return -1;
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getDeaths();
     }
 
     /**
      * Get the number of deaths a player has.
      */
     public static int getDeaths(UUID p) {
-        if (DSave.hasData(p, "DEATHS")) return (Integer) DSave.getData(p, "DEATHS");
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getDeaths();
+        }
         return -1;
     }
 
@@ -670,8 +600,11 @@ public class DMiscUtil {
      * @param amt
      */
     public static void setFavorCap(UUID p, int amt) {
-        if (amt > FAVORCAP) amt = FAVORCAP;
-        DSave.saveData(p, "FAVORCAP", amt);
+        if (amt > Setting.FAVOR_CAP) amt = Setting.FAVOR_CAP;
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setMaxFavor(amt);
+        }
     }
 
     public static void setFavorCap(Player p, int amt) {
@@ -682,12 +615,16 @@ public class DMiscUtil {
      * Get a player's maximum favor.
      */
     public static int getFavorCap(UUID p) {
-        if (DSave.hasData(p, "FAVORCAP")) return (Integer) DSave.getData(p, "FAVORCAP");
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            return opSave.get().getMaxFavor();
+        }
         return -1;
     }
 
     public static int getFavorCap(Player p) {
-        return getFavorCap(p.getUniqueId());
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getMaxFavor();
     }
 
     /**
@@ -739,53 +676,21 @@ public class DMiscUtil {
      */
     @SuppressWarnings("unchecked")
     public static boolean isBound(Player p, Material material) {
-        return DSave.hasData(p, "BINDINGS") && ((ArrayList<Material>) DSave.getData(p, "BINDINGS")).contains(material);
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getBound().contains(material);
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<Material> getBindings(Player p) {
-        if (DSave.hasData(p, "BINDINGS")) {
-            return (ArrayList<Material>) DSave.getData(p, "BINDINGS");
-        }
-        return null;
-    }
-
-    /**
-     * Registers a material to the player's list of bound items.
-     *
-     * @param p
-     * @param m
-     */
-    @SuppressWarnings("unchecked")
-    public static void registerBind(Player p, Material m) {
-        ArrayList<Material> used = new ArrayList<Material>();
-        if (DSave.hasData(p, "BINDINGS")) {
-            used = (ArrayList<Material>) DSave.getData(p, "BINDINGS");
-            if (!used.contains(m)) used.add(m);
-        } else {
-            used.add(m);
-        }
-        DSave.saveData(p, "BINDINGS", used);
-    }
-
-    /**
-     * Removes a material from the player's list of bound items.
-     */
-    @SuppressWarnings("unchecked")
-    public static void removeBind(Player p, Material m) {
-        ArrayList<Material> used;
-        if (DSave.hasData(p, "BINDINGS")) {
-            used = (ArrayList<Material>) DSave.getData(p, "BINDINGS");
-            if (used.contains(m)) used.remove(m);
-            DSave.saveData(p, "BINDINGS", used);
-        }
+    public static List<Material> getBindings(Player p) {
+        PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        return saveable.getBound();
     }
 
     /**
      * Grab the plugin.
      */
     public static NorseDemigods getPlugin() {
-        return plugin;
+        return NorseDemigods.INST;
     }
 
     /**
@@ -803,16 +708,7 @@ public class DMiscUtil {
         if (getDeaths(p) == -1) return false;
         if (getKills(p) == -1) return false;
         if ((getDeities(p) == null) || (getDeities(p).size() == 0)) return false;
-        return getAscensions(p) != -1 && getMaxHP(p) != -1 && getFavor(p) != -1 && getFavorCap(p) != -1;
-    }
-
-    @Deprecated
-    public static boolean isFullParticipant(String p) {
-        try {
-            return isFullParticipant(getDemigodsPlayerId(p));
-        } catch (Exception ignored) {
-        }
-        return false;
+        return getAscensions(p) != -1 && getFavor(p) != -1 && getFavorCap(p) != -1;
     }
 
     /**
@@ -823,22 +719,21 @@ public class DMiscUtil {
      */
     public static boolean hasAdvantage(String alliance) {
         HashMap<String, Integer> alliances = new HashMap<String, Integer>();
-        for (UUID player : DSave.getCompleteData().keySet()) {
-            if (DSave.hasData(player, "ALLEGIANCE")) {
-                if (DSave.hasData(player, "LASTLOGINTIME"))
-                    if ((Long) DSave.getData(player, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
+        for (PlayerDataSaveable saveable : getPlugin().getPlayerDataRegistry().getFromDb().values()) {
+            if (!saveable.getAlliance().equals("Human")) {
+                if (saveable.getLastLoginTime() < System.currentTimeMillis() - 604800000)
                         continue;
-                if (alliances.containsKey(((String) DSave.getData(player, "ALLEGIANCE")).toUpperCase())) {
-                    int put = alliances.remove(((String) DSave.getData(player, "ALLEGIANCE")).toUpperCase()) + 1;
-                    alliances.put(((String) DSave.getData(player, "ALLEGIANCE")).toUpperCase(), put);
-                } else alliances.put(((String) DSave.getData(player, "ALLEGIANCE")).toUpperCase(), 1);
+                if (alliances.containsKey(saveable.getAlliance().toUpperCase())) {
+                    int put = alliances.remove(saveable.getAlliance().toUpperCase().toUpperCase()) + 1;
+                    alliances.put(saveable.getAlliance().toUpperCase(), put);
+                } else alliances.put(saveable.getAlliance().toUpperCase(), 1);
             }
         }
         @SuppressWarnings("unchecked")
         HashMap<String, Integer> talliances = (HashMap<String, Integer>) alliances.clone();
         ArrayList<String> alliancerank = new ArrayList<String>();
-        Logger.getLogger("Minecraft").info("Total alliances: " + alliances.size());
-        Logger.getLogger("Minecraft").info(alliances + "");
+        getPlugin().getLogger().info("Total alliances: " + alliances.size());
+        getPlugin().getLogger().info(alliances + "");
         for (int i = 0; i < alliances.size() + 1; i++) {
             String newleader = "";
             int leadamt = -1;
@@ -852,7 +747,8 @@ public class DMiscUtil {
             alliances.remove(newleader);
         }
         if (alliancerank.size() == 1) return false;
-        return alliancerank.get(0).equalsIgnoreCase(alliance) && DCommandExecutor.ADVANTAGEPERCENT <= ((double) talliances.get(alliancerank.get(0)) / talliances.get(alliancerank.get(1)));
+        return alliancerank.get(0).equalsIgnoreCase(alliance) && DCommandExecutor.ADVANTAGEPERCENT <= ((double)
+                talliances.get(alliancerank.get(0)) / talliances.get(alliancerank.get(1)));
     }
 
     /**
@@ -1046,18 +942,18 @@ public class DMiscUtil {
     /**
      * Used for adding a player to "full participant" status
      */
-    public static void initializePlayer(UUID player, String allegiance, Deity deity) {
+    public static void initializePlayer(Player player, String allegiance, Deity deity) {
         setAllegiance(player, allegiance);
         setFavorCap(player, 300); // set favor cap before favor (MUST!!!)
         setFavor(player, 300);
         setMaxHP(player, 25.0);
         setHP(player, 25.0);
-        setAscensions(player, 0);
+        setAscensions(player.getUniqueId(), 0);
         setDeaths(player, 0);
         setKills(player, 0);
         giveDeity(player, deity);
-        setActiveEffects(player, new HashMap<String, Long>());
-        setShrines(player, new HashMap<String, LocationSaveable>());
+        setActiveEffects(player.getUniqueId(), new HashMap<>());
+        setShrines(player.getUniqueId(), new HashMap<>());
     }
 
     /**
@@ -1078,7 +974,7 @@ public class DMiscUtil {
         LocationSaveable shrine = null;
         for (LocationSaveable w : getAllShrines()) {
             if (!w.getWorld().equals(l.getWorld().getName())) continue;
-            Location l1 = DMiscUtil.toLocation(w);
+            Location l1 = DMisc.toLocation(w);
             if (l1.distance(l) < DShrines.RADIUS) {
                 shrine = w;
                 break;
@@ -1180,7 +1076,7 @@ public class DMiscUtil {
     public static ArrayList<UUID> getShrineGuestlist(LocationSaveable shrine) {
         ArrayList<UUID> list = new ArrayList<UUID>();
         for (UUID p : getFullParticipants()) {
-            for (LocationSaveable w : DMiscUtil.getAccessibleShrines(p)) {
+            for (LocationSaveable w : DMisc.getAccessibleShrines(p)) {
                 if (w.equalsApprox(shrine)) list.add(p);
             }
         }
@@ -1204,7 +1100,7 @@ public class DMiscUtil {
             for (String key : getShrines(p).keySet()) {
                 if (!getShrines(p).get(key).equalsApprox(shrine)) replace.put(key, getShrines(p).get(key));
             }
-            DMiscUtil.setShrines(p, replace);
+            DMisc.setShrines(p, replace);
             // remove from guest lists
             while (getAccessibleShrines(p).contains(shrine))
                 getAccessibleShrines(p).remove(shrine);
@@ -1236,7 +1132,7 @@ public class DMiscUtil {
         for (UUID p : getFullParticipants()) {
             if (getShrines(p).containsKey(newname)) return false;
         }
-        UUID owner = DMiscUtil.getOwnerOfShrine(shrine);
+        UUID owner = DMisc.getOwnerOfShrine(shrine);
         String tomodify = null;
         for (String shrinename : getShrines(owner).keySet()) {
             if (getShrines(owner).get(shrinename).equalsApprox(shrine)) {
@@ -1322,8 +1218,8 @@ public class DMiscUtil {
     }
 
     public static void removeActiveEffect(UUID p, String effectname) {
-        for (String effect : DMiscUtil.getActiveEffectsList(p)) {
-            if (effect.equals(effectname)) DMiscUtil.getActiveEffects(p).remove(effect);
+        for (String effect : DMisc.getActiveEffectsList(p)) {
+            if (effect.equals(effectname)) DMisc.getActiveEffects(p).remove(effect);
         }
     }
 

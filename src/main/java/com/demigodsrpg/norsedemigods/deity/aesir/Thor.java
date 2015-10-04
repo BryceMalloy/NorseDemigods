@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -60,8 +60,8 @@ public class Thor implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Thor") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.hasDeity(p, "Thor") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
 			 */
@@ -69,7 +69,7 @@ public class Thor implements Deity {
             int targets = (int) Math.ceil(1.561 * Math.pow(devotion, 0.128424));
             double multiply = 0.1753 * Math.pow(devotion, 0.322917);
             // ultimate
-            int t = (int) (ZEUSULTIMATECOOLDOWNMAX - ((ZEUSULTIMATECOOLDOWNMAX - ZEUSULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int t = (int) (ZEUSULTIMATECOOLDOWNMAX - ((ZEUSULTIMATECOOLDOWNMAX - ZEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
 			 */
@@ -77,14 +77,14 @@ public class Thor implements Deity {
             p.sendMessage(":Immune to fall damage.");
             p.sendMessage(":Strike lightning at a target location. " + ChatColor.GREEN + "/lightning");
             p.sendMessage(ChatColor.YELLOW + "Costs " + LIGHTNINGCOST + " Favor.");
-            if (((Thor) (DMiscUtil.getDeity(p, "Thor"))).LIGHTNINGBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMiscUtil.getDeity(p, "Thor"))).LIGHTNINGBIND.name());
+            if (((Thor) (DMisc.getDeity(p, "Thor"))).LIGHTNINGBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMisc.getDeity(p, "Thor"))).LIGHTNINGBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to designate an item as Thor's hammer.");
             p.sendMessage(":Use the force of Thor's hammer to knock back enemies. " + ChatColor.GREEN + "/slam");
             p.sendMessage(ChatColor.YELLOW + "Costs " + SHOVECOST + " Favor.");
             p.sendMessage("Affects up to " + targets + " targets with power " + (int) (Math.round(multiply * 10)) + ".");
-            if (((Thor) (DMiscUtil.getDeity(p, "Thor"))).SHOVEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMiscUtil.getDeity(p, "Thor"))).SHOVEBIND.name());
+            if (((Thor) (DMisc.getDeity(p, "Thor"))).SHOVEBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMisc.getDeity(p, "Thor"))).SHOVEBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             return;
         }
@@ -112,13 +112,13 @@ public class Thor implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.hasDeity(p, "Thor") || !DMiscUtil.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Thor") || !DMisc.isFullParticipant(p)) return;
             if (SHOVE || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SHOVEBIND))) {
                 if (ZEUSSHOVETIME > System.currentTimeMillis()) return;
                 ZEUSSHOVETIME = System.currentTimeMillis() + SHOVEDELAY;
-                if (DMiscUtil.getFavor(p) >= SHOVECOST) {
+                if (DMisc.getFavor(p) >= SHOVECOST) {
                     shove(p);
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SHOVECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - SHOVECOST);
                     return;
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
@@ -128,9 +128,9 @@ public class Thor implements Deity {
             if (LIGHTNING || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == LIGHTNINGBIND))) {
                 if (ZEUSLIGHTNINGTIME > System.currentTimeMillis()) return;
                 ZEUSLIGHTNINGTIME = System.currentTimeMillis() + LIGHTNINGDELAY;
-                if (DMiscUtil.getFavor(p) >= LIGHTNINGCOST) {
+                if (DMisc.getFavor(p) >= LIGHTNINGCOST) {
                     lightning(p, e.getClickedBlock());
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - LIGHTNINGCOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - LIGHTNINGCOST);
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     LIGHTNING = false;
@@ -147,21 +147,21 @@ public class Thor implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (!DMiscUtil.hasDeity(p, "Thor")) return;
+        if (!DMisc.hasDeity(p, "Thor")) return;
         if (str.equalsIgnoreCase("lightning")) {
             if (bind) {
                 if (LIGHTNINGBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         LIGHTNINGBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Lightning is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, LIGHTNINGBIND);
+                    DMisc.removeBind(p, LIGHTNINGBIND);
                     p.sendMessage(ChatColor.YELLOW + "Lightning is no longer bound to " + LIGHTNINGBIND.name() + ".");
                     LIGHTNINGBIND = null;
                 }
@@ -177,17 +177,17 @@ public class Thor implements Deity {
         } else if (str.equalsIgnoreCase("slam")) {
             if (bind) {
                 if (SHOVEBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         SHOVEBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Slam is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, SHOVEBIND);
+                    DMisc.removeBind(p, SHOVEBIND);
                     p.sendMessage(ChatColor.YELLOW + "Slam is no longer bound to " + SHOVEBIND.name() + ".");
                     SHOVEBIND = null;
                 }
@@ -209,22 +209,22 @@ public class Thor implements Deity {
      * ---------------
      */
     private void shove(Player p) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return;
         }
         ArrayList<LivingEntity> hit = new ArrayList<LivingEntity>();
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int targets = (int) Math.ceil(1.561 * Math.pow(devotion, 0.128424));
         double multiply = 0.1753 * Math.pow(devotion, 0.322917);
         for (Block b : p.getLineOfSight((Set) null, 10)) {
             for (LivingEntity le : p.getWorld().getLivingEntities()) {
                 if (targets == hit.size()) break;
                 if (le instanceof Player) {
-                    if (DMiscUtil.areAllied(p, (Player) le)) continue;
+                    if (DMisc.areAllied(p, (Player) le)) continue;
                 }
                 if ((le.getLocation().distance(b.getLocation()) <= 5) && !hit.contains(le))
-                    if (DMiscUtil.canTarget(le, le.getLocation())) hit.add(le);
+                    if (DMisc.canTarget(le, le.getLocation())) hit.add(le);
             }
         }
         if (hit.size() > 0) {
@@ -238,7 +238,7 @@ public class Thor implements Deity {
     }
 
     private void lightning(Player p, Block b) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return;
         }
@@ -247,14 +247,14 @@ public class Thor implements Deity {
             p.getWorld().strikeLightningEffect(target);
             if (p.getLocation().distance(target) > 2) {
                 if (!p.getWorld().equals(target.getWorld())) return;
-                if (!DMiscUtil.canLocationPVP(target)) return;
+                if (!DMisc.canLocationPVP(target)) return;
                 for (Entity e : b.getLocation().getChunk().getEntities()) {
                     if (e.getLocation().distance(target) > 1) continue;
                     if (e instanceof LivingEntity) {
                         LivingEntity le = (LivingEntity) e;
                         if (le instanceof Player && le == p) continue;
                         if (le.getLocation().distance(target) < 1.5)
-                            DMiscUtil.damageDemigods(p, le, DMiscUtil.getAscensions(p) * 2, DamageCause.LIGHTNING);
+                            DMisc.damageDemigods(p, le, DMisc.getAscensions(p) * 2, DamageCause.LIGHTNING);
                     }
                 }
             } else p.sendMessage(ChatColor.YELLOW + "Your target is too far away, or too close to you.");
@@ -264,14 +264,14 @@ public class Thor implements Deity {
 
     private void strikeLightning(Player p, Entity target) {
         if (!p.getWorld().equals(target.getWorld())) return;
-        if (!DMiscUtil.canTarget(target, target.getLocation())) return;
+        if (!DMisc.canTarget(target, target.getLocation())) return;
         p.getWorld().strikeLightningEffect(target.getLocation());
         for (Entity e : target.getLocation().getBlock().getChunk().getEntities()) {
             if (e instanceof LivingEntity) {
                 LivingEntity le = (LivingEntity) e;
-                if (le instanceof Player && (le == p || !DMiscUtil.canTarget(le, le.getLocation()))) continue;
+                if (le instanceof Player && (le == p || !DMisc.canTarget(le, le.getLocation()))) continue;
                 if (le.getLocation().distance(target.getLocation()) < 1.5)
-                    DMiscUtil.damageDemigods(p, le, DMiscUtil.getAscensions(p) * (2 * 3), DamageCause.LIGHTNING);
+                    DMisc.damageDemigods(p, le, DMisc.getAscensions(p) * (2 * 3), DamageCause.LIGHTNING);
             }
         }
     }

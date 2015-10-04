@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -63,12 +63,12 @@ public class FireGiant implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Fire Giant") && DMiscUtil.isFullParticipant(p)) {
+        if (DMisc.hasDeity(p, "Fire Giant") && DMisc.isFullParticipant(p)) {
             int devotion = 10000;
             /*
              * Calculate special values first
 			 */
-            int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             int diameter = (int) Math.ceil(1.43 * Math.pow(devotion, 0.1527));
             if (diameter > 12) diameter = 12;
             int firestormshots = (int) Math.round(2 * Math.pow(40000, 0.15));
@@ -79,13 +79,13 @@ public class FireGiant implements Deity {
             p.sendMessage(":Immune to fire damage.");
             p.sendMessage(":Shoot a fireball at the cursor's location. " + ChatColor.GREEN + "/fireball");
             p.sendMessage(ChatColor.YELLOW + "Costs " + FIREBALLCOST + " Favor.");
-            if (((FireGiant) (DMiscUtil.getDeity(p, "Fire Giant"))).FIREBALLITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMiscUtil.getDeity(p, "Fire Giant"))).FIREBALLITEM.name());
+            if (((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).FIREBALLITEM != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).FIREBALLITEM.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Ignite the ground at the target location with diameter " + diameter + ". " + ChatColor.GREEN + "/blaze");
             p.sendMessage(ChatColor.YELLOW + "Costs " + BLAZECOST + " Favor. Cooldown time: " + BLAZEDELAY + " seconds.");
-            if (((FireGiant) (DMiscUtil.getDeity(p, "Fire Giant"))).BLAZEITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMiscUtil.getDeity(p, "Fire Giant"))).BLAZEITEM.name());
+            if (((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).BLAZEITEM != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).BLAZEITEM.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Your fire power rains down on your enemies.");
             p.sendMessage("Shoots " + firestormshots + " fireballs. " + ChatColor.GREEN + "/firestorm");
@@ -108,17 +108,17 @@ public class FireGiant implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p)) return;
-            if (!DMiscUtil.hasDeity(p, "Fire Giant")) return;
+            if (!DMisc.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Fire Giant")) return;
             if (FIREBALL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == FIREBALLITEM))) {
                 if (System.currentTimeMillis() < FIREBALLTIME) return;
-                if (DMiscUtil.getFavor(p) >= FIREBALLCOST) {
-                    if (!DMiscUtil.canTarget(p, p.getLocation())) {
+                if (DMisc.getFavor(p) >= FIREBALLCOST) {
+                    if (!DMisc.canTarget(p, p.getLocation())) {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - FIREBALLCOST);
-                    shootFireball(p.getEyeLocation(), DMiscUtil.getTargetLocation(p), p);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - FIREBALLCOST);
+                    shootFireball(p.getEyeLocation(), DMisc.getTargetLocation(p), p);
                     double FIREBALLDELAY = 0.5;
                     FIREBALLTIME = System.currentTimeMillis() + (long) (FIREBALLDELAY * 1000);
                 } else {
@@ -131,16 +131,16 @@ public class FireGiant implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "Blaze is on cooldown.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= BLAZECOST) {
-                    if (!DMiscUtil.canTarget(p, p.getLocation())) {
+                if (DMisc.getFavor(p) >= BLAZECOST) {
+                    if (!DMisc.canTarget(p, p.getLocation())) {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
                     int diameter = (int) Math.ceil(1.43 * Math.pow(10000, 0.1527));
                     if (diameter > 12) diameter = 12;
-                    if (DMiscUtil.canLocationPVP(DMiscUtil.getTargetLocation(p))) {
-                        blaze(DMiscUtil.getTargetLocation(p), diameter);
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - BLAZECOST);
+                    if (DMisc.canLocationPVP(DMisc.getTargetLocation(p))) {
+                        blaze(DMisc.getTargetLocation(p), diameter);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - BLAZECOST);
                         BLAZETIME = System.currentTimeMillis() + (long) (BLAZEDELAY * 1000);
                     } else p.sendMessage(ChatColor.YELLOW + "That is a protected area.");
                 } else {
@@ -154,21 +154,21 @@ public class FireGiant implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (!DMiscUtil.isFullParticipant(p)) return;
-        if (!DMiscUtil.hasDeity(p, "Fire Giant")) return;
+        if (!DMisc.isFullParticipant(p)) return;
+        if (!DMisc.hasDeity(p, "Fire Giant")) return;
         if (str.equalsIgnoreCase("fireball")) {
             if (bind) {
                 if (FIREBALLITEM == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         FIREBALLITEM = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Fireball is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, FIREBALLITEM);
+                    DMisc.removeBind(p, FIREBALLITEM);
                     p.sendMessage(ChatColor.YELLOW + "Fireball is no longer bound to " + FIREBALLITEM.name() + ".");
                     FIREBALLITEM = null;
                 }
@@ -184,16 +184,16 @@ public class FireGiant implements Deity {
         } else if (str.equalsIgnoreCase("blaze")) {
             if (bind) {
                 if (BLAZEITEM == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         BLAZEITEM = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Blaze is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, BLAZEITEM);
+                    DMisc.removeBind(p, BLAZEITEM);
                     p.sendMessage(ChatColor.YELLOW + "Blaze is no longer bound to " + BLAZEITEM.name() + ".");
                     BLAZEITEM = null;
                 }
@@ -212,16 +212,16 @@ public class FireGiant implements Deity {
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMiscUtil.getFavor(p) >= PROMETHEUSULTIMATECOST) {
-                if (!DMiscUtil.canTarget(p, p.getLocation())) {
+            if (DMisc.getFavor(p) >= PROMETHEUSULTIMATECOST) {
+                if (!DMisc.canTarget(p, p.getLocation())) {
                     p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                 FIRESTORMTIME = System.currentTimeMillis() + (t * 1000);
                 p.sendMessage(ChatColor.GOLD + "Your divine fire " + ChatColor.WHITE + " has unleashed his wrath on " + firestorm(p) + " non-allied entities,");
                 p.sendMessage("in exchange for " + ChatColor.AQUA + PROMETHEUSULTIMATECOST + ChatColor.WHITE + " Favor.");
-                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - PROMETHEUSULTIMATECOST);
+                DMisc.setFavor(p, DMisc.getFavor(p) - PROMETHEUSULTIMATECOST);
             } else p.sendMessage("Firestorm requires " + PROMETHEUSULTIMATECOST + " Favor.");
         }
     }
@@ -259,7 +259,7 @@ public class FireGiant implements Deity {
             for (int y = -diameter / 2; y <= diameter / 2; y++) {
                 for (int z = -diameter / 2; z <= diameter / 2; z++) {
                     Block b = target.getWorld().getBlockAt(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
-                    if ((b.getType() == Material.AIR) || (((b.getType() == Material.SNOW)) && DMiscUtil.canLocationPVP(b.getLocation())))
+                    if ((b.getType() == Material.AIR) || (((b.getType() == Material.SNOW)) && DMisc.canLocationPVP(b.getLocation())))
                         b.setType(Material.FIRE);
                 }
             }
@@ -271,15 +271,15 @@ public class FireGiant implements Deity {
         Vector ploc = p.getLocation().toVector();
         ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
         for (LivingEntity anEntity : p.getWorld().getLivingEntities()) {
-            if (anEntity instanceof Player) if (DMiscUtil.isFullParticipant((Player) anEntity))
-                if (DMiscUtil.areAllied(p, (Player) anEntity)) continue;
-            if (!DMiscUtil.canTarget(anEntity, anEntity.getLocation())) continue;
+            if (anEntity instanceof Player) if (DMisc.isFullParticipant((Player) anEntity))
+                if (DMisc.areAllied(p, (Player) anEntity)) continue;
+            if (!DMisc.canTarget(anEntity, anEntity.getLocation())) continue;
             if (anEntity.getLocation().toVector().isInSphere(ploc, 50)) entitylist.add(anEntity);
         }
         final Player pl = p;
         final ArrayList<LivingEntity> enList = entitylist;
         for (int i = 0; i <= total; i += 20) {
-            DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
                 @Override
                 public void run() {
                     for (LivingEntity e1 : enList) {

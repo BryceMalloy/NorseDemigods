@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -56,8 +56,8 @@ public class Odin implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Odin") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.hasDeity(p, "Odin") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
 			 */
@@ -68,9 +68,9 @@ public class Odin implements Deity {
             int duration = (int) Math.ceil(3.635 * Math.pow(devotion, 0.2576)); // seconds
             int strength = (int) Math.ceil(2.757 * Math.pow(devotion, 0.097));
             // ultimate
-            int slowamount = (int) Math.round(.77179 * Math.pow(DMiscUtil.getAscensions(p), 0.17654391));
-            int stopduration = (int) Math.round(9.9155621 * Math.pow(DMiscUtil.getAscensions(p), 0.459019));
-            int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int slowamount = (int) Math.round(.77179 * Math.pow(DMisc.getAscensions(p), 0.17654391));
+            int stopduration = (int) Math.round(9.9155621 * Math.pow(DMisc.getAscensions(p), 0.459019));
+            int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
 			 */
@@ -81,8 +81,8 @@ public class Odin implements Deity {
             p.sendMessage(":Slow time to reduce movement speed of an enemy player. " + ChatColor.GREEN + "/slow");
             p.sendMessage(ChatColor.YELLOW + "Costs " + SLOWCOST + " Favor.");
             p.sendMessage("Slow power: " + strength + " for " + duration + " seconds.");
-            if (((Odin) (DMiscUtil.getDeity(p, "Odin"))).SLOWITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Odin) (DMiscUtil.getDeity(p, "Odin"))).SLOWITEM).name());
+            if (((Odin) (DMisc.getDeity(p, "Odin"))).SLOWITEM != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Odin) (DMisc.getDeity(p, "Odin"))).SLOWITEM).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Odin slows enemies' perception of time, slowing their");
             p.sendMessage("movement by " + slowamount + " for " + stopduration + " seconds. " + ChatColor.GREEN + "/timestop");
@@ -113,10 +113,10 @@ public class Odin implements Deity {
                 EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) ee;
                 if (e.getDamager() instanceof Player) {
                     Player p = (Player) e.getDamager();
-                    if (DMiscUtil.isFullParticipant(p)) {
-                        if (!DMiscUtil.hasDeity(p, "Odin")) return;
+                    if (DMisc.isFullParticipant(p)) {
+                        if (!DMisc.hasDeity(p, "Odin")) return;
                         if (!p.getItemInHand().getType().name().contains("_SPADE")) return;
-                        if (!DMiscUtil.canTarget(p, p.getLocation())) return;
+                        if (!DMisc.canTarget(p, p.getLocation())) return;
 
                         Material STABITEM = p.getItemInHand().getType();
 
@@ -125,8 +125,8 @@ public class Odin implements Deity {
 						 */
                         if (e.getEntity() instanceof Player) {
                             Player attacked = (Player) e.getEntity();
-                            if (!DMiscUtil.canTarget(attacked, attacked.getLocation())) return;
-                            if (!DMiscUtil.isFullParticipant(attacked) || (DMiscUtil.isFullParticipant(attacked) && !(DMiscUtil.getAllegiance(p).equalsIgnoreCase(DMiscUtil.getAllegiance(attacked))))) {
+                            if (!DMisc.canTarget(attacked, attacked.getLocation())) return;
+                            if (!DMisc.isFullParticipant(attacked) || (DMisc.isFullParticipant(attacked) && !(DMisc.getAllegiance(p).equalsIgnoreCase(DMisc.getAllegiance(attacked))))) {
                                 attacked.setVelocity(new Vector(0, 0, 0));
                             }
                         }
@@ -134,14 +134,14 @@ public class Odin implements Deity {
 						 * Cleave
 						 */
                         if (STAB) {
-                            if (DMiscUtil.getFavor(p) >= STABCOST) {
+                            if (DMisc.getFavor(p) >= STABCOST) {
                                 if (!(e.getEntity() instanceof LivingEntity)) return;
                                 if (System.currentTimeMillis() < STABTIME + 100) return;
-                                if (!DMiscUtil.canTarget(e.getEntity(), e.getEntity().getLocation())) return;
-                                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - STABCOST);
+                                if (!DMisc.canTarget(e.getEntity(), e.getEntity().getLocation())) return;
+                                DMisc.setFavor(p, DMisc.getFavor(p) - STABCOST);
                                 for (int i = 1; i <= 31; i += 4)
                                     e.getEntity().getWorld().playEffect(e.getEntity().getLocation(), Effect.SMOKE, i);
-                                DMiscUtil.damageDemigods(p, (LivingEntity) e.getEntity(), (int) Math.ceil(Math.pow(DMiscUtil.getDevotion(p, getName()), 0.35)), EntityDamageEvent.DamageCause.ENTITY_ATTACK);
+                                DMisc.damageDemigods(p, (LivingEntity) e.getEntity(), (int) Math.ceil(Math.pow(DMisc.getDevotion(p, getName()), 0.35)), EntityDamageEvent.DamageCause.ENTITY_ATTACK);
                                 STABTIME = System.currentTimeMillis();
                                 if (e.getEntity() instanceof Player) {
                                     Player otherP = (Player) e.getEntity();
@@ -159,10 +159,10 @@ public class Odin implements Deity {
         } else if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.hasDeity(p, "Odin")) return;
+            if (!DMisc.hasDeity(p, "Odin")) return;
             if (SLOW || ((SLOWITEM != null) && (p.getItemInHand().getType() == SLOWITEM))) {
-                if (DMiscUtil.getFavor(p) >= SLOWCOST) {
-                    if (slow(p)) DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SLOWCOST);
+                if (DMisc.getFavor(p) >= SLOWCOST) {
+                    if (slow(p)) DMisc.setFavor(p, DMisc.getFavor(p) - SLOWCOST);
                 } else {
                     SLOW = false;
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
@@ -173,7 +173,7 @@ public class Odin implements Deity {
 
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
-        if (!DMiscUtil.hasDeity(p, "Odin")) return;
+        if (!DMisc.hasDeity(p, "Odin")) return;
         if (str.equalsIgnoreCase("stab")) {
             if (STAB) {
                 STAB = false;
@@ -185,17 +185,17 @@ public class Odin implements Deity {
         } else if (str.equalsIgnoreCase("slow")) {
             if (bind) {
                 if (SLOWITEM == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         SLOWITEM = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Slow is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, SLOWITEM);
+                    DMisc.removeBind(p, SLOWITEM);
                     p.sendMessage(ChatColor.YELLOW + "Slow is no longer bound to " + SLOWITEM.name() + ".");
                     SLOWITEM = null;
                 }
@@ -209,21 +209,21 @@ public class Odin implements Deity {
                 p.sendMessage(ChatColor.YELLOW + "Slow is now active.");
             }
         } else if (str.equalsIgnoreCase("timestop")) {
-            if (!DMiscUtil.hasDeity(p, "Odin")) return;
+            if (!DMisc.hasDeity(p, "Odin")) return;
             if (System.currentTimeMillis() < CRONUSULTIMATETIME) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot stop time again for " + ((((CRONUSULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((CRONUSULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMiscUtil.getFavor(p) >= CRONUSULTIMATECOST) {
-                if (!DMiscUtil.canTarget(p, p.getLocation())) {
+            if (DMisc.getFavor(p) >= CRONUSULTIMATECOST) {
+                if (!DMisc.canTarget(p, p.getLocation())) {
                     p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                 CRONUSULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                 timeStop(p);
-                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - CRONUSULTIMATECOST);
+                DMisc.setFavor(p, DMisc.getFavor(p) - CRONUSULTIMATECOST);
             } else p.sendMessage(ChatColor.YELLOW + "Stopping time requires " + CRONUSULTIMATECOST + " Favor.");
         }
     }
@@ -234,14 +234,14 @@ public class Odin implements Deity {
     }
 
     private boolean slow(Player p) {
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int duration = (int) Math.ceil(3.635 * Math.pow(devotion, 0.2576)); // seconds
         int strength = (int) Math.ceil(2.757 * Math.pow(devotion, 0.097));
         Player target = null;
         Block b = p.getTargetBlock((Set) null, 200);
         for (Player pl : b.getWorld().getPlayers()) {
             if (pl.getLocation().distance(b.getLocation()) < 4) {
-                if (!DMiscUtil.areAllied(pl, p) && DMiscUtil.canTarget(pl, pl.getLocation())) {
+                if (!DMisc.areAllied(pl, p) && DMisc.canTarget(pl, pl.getLocation())) {
                     target = pl;
                     break;
                 }
@@ -251,7 +251,7 @@ public class Odin implements Deity {
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration * 20, strength));
             p.sendMessage(ChatColor.YELLOW + target.getName() + " has been slowed.");
             target.sendMessage(ChatColor.RED + "You have been slowed for " + duration + " seconds.");
-            DMiscUtil.addActiveEffect(target.getUniqueId(), "Slow", duration);
+            DMisc.addActiveEffect(target.getUniqueId(), "Slow", duration);
             return true;
         } else {
             p.sendMessage(ChatColor.YELLOW + "No target found.");
@@ -260,18 +260,18 @@ public class Odin implements Deity {
     }
 
     private void timeStop(Player p) {
-        int slowamount = (int) Math.round(4.77179 * Math.pow(DMiscUtil.getAscensions(p), 0.17654391));
-        int duration = (int) Math.round(9.9155621 * Math.pow(DMiscUtil.getAscensions(p), 0.459019));
+        int slowamount = (int) Math.round(4.77179 * Math.pow(DMisc.getAscensions(p), 0.17654391));
+        int duration = (int) Math.round(9.9155621 * Math.pow(DMisc.getAscensions(p), 0.459019));
         int count = 0;
         for (Player pl : p.getWorld().getPlayers()) {
             if (!(pl.getLocation().toVector().isInSphere(p.getLocation().toVector(), 70))) continue;
-            if (DMiscUtil.isFullParticipant(pl)) {
-                if (DMiscUtil.getAllegiance(pl).equalsIgnoreCase(DMiscUtil.getAllegiance(p))) continue;
-                if (!DMiscUtil.canTarget(pl, pl.getLocation())) continue;
+            if (DMisc.isFullParticipant(pl)) {
+                if (DMisc.getAllegiance(pl).equalsIgnoreCase(DMisc.getAllegiance(p))) continue;
+                if (!DMisc.canTarget(pl, pl.getLocation())) continue;
             }
             pl.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration * 20, slowamount));
             p.sendMessage(ChatColor.DARK_RED + "Odin has slowed time around you.");
-            DMiscUtil.addActiveEffect(pl.getUniqueId(), "Time Stop", duration);
+            DMisc.addActiveEffect(pl.getUniqueId(), "Time Stop", duration);
             count++;
         }
         p.sendMessage(ChatColor.RED + "Odin has slowed time for " + count + " players nearby.");

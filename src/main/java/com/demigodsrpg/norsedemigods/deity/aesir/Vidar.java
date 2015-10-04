@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -55,8 +55,8 @@ public class Vidar implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Vidar") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.hasDeity(p, "Vidar") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
 			 */
@@ -64,20 +64,20 @@ public class Vidar implements Deity {
             final int slowpower = (int) (Math.ceil(1.681539 * Math.pow(devotion, 0.11457)));
             int duration = (int) (Math.ceil(2.9573 * Math.pow(devotion, 0.138428)));
             // ultimate
-            int targets = (int) Math.ceil(3.08 * (Math.pow(1.05, DMiscUtil.getAscensions(p))));
-            int range = (int) Math.ceil(7.17 * Math.pow(1.035, DMiscUtil.getAscensions(p)));
-            int damage = (int) Math.ceil(10 * Math.pow(DMiscUtil.getAscensions(p), 0.868));
-            int confuseduration = (int) (1.0354 * Math.pow(DMiscUtil.getAscensions(p), 0.4177)) * 20;
-            int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int targets = (int) Math.ceil(3.08 * (Math.pow(1.05, DMisc.getAscensions(p))));
+            int range = (int) Math.ceil(7.17 * Math.pow(1.035, DMisc.getAscensions(p)));
+            int damage = (int) Math.ceil(10 * Math.pow(DMisc.getAscensions(p), 0.868));
+            int confuseduration = (int) (1.0354 * Math.pow(DMisc.getAscensions(p), 0.4177)) * 20;
+            int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
 			 */
             p.sendMessage("--" + ChatColor.GOLD + "Vidar" + ChatColor.GRAY + " [" + devotion + "]");
-            p.sendMessage(":Up to " + DMiscUtil.getAscensions(p) + " additional Favor per hit on overkill.");
+            p.sendMessage(":Up to " + DMisc.getAscensions(p) + " additional Favor per hit on overkill.");
             p.sendMessage(":Strike an enemy from afar with your sword, slowing them down.");
             p.sendMessage("Slow: " + slowpower + " for " + duration + " seconds. Damage: " + dmg + ChatColor.GREEN + " /strike " + ChatColor.YELLOW + "Costs " + STRIKECOST + " Favor.");
-            if (((Vidar) DMiscUtil.getDeity(p, getName())).STRIKEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Vidar) DMiscUtil.getDeity(p, getName())).STRIKEBIND.name());
+            if (((Vidar) DMisc.getDeity(p, getName())).STRIKEBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Vidar) DMisc.getDeity(p, getName())).STRIKEBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Vidar flings up to " + targets + " targets within range " + range + " to you, dealing");
             p.sendMessage(damage + " damage to each and confusing them for " + confuseduration + " seconds." + ChatColor.GREEN + " /crash");
@@ -110,14 +110,14 @@ public class Vidar implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.hasDeity(p, "Vidar") || !DMiscUtil.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Vidar") || !DMisc.isFullParticipant(p)) return;
             if ((p.getItemInHand() != null) && p.getItemInHand().getType().name().contains("SWORD")) {
                 if (STRIKE || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == STRIKEBIND))) {
                     if (STRIKETIME > System.currentTimeMillis()) return;
                     STRIKETIME = System.currentTimeMillis() + STRIKEDELAY;
-                    if (DMiscUtil.getFavor(p) >= STRIKECOST) {
+                    if (DMisc.getFavor(p) >= STRIKECOST) {
                         strike(p);
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - STRIKECOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - STRIKECOST);
                     } else {
                         p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                         STRIKE = false;
@@ -129,15 +129,15 @@ public class Vidar implements Deity {
                 EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) ee;
                 if (e.getDamager() instanceof Player) {
                     Player p = (Player) e.getDamager();
-                    if (!DMiscUtil.hasDeity(p, "Vidar") || !DMiscUtil.isFullParticipant(p)) return;
+                    if (!DMisc.hasDeity(p, "Vidar") || !DMisc.isFullParticipant(p)) return;
                     try {
                         LivingEntity le = (LivingEntity) e.getEntity();
                         if (le.getHealth() - e.getDamage() <= 0.0) {
                             //
                             if ((int) (Math.random() * 3) == 1) {
-                                int reward = 1 + (int) (Math.random() * DMiscUtil.getAscensions(p));
+                                int reward = 1 + (int) (Math.random() * DMisc.getAscensions(p));
                                 p.sendMessage(ChatColor.RED + "Finishing bonus: +" + reward);
-                                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) + reward);
+                                DMisc.setFavor(p, DMisc.getFavor(p) + reward);
                             }
                         }
                     } catch (Exception ignored) {
@@ -155,23 +155,23 @@ public class Vidar implements Deity {
      */
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
-        if (DMiscUtil.hasDeity(p, "Vidar")) {
+        if (DMisc.hasDeity(p, "Vidar")) {
             if (str.equalsIgnoreCase("strike")) {
                 if (bind) {
                     if (STRIKEBIND == null) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         if (!p.getItemInHand().getType().name().contains("SWORD"))
                             p.sendMessage(ChatColor.YELLOW + "You must bind this skill to a sword.");
                         else {
-                            DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                            DMisc.registerBind(p, p.getItemInHand().getType());
                             STRIKEBIND = p.getItemInHand().getType();
                             p.sendMessage(ChatColor.YELLOW + "Strike is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMiscUtil.removeBind(p, STRIKEBIND);
+                        DMisc.removeBind(p, STRIKEBIND);
                         p.sendMessage(ChatColor.YELLOW + "Strike is no longer bound to " + STRIKEBIND.name() + ".");
                         STRIKEBIND = null;
                     }
@@ -191,8 +191,8 @@ public class Vidar implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ARESULTIMATECOST) {
-                    if (!DMiscUtil.canTarget(p, p.getLocation())) {
+                if (DMisc.getFavor(p) >= ARESULTIMATECOST) {
+                    if (!DMisc.canTarget(p, p.getLocation())) {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
@@ -201,11 +201,11 @@ public class Vidar implements Deity {
                         p.sendMessage(ChatColor.YELLOW + "No targets were found, or the skill could not be used.");
                         return;
                     }
-                    int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                    int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                     ARESULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                     p.sendMessage("In exchange for " + ChatColor.AQUA + ARESULTIMATECOST + ChatColor.WHITE + " Favor, ");
                     p.sendMessage(ChatColor.GOLD + "Vidar" + ChatColor.WHITE + " has unleashed his powers on " + hits + " non-allied entities.");
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ARESULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - ARESULTIMATECOST);
                 } else p.sendMessage(ChatColor.YELLOW + "Power crash requires " + ARESULTIMATECOST + " Favor.");
             }
         }
@@ -220,19 +220,19 @@ public class Vidar implements Deity {
         /*
 		 * /
 		 */
-        LivingEntity target = DMiscUtil.getTargetLivingEntity(p, 2);
+        LivingEntity target = DMisc.getTargetLivingEntity(p, 2);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "No target found.");
             return;
         }
-        if (!DMiscUtil.canTarget(target, target.getLocation()) || !DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(target, target.getLocation()) || !DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "Can't attack in a no-PVP zone.");
             return;
         }
 		/*
 		 * Calculate special values
 		 */
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int damage = (int) Math.round(0.9 * Math.pow(devotion, 0.34));
         final int slowpower = (int) (Math.ceil(1.681539 * Math.pow(devotion, 0.11457)));
         int duration = (int) (Math.ceil(2.9573 * Math.pow(devotion, 0.138428)));
@@ -240,7 +240,7 @@ public class Vidar implements Deity {
 		/*
 		 * Deal damage and slow if player
 		 */
-        DMiscUtil.damageDemigods(p, target, damage, DamageCause.ENTITY_ATTACK);
+        DMisc.damageDemigods(p, target, damage, DamageCause.ENTITY_ATTACK);
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration, slowpower));
     }
 
@@ -251,10 +251,10 @@ public class Vidar implements Deity {
 		 * Damage: done instantly
 		 * Confusion: how long players remain dizzied
 		 */
-        int range = (int) (7.17 * Math.pow(1.035, DMiscUtil.getAscensions(p)));
-        double damage = (1.929 * Math.pow(DMiscUtil.getAscensions(p), 0.48028));
-        int confuseduration = (int) (1.0354 * Math.pow(DMiscUtil.getAscensions(p), 0.4177)) * 20;
-		/*
+        int range = (int) (7.17 * Math.pow(1.035, DMisc.getAscensions(p)));
+        double damage = (1.929 * Math.pow(DMisc.getAscensions(p), 0.48028));
+        int confuseduration = (int) (1.0354 * Math.pow(DMisc.getAscensions(p), 0.4177)) * 20;
+        /*
 		 * The ultimate
 		 */
         ArrayList<LivingEntity> targets = new ArrayList<LivingEntity>();
@@ -263,8 +263,8 @@ public class Vidar implements Deity {
             if (le.getLocation().distance(p.getLocation()) <= range) {
                 if (le instanceof Player) {
                     Player pt = (Player) le;
-                    if (DMiscUtil.getAllegiance(pt).equals(DMiscUtil.getAllegiance(p)) || pt.equals(p)) continue;
-                    if (!DMiscUtil.canTarget(le, le.getLocation())) continue;
+                    if (DMisc.getAllegiance(pt).equals(DMisc.getAllegiance(p)) || pt.equals(p)) continue;
+                    if (!DMisc.canTarget(le, le.getLocation())) continue;
                     targets.add(le);
                     confuse.add(pt);
                 } else targets.add(le);
@@ -275,7 +275,7 @@ public class Vidar implements Deity {
                 Vector v = le.getLocation().toVector();
                 Vector victor = p.getLocation().toVector().subtract(v);
                 le.setVelocity(victor);
-                DMiscUtil.damageDemigods(p, le, damage, DamageCause.ENTITY_ATTACK);
+                DMisc.damageDemigods(p, le, damage, DamageCause.ENTITY_ATTACK);
             }
         }
         if (confuse.size() > 0) {

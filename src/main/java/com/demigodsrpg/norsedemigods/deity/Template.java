@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.deity;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -33,8 +33,8 @@ public class Template implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.isFullParticipant(p) && DMiscUtil.hasDeity(p, getName())) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
+            int devotion = DMisc.getDevotion(p, getName());
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             return;
         }
@@ -49,7 +49,7 @@ public class Template implements Deity {
     public void onInteractEvent(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
-        if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+        if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
         Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
         Optional<Material> opBind = saveable.getBind(skillname);
         if (opEnabled.isPresent() && (boolean) opEnabled.get() || ((p.getItemInHand() != null) &&
@@ -57,11 +57,11 @@ public class Template implements Deity {
             Optional opTime = saveable.getAbilityData(skillname, "time");
             if (opTime.isPresent() && (double) opTime.get() > System.currentTimeMillis()) return;
             saveable.setAbilityData(getBackend(), skillname, "time", System.currentTimeMillis() + SKILLDELAY);
-            if (DMiscUtil.getFavor(p) >= SKILLCOST) {
+            if (DMisc.getFavor(p) >= SKILLCOST) {
                 /*
                  * Skill
                  */
-                DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+                DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
             } else {
                 p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                 saveable.setAbilityData(getBackend(), skillname, "enabled", false);
@@ -73,12 +73,12 @@ public class Template implements Deity {
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
         PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
-        if (DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(p, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     Optional opBind = saveable.getAbilityData(skillname, "bind");
                     if (opBind.isPresent()) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
@@ -111,14 +111,14 @@ public class Template implements Deity {
                             (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
+                if (DMisc.getFavor(p) >= ULTIMATECOST) {
                     int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) *
-                            ((double) DMiscUtil.getAscensions(p) / 100)));
+                            ((double) DMisc.getAscensions(p) / 100)));
                     saveable.setAbilityData(getBackend(), ult, "time", System.currentTimeMillis() + (t * 1000));
                     /*
 					 * Ultimate code
 					 */
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                 } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
         }

@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.listener;
 
 import com.demigodsrpg.norsedemigods.DFixes;
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import com.google.common.collect.Lists;
@@ -36,7 +36,7 @@ public class DPvP implements Listener {
             Arrow arrow = (Arrow) e.getEntity();
             if (arrow.getShooter() instanceof Player) {
                 Player shooter = (Player) arrow.getShooter();
-                if (!DMiscUtil.canTarget(shooter, shooter.getLocation())) {
+                if (!DMisc.canTarget(shooter, shooter.getLocation())) {
                     shooter.sendMessage(ChatColor.YELLOW + "This is a no-PvP zone.");
 
                     // Undo the arrow being removed from the inventory
@@ -51,7 +51,7 @@ public class DPvP implements Listener {
         } else if (e.getEntityType().equals(EntityType.ENDER_PEARL)) {
             if (e.getEntity().getShooter() instanceof Player) {
                 Player player = (Player) e.getEntity().getShooter();
-                if (!DMiscUtil.canWorldGuardBuild(player, player.getLocation())) e.getEntity().remove();
+                if (!DMisc.canWorldGuardBuild(player, player.getLocation())) e.getEntity().remove();
             }
         }
     }
@@ -65,30 +65,30 @@ public class DPvP implements Listener {
         else if (e.getDamager() instanceof Player) attacker = (Player) e.getDamager();
         else return;
         if (!DSettings.getEnabledWorlds().contains(attacker.getWorld())) return;
-        if (!(DMiscUtil.isFullParticipant(attacker) && DMiscUtil.isFullParticipant(target))) {
-            if (!DMiscUtil.canTarget(target, target.getLocation())) {
+        if (!(DMisc.isFullParticipant(attacker) && DMisc.isFullParticipant(target))) {
+            if (!DMisc.canTarget(target, target.getLocation())) {
                 attacker.sendMessage(ChatColor.YELLOW + "This is a no-PvP zone.");
                 DFixes.checkAndCancel(e);
                 return;
             }
         }
-        if (DMiscUtil.getAllegiance(attacker).equalsIgnoreCase(DMiscUtil.getAllegiance(target)))
+        if (DMisc.getAllegiance(attacker).equalsIgnoreCase(DMisc.getAllegiance(target)))
             return; // Handled in DDamage...
-        if (!DMiscUtil.canTarget(target, target.getLocation())) {
+        if (!DMisc.canTarget(target, target.getLocation())) {
             attacker.sendMessage(ChatColor.YELLOW + "This is a no-PvP zone.");
             DFixes.checkAndCancel(e);
             return;
         }
-        if (!DMiscUtil.canTarget(attacker, attacker.getLocation())) {
+        if (!DMisc.canTarget(attacker, attacker.getLocation())) {
             attacker.sendMessage(ChatColor.YELLOW + "This is a no-PvP zone.");
             DFixes.checkAndCancel(e);
             return;
         }
         try {
-            List<Deity> deities = Lists.newArrayList(DMiscUtil.getTributeableDeities(attacker));
+            List<Deity> deities = Lists.newArrayList(DMisc.getTributeableDeities(attacker));
             if (!deities.isEmpty()) {
                 Deity d = deities.get((int) Math.floor(Math.random() * deities.size()));
-                DMiscUtil.setDevotion(attacker, d, DMiscUtil.getDevotion(attacker, d) + (int) (e.getDamage() * MULTIPLIER));
+                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (e.getDamage() * MULTIPLIER));
                 DLevels.levelProcedure(attacker);
             }
         } catch (Exception ignored) {
@@ -97,7 +97,7 @@ public class DPvP implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void playerDeath(final EntityDeathEvent e1) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
             @Override
             public void run() {
                 if (!(e1.getEntity() instanceof Player)) return;
@@ -108,28 +108,28 @@ public class DPvP implements Listener {
                     EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) attacked.getLastDamageCause();
                     if (!(e.getDamager() instanceof Player)) return;
                     Player attacker = (Player) e.getDamager();
-                    if (!(DMiscUtil.isFullParticipant(attacker))) return;
-                    if (DMiscUtil.isFullParticipant(attacked)) {
-                        if (DMiscUtil.getAllegiance(attacker).equalsIgnoreCase(DMiscUtil.getAllegiance(attacked))) { // betrayal
-                            DMiscUtil.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was betrayed by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMiscUtil.getAllegiance(attacker) + " alliance.");
-                            if (DMiscUtil.getKills(attacker) > 0) {
-                                DMiscUtil.setKills(attacker, DMiscUtil.getKills(attacker) - 1);
-                                attacker.sendMessage(ChatColor.RED + "Your number of kills has decreased to " + DMiscUtil.getKills(attacker) + ".");
+                    if (!(DMisc.isFullParticipant(attacker))) return;
+                    if (DMisc.isFullParticipant(attacked)) {
+                        if (DMisc.getAllegiance(attacker).equalsIgnoreCase(DMisc.getAllegiance(attacked))) { // betrayal
+                            DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was betrayed by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
+                            if (DMisc.getKills(attacker) > 0) {
+                                DMisc.setKills(attacker, DMisc.getKills(attacker) - 1);
+                                attacker.sendMessage(ChatColor.RED + "Your number of kills has decreased to " + DMisc.getKills(attacker) + ".");
                             }
                         } else { // PVP kill
-                            DMiscUtil.setKills(attacker, DMiscUtil.getKills(attacker) + 1);
-                            DMiscUtil.setDeaths(attacked, DMiscUtil.getDeaths(attacked) + 1);
-                            DMiscUtil.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " of the " + DMiscUtil.getAllegiance(attacked) + " alliance was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMiscUtil.getAllegiance(attacker) + " alliance.");
+                            DMisc.setKills(attacker, DMisc.getKills(attacker) + 1);
+                            DMisc.setDeaths(attacked, DMisc.getDeaths(attacked) + 1);
+                            DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacked) + " alliance was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
 
-                            double adjusted = DMiscUtil.getKills(attacked) * 1.0 / DMiscUtil.getDeaths(attacked);
+                            double adjusted = DMisc.getKills(attacked) * 1.0 / DMisc.getDeaths(attacked);
                             if (adjusted > 5) adjusted = 5;
                             if (adjusted < 0.2) adjusted = 0.2;
-                            for (Deity d : DMiscUtil.getDeities(attacker)) {
-                                DMiscUtil.setDevotion(attacker, d, DMiscUtil.getDevotion(attacker, d) + (int) (pvpkillreward * MULTIPLIER * adjusted));
+                            for (Deity d : DMisc.getDeities(attacker)) {
+                                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (pvpkillreward * MULTIPLIER * adjusted));
                             }
                         }
                     } else { // regular player
-                        DMiscUtil.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMiscUtil.getAllegiance(attacker) + " alliance.");
+                        DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
                     }
                 }
             }
@@ -151,10 +151,10 @@ public class DPvP implements Listener {
 
         if (DSave.hasData(player, "temp_flash") || event.getCause() == TeleportCause.ENDER_PEARL) {
             onPlayerLineJump(player, to, from, delayTime);
-        } else if (!DMiscUtil.canLocationPVP(to) && DMiscUtil.canLocationPVP(from)) {
+        } else if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from)) {
             DSave.removeData(player, "temp_was_PVP");
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
-        } else if (!DMiscUtil.canLocationPVP(from) && DMiscUtil.canLocationPVP(to))
+        } else if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
             player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
     }
 
@@ -162,27 +162,27 @@ public class DPvP implements Listener {
         // NullPointer Check
         if (to == null || from == null) return;
 
-        if (DSave.hasData(player, "temp_was_PVP") || !DMiscUtil.isFullParticipant(player)) return;
+        if (DSave.hasData(player, "temp_was_PVP") || !DMisc.isFullParticipant(player)) return;
 
         // No Spawn Line-Jumping
-        if (!DMiscUtil.canLocationPVP(to) && DMiscUtil.canLocationPVP(from) && delayTime > 0 && !DMiscUtil.hasPermission(player, "demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
+        if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from) && delayTime > 0 && !DMisc.hasPermission(player, "demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
             DSave.saveData(player, "temp_was_PVP", true);
             if (DSave.hasData(player, "temp_flash")) DSave.removeData(player, "temp_flash");
 
-            DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
                 @Override
                 public void run() {
                     DSave.removeData(player, "temp_was_PVP");
-                    if (!DMiscUtil.canLocationPVP(player.getLocation()))
+                    if (!DMisc.canLocationPVP(player.getLocation()))
                         player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
                 }
             }, (delayTime * 20));
-        } else if (!DSave.hasData(player, "temp_was_PVP") && !DMiscUtil.canLocationPVP(to) && DMiscUtil.canLocationPVP(from))
+        } else if (!DSave.hasData(player, "temp_was_PVP") && !DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from))
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
 
         // Let players know where they can PVP
-        if (!DSave.hasData(player, "temp_was_PVP") && DMiscUtil.canLocationPVP(to) && !DMiscUtil.canLocationPVP(from)) {
-            if (!DMiscUtil.canLocationPVP(from) && DMiscUtil.canLocationPVP(to))
+        if (!DSave.hasData(player, "temp_was_PVP") && DMisc.canLocationPVP(to) && !DMisc.canLocationPVP(from)) {
+            if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
                 player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
         }
     }

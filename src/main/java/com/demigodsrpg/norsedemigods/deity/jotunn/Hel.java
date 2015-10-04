@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
@@ -67,8 +67,8 @@ public class Hel implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Hel") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, "Hel");
+        if (DMisc.hasDeity(p, "Hel") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, "Hel");
             /*
              * Calculate special values first
 			 */
@@ -80,8 +80,8 @@ public class Hel implements Deity {
             int duration = (int) Math.round(2.18678 * Math.pow(devotion, 0.24723));
             // ult
             int ultrange = (int) Math.round(18.83043 * Math.pow(devotion, 0.088637));
-            int ultduration = (int) Math.round(30 * Math.pow(DMiscUtil.getDevotion(p, getName()), 0.09));
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int ultduration = (int) Math.round(30 * Math.pow(DMisc.getDevotion(p, getName()), 0.09));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
 			 * The printed text
 			 */
@@ -90,14 +90,14 @@ public class Hel implements Deity {
             p.sendMessage(":Entomb an entity in obsidian. " + ChatColor.GREEN + "/entomb");
             p.sendMessage(ChatColor.YELLOW + "Costs " + ENTOMBCOST + " Favor.");
             p.sendMessage("Duration: " + duration + " seconds.");
-            if (((Hel) (DMiscUtil.getDeity(p, "Hel"))).ENTOMBBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Hel) (DMiscUtil.getDeity(p, "Hel"))).ENTOMBBIND).name());
+            if (((Hel) (DMisc.getDeity(p, "Hel"))).ENTOMBBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Hel) (DMisc.getDeity(p, "Hel"))).ENTOMBBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Fire a chain of smoke, causing damage and darkness. " + ChatColor.GREEN + "/chain");
             p.sendMessage(ChatColor.YELLOW + "Costs " + CHAINCOST + " Favor.");
             p.sendMessage(damage + " damage, causes level " + blindpower + " darkness for " + blindduration + " seconds.");
-            if (((Hel) (DMiscUtil.getDeity(p, "Hel"))).CHAINBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Chain bound to " + (((Hel) (DMiscUtil.getDeity(p, "Hel"))).CHAINBIND).name());
+            if (((Hel) (DMisc.getDeity(p, "Hel"))).CHAINBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Chain bound to " + (((Hel) (DMisc.getDeity(p, "Hel"))).CHAINBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Turn day to night and curse your enemies.");
             p.sendMessage("Range: " + ultrange + ". Duration: " + ultduration + "" + ChatColor.GREEN + " /curse");
@@ -120,18 +120,18 @@ public class Hel implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p)) return;
-            if (!DMiscUtil.hasDeity(p, "Hel")) return;
+            if (!DMisc.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Hel")) return;
             if (CHAIN || ((CHAINBIND != null) && (p.getItemInHand().getType() == CHAINBIND))) {
                 if (System.currentTimeMillis() < CHAINTIME) return;
-                if (DMiscUtil.getFavor(p) >= CHAINCOST) {
-                    int devotion = DMiscUtil.getDevotion(p, "Hel");
+                if (DMisc.getFavor(p) >= CHAINCOST) {
+                    int devotion = DMisc.getDevotion(p, "Hel");
                     int damage = (int) (Math.round(5 * Math.pow(devotion, 0.20688)));
                     int blindpower = (int) Math.round(1.26985 * Math.pow(devotion, 0.13047));
                     int blindduration = (int) Math.round(0.75 * Math.pow(devotion, 0.323999));
                     if (chain(p, damage, blindpower, blindduration)) {
                         CHAINTIME = System.currentTimeMillis() + CHAINDELAY;
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - CHAINCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - CHAINCOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No target found.");
                 } else {
                     CHAIN = false;
@@ -140,10 +140,10 @@ public class Hel implements Deity {
             }
             if (ENTOMB || ((ENTOMBBIND != null) && (p.getItemInHand().getType() == ENTOMBBIND))) {
                 if (System.currentTimeMillis() < ENTOMBTIME) return;
-                if ((DMiscUtil.getFavor(p) >= ENTOMBCOST)) {
+                if ((DMisc.getFavor(p) >= ENTOMBCOST)) {
                     if (entomb(p)) {
                         ENTOMBTIME = System.currentTimeMillis() + ENTOMBDELAY;
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ENTOMBCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - ENTOMBCOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No target found or area is protected.");
                 } else {
                     ENTOMB = false;
@@ -154,7 +154,7 @@ public class Hel implements Deity {
             EntityTargetEvent e = (EntityTargetEvent) ee;
             if (e.getEntity() instanceof LivingEntity) {
                 if ((e.getEntity() instanceof Zombie) || (e.getEntity() instanceof Skeleton)) {
-                    if (!DMiscUtil.hasDeity((Player) e.getTarget(), "Hel")) return;
+                    if (!DMisc.hasDeity((Player) e.getTarget(), "Hel")) return;
                     e.setCancelled(true);
                 }
             }
@@ -164,22 +164,22 @@ public class Hel implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (!DMiscUtil.isFullParticipant(p)) return;
-        if (!DMiscUtil.hasDeity(p, "Hel")) return;
+        if (!DMisc.isFullParticipant(p)) return;
+        if (!DMisc.hasDeity(p, "Hel")) return;
         if (str.equalsIgnoreCase("chain")) {
             if (bind) {
                 if (CHAINBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         CHAINBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Dark chain is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, CHAINBIND);
+                    DMisc.removeBind(p, CHAINBIND);
                     p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer bound to " + CHAINBIND.name() + ".");
                     CHAINBIND = null;
                 }
@@ -195,17 +195,17 @@ public class Hel implements Deity {
         } else if (str.equalsIgnoreCase("entomb")) {
             if (bind) {
                 if (ENTOMBBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         ENTOMBBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Entomb is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, ENTOMBBIND);
+                    DMisc.removeBind(p, ENTOMBBIND);
                     p.sendMessage(ChatColor.YELLOW + "Entomb is no longer bound to " + ENTOMBBIND.name() + ".");
                     ENTOMBBIND = null;
                 }
@@ -225,16 +225,16 @@ public class Hel implements Deity {
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
-                if (!DMiscUtil.canTarget(p, p.getLocation())) {
+            if (DMisc.getFavor(p) >= ULTIMATECOST) {
+                if (!DMisc.canTarget(p, p.getLocation())) {
                     p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                 int amt = tartarus(p);
                 if (amt > 0) {
                     p.sendMessage(ChatColor.DARK_RED + "Hel" + ChatColor.GRAY + " curses " + amt + " enemies.");
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                     p.getWorld().setTime(18000);
                     ULTIMATETIME = System.currentTimeMillis() + t * 1000;
                 } else
@@ -244,19 +244,19 @@ public class Hel implements Deity {
     }
 
     private boolean chain(Player p, int damage, int blindpower, int blindduration) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) return false;
-        LivingEntity target = DMiscUtil.getTargetLivingEntity(p, 3);
+        if (!DMisc.canTarget(p, p.getLocation())) return false;
+        LivingEntity target = DMisc.getTargetLivingEntity(p, 3);
         if (target == null) return false;
-        if (!DMiscUtil.canTarget(target, target.getLocation())) {
+        if (!DMisc.canTarget(target, target.getLocation())) {
             return false;
         }
-        if (DSettings.getSettingBoolean("friendly_fire") && target instanceof Player && DMiscUtil.areAllied(p, (Player) target)) {
+        if (DSettings.getSettingBoolean("friendly_fire") && target instanceof Player && DMisc.areAllied(p, (Player) target)) {
             if (DSettings.getSettingBoolean("friendly_fire_message"))
                 p.sendMessage(ChatColor.YELLOW + "No friendly fire.");
             return false;
         }
         target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindduration, blindpower));
-        DMiscUtil.damageDemigods(p, target, damage, DamageCause.ENTITY_ATTACK);
+        DMisc.damageDemigods(p, target, damage, DamageCause.ENTITY_ATTACK);
         for (BlockFace bf : BlockFace.values()) {
             p.getWorld().playEffect(target.getLocation().getBlock().getRelative(bf).getLocation(), Effect.SMOKE, 1);
         }
@@ -264,10 +264,10 @@ public class Hel implements Deity {
     }
 
     private boolean entomb(Player p) {
-        LivingEntity le = DMiscUtil.getTargetLivingEntity(p, 2);
+        LivingEntity le = DMisc.getTargetLivingEntity(p, 2);
         if (le == null) return false;
-        if (!DMiscUtil.canTarget(p, p.getLocation()) || !DMiscUtil.canTarget(le, le.getLocation())) return false;
-        int duration = (int) Math.round(2.18678 * Math.pow(DMiscUtil.getDevotion(p, "Hel"), 0.24723)); // seconds
+        if (!DMisc.canTarget(p, p.getLocation()) || !DMisc.canTarget(le, le.getLocation())) return false;
+        int duration = (int) Math.round(2.18678 * Math.pow(DMisc.getDevotion(p, "Hel"), 0.24723)); // seconds
         final ArrayList<Block> tochange = new ArrayList<Block>();
         for (int x = -3; x <= 3; x++) {
             for (int y = -3; y <= 3; y++) {
@@ -281,7 +281,7 @@ public class Hel implements Deity {
                 }
             }
         }
-        DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
             @Override
             public void run() {
                 for (Block b : tochange)
@@ -292,15 +292,15 @@ public class Hel implements Deity {
     }
 
     private int tartarus(Player p) {
-        int range = (int) Math.round(18.83043 * Math.pow(DMiscUtil.getDevotion(p, "Hel"), 0.088637));
+        int range = (int) Math.round(18.83043 * Math.pow(DMisc.getDevotion(p, "Hel"), 0.088637));
         ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
         Vector ploc = p.getLocation().toVector();
         for (LivingEntity anEntity : p.getWorld().getLivingEntities()) {
-            if (anEntity instanceof Player) if (DMiscUtil.isFullParticipant((Player) anEntity))
-                if (DMiscUtil.areAllied((Player) anEntity, p)) continue;
+            if (anEntity instanceof Player) if (DMisc.isFullParticipant((Player) anEntity))
+                if (DMisc.areAllied((Player) anEntity, p)) continue;
             if (anEntity.getLocation().toVector().isInSphere(ploc, range)) entitylist.add(anEntity);
         }
-        int duration = (int) Math.round(30 * Math.pow(DMiscUtil.getDevotion(p, getName()), 0.09)) * 20;
+        int duration = (int) Math.round(30 * Math.pow(DMisc.getDevotion(p, getName()), 0.09)) * 20;
         for (LivingEntity le : entitylist)
             target(le, duration);
         return entitylist.size();

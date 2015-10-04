@@ -3,7 +3,6 @@ package com.demigodsrpg.norsedemigods;
 import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DDeities;
 import com.demigodsrpg.norsedemigods.listener.DPvP;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,11 +22,11 @@ public class DFixes implements Listener {
     private void onImportantDamage(EntityDamageEvent event) {
         if (isProcessed(event) || !DSettings.getEnabledWorlds().contains(event.getEntity().getLocation().getWorld()))
             return;
-        if (event instanceof EntityDamageByEntityEvent && ((EntityDamageByEntityEvent) event).getDamager() instanceof Player && DMiscUtil.isFullParticipant((Player) ((EntityDamageByEntityEvent) event).getDamager()))
+        if (event instanceof EntityDamageByEntityEvent && ((EntityDamageByEntityEvent) event).getDamager() instanceof Player && DMisc.isFullParticipant((Player) ((EntityDamageByEntityEvent) event).getDamager()))
             important.add(event);
         else if (event instanceof EntityDamageByEntityEvent && (((EntityDamageByEntityEvent) event).getDamager() instanceof Fireball || ((EntityDamageByEntityEvent) event).getDamager() instanceof Arrow))
             important.add(event);
-        else if (event.getEntity() instanceof Player && DMiscUtil.isFullParticipant((Player) event.getEntity()))
+        else if (event.getEntity() instanceof Player && DMisc.isFullParticipant((Player) event.getEntity()))
             important.add(event);
 
         triggerDownstream(event);
@@ -59,29 +58,29 @@ public class DFixes implements Listener {
     private static void deityDamageImmunity(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player) {
             Player p = (Player) event.getEntity();
-            if ((DMiscUtil.hasDeity(p, "Fire Giant") || DMiscUtil.hasDeity(p, "Dwarf")) && (event.getCause() == EntityDamageEvent.DamageCause.FIRE) || (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
+            if ((DMisc.hasDeity(p, "Fire Giant") || DMisc.hasDeity(p, "Dwarf")) && (event.getCause() == EntityDamageEvent.DamageCause.FIRE) || (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
                 p.setFireTicks(0);
                 DFixes.checkAndCancel(event);
                 return;
-            } else if (DMiscUtil.hasDeity(p, "Thor") && (event.getCause() == EntityDamageEvent.DamageCause.FALL || event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING)) {
+            } else if (DMisc.hasDeity(p, "Thor") && (event.getCause() == EntityDamageEvent.DamageCause.FALL || event.getCause() == EntityDamageEvent.DamageCause.LIGHTNING)) {
                 DFixes.checkAndCancel(event);
                 return;
-            } else if (DMiscUtil.hasDeity(p, "Jormungand") && event.getCause() == EntityDamageEvent.DamageCause.DROWNING) {
+            } else if (DMisc.hasDeity(p, "Jormungand") && event.getCause() == EntityDamageEvent.DamageCause.DROWNING) {
                 DFixes.checkAndCancel(event);
                 return;
-            } else if (DMiscUtil.hasDeity(p, "Thrymr")) {
+            } else if (DMisc.hasDeity(p, "Thrymr")) {
                 if (event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
-                    double reduction = (double) Math.round(Math.pow(DMiscUtil.getDevotion(p, "Thrymr"), 0.115));
+                    double reduction = (double) Math.round(Math.pow(DMisc.getDevotion(p, "Thrymr"), 0.115));
                     if (reduction > event.getDamage()) reduction = event.getDamage();
                     event.setDamage(event.getDamage() - reduction);
                 } else if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
-                    if (DMiscUtil.getActiveEffectsList(p.getUniqueId()).contains("Unburden"))
+                    if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Unburden"))
                         event.setDamage(event.getDamage() / 3.0);
                 }
             }
             if (event instanceof EntityDamageByEntityEvent) {
                 try {
-                    if (DMiscUtil.getActiveEffectsList(p.getUniqueId()).contains("Ceasefire")) {
+                    if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Ceasefire")) {
                         DFixes.checkAndCancel(event);
                         return;
                     }
@@ -90,9 +89,9 @@ public class DFixes implements Listener {
                 EntityDamageByEntityEvent damageByEntityEvent = (EntityDamageByEntityEvent) event;
                 if (damageByEntityEvent.getDamager() instanceof Player) {
                     Player damager = (Player) damageByEntityEvent.getDamager();
-                    if (DMiscUtil.isFullParticipant(p)) {
+                    if (DMisc.isFullParticipant(p)) {
                         try {
-                            if (DMiscUtil.getActiveEffectsList(damager.getUniqueId()).contains("Ceasefire")) {
+                            if (DMisc.getActiveEffectsList(damager.getUniqueId()).contains("Ceasefire")) {
                                 DFixes.checkAndCancel(event);
                                 return;
                             }
@@ -100,7 +99,7 @@ public class DFixes implements Listener {
                         }
                     }
                 }
-                if (DMiscUtil.hasDeity(p, "Hel") && (damageByEntityEvent.getDamager() instanceof Zombie) || (damageByEntityEvent.getDamager() instanceof Skeleton)) {
+                if (DMisc.hasDeity(p, "Hel") && (damageByEntityEvent.getDamager() instanceof Zombie) || (damageByEntityEvent.getDamager() instanceof Skeleton)) {
                     DFixes.checkAndCancel(event);
                 }
             }
@@ -116,6 +115,6 @@ public class DFixes implements Listener {
     }
 
     public static boolean isNoob(Player player) {
-        return DMiscUtil.getDevotion(player) <= Setting.NOOB_LEVEL;
+        return DMisc.getDevotion(player) <= Setting.NOOB_LEVEL;
     }
 }

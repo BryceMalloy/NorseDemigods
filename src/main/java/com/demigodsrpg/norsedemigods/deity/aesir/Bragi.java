@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
@@ -61,8 +61,8 @@ public class Bragi implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.isFullParticipant(p) && DMiscUtil.hasDeity(p, getName())) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Special values
 			 */
@@ -74,14 +74,14 @@ public class Bragi implements Deity {
             int ultrange = (int) Math.round(20 * Math.pow(devotion, 0.15));
             int ultslowduration = (int) Math.round(10 * Math.pow(devotion, 0.05)); // seconds
             int ultattacks = (int) Math.round(4 * Math.pow(devotion, 0.08)); // number of arrow "waves"
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
             // print
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Play a music disc to receive a buff lasting " + duration + " seconds.");
             p.sendMessage(":Left-click to heal yourself for " + (healamt / 2) + " and a target");
             p.sendMessage("ally for " + healamt + " health." + ChatColor.GREEN + " /cure " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((Bragi) DMiscUtil.getDeity(p, getName())).SKILLBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Bragi) DMiscUtil.getDeity(p, getName())).SKILLBIND.name());
+            if (((Bragi) DMisc.getDeity(p, getName())).SKILLBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Bragi) DMisc.getDeity(p, getName())).SKILLBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage("Slow enemies in range " + ultrange + " for " + ultslowduration + " seconds and strike");
             p.sendMessage("them with " + ultattacks + " waves of arrows." + ChatColor.GREEN + " /finale");
@@ -103,7 +103,7 @@ public class Bragi implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+            if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
             if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 if (e.getClickedBlock().getType() != Material.JUKEBOX) return;
                 if (p.getItemInHand() != null) switch (p.getItemInHand().getType()) {
@@ -145,9 +145,9 @@ public class Bragi implements Deity {
             if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
                 if (SKILLTIME > System.currentTimeMillis()) return;
                 SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
-                if (DMiscUtil.getFavor(p) >= SKILLCOST) {
+                if (DMisc.getFavor(p) >= SKILLCOST) {
                     cure();
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     SKILL = false;
@@ -158,21 +158,21 @@ public class Bragi implements Deity {
 
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
-        if (DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(p, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     if (SKILLBIND == null) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                            DMisc.registerBind(p, p.getItemInHand().getType());
                             SKILLBIND = p.getItemInHand().getType();
                             p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMiscUtil.removeBind(p, SKILLBIND);
+                        DMisc.removeBind(p, SKILLBIND);
                         p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + SKILLBIND.name() + ".");
                         SKILLBIND = null;
                     }
@@ -192,17 +192,17 @@ public class Bragi implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
-                    if (!DMiscUtil.canTarget(p, p.getLocation())) {
+                if (DMisc.getFavor(p) >= ULTIMATECOST) {
+                    if (!DMisc.canTarget(p, p.getLocation())) {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
                     int hit = finale(p);
                     if (hit > 0) {
                         ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                         p.sendMessage(ChatColor.GOLD + "Bragi " + ChatColor.WHITE + " rains arrows on " + hit + " of your foes.");
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No targets for Finale were found.");
                 } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
@@ -213,39 +213,39 @@ public class Bragi implements Deity {
     public void onSyncTick(long timeSent) {
         if (timeSent > LASTCHECK + 10000) {
             LASTCHECK = timeSent;
-            if ((DMiscUtil.getOnlinePlayer(getPlayerId()) != null) && !DMiscUtil.getOnlinePlayer(getPlayerId()).isDead()) {
-                Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
-                if (DMiscUtil.getActiveEffectsList(getPlayerId()).contains("Bragi health regeneration")) {
-                    DMiscUtil.setHP(p, DMiscUtil.getHP(p) + 1);
-                    if (DMiscUtil.getHP(p) > DMiscUtil.getMaxHP(p)) DMiscUtil.setHP(p, DMiscUtil.getMaxHP(p));
-                } else if (DMiscUtil.getActiveEffectsList(getPlayerId()).contains("Bragi Favor regeneration")) {
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) + 5);
-                    if (DMiscUtil.getFavor(p) > DMiscUtil.getFavorCap(p))
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavorCap(p));
+            if ((DMisc.getOnlinePlayer(getPlayerId()) != null) && !DMisc.getOnlinePlayer(getPlayerId()).isDead()) {
+                Player p = DMisc.getOnlinePlayer(getPlayerId());
+                if (DMisc.getActiveEffectsList(getPlayerId()).contains("Bragi health regeneration")) {
+                    DMisc.setHP(p, DMisc.getHP(p) + 1);
+                    if (DMisc.getHP(p) > DMisc.getMaxHP(p)) DMisc.setHP(p, DMisc.getMaxHP(p));
+                } else if (DMisc.getActiveEffectsList(getPlayerId()).contains("Bragi Favor regeneration")) {
+                    DMisc.setFavor(p, DMisc.getFavor(p) + 5);
+                    if (DMisc.getFavor(p) > DMisc.getFavorCap(p))
+                        DMisc.setFavor(p, DMisc.getFavorCap(p));
                 }
             }
         }
     }
 
     private void applyEffect(PotionEffectType e, String description) {
-        int duration = (int) Math.round(60 * Math.pow(DMiscUtil.getDevotion(getPlayerId(), getName()), 0.09));
-        Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
-        if (DMiscUtil.getActiveEffectsList(p.getUniqueId()).contains("Music Buff")) {
+        int duration = (int) Math.round(60 * Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.09));
+        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Music Buff")) {
             p.sendMessage(ChatColor.YELLOW + "You have already received a Music Buff from Bragi.");
             return;
         }
         if (e == null) {
             p.sendMessage(ChatColor.GOLD + "Bragi" + ChatColor.WHITE + " has granted you a " + description + " bonus for " + duration + " seconds.");
             p.sendMessage(ChatColor.YELLOW + "NOTE: This bonus cannot be applied to your allies.");
-            DMiscUtil.addActiveEffect(p.getUniqueId(), "Bragi " + description, duration);
-            DMiscUtil.addActiveEffect(p.getUniqueId(), "Music Buff", duration);
+            DMisc.addActiveEffect(p.getUniqueId(), "Bragi " + description, duration);
+            DMisc.addActiveEffect(p.getUniqueId(), "Music Buff", duration);
         } else for (Player pl : p.getWorld().getPlayers()) {
             if (pl.getLocation().toVector().isInSphere(p.getLocation().toVector(), 15)) {
-                if (DMiscUtil.isFullParticipant(pl)) {
-                    if (DMiscUtil.getAllegiance(pl).equalsIgnoreCase(DMiscUtil.getAllegiance(p))) {
+                if (DMisc.isFullParticipant(pl)) {
+                    if (DMisc.getAllegiance(pl).equalsIgnoreCase(DMisc.getAllegiance(p))) {
                         pl.sendMessage(ChatColor.GOLD + "Bragi" + ChatColor.WHITE + " has granted you a " + description + " bonus for " + duration + " seconds.");
                         pl.addPotionEffect(new PotionEffect(e, duration * 20, 0));
-                        DMiscUtil.addActiveEffect(pl.getUniqueId(), "Music Buff", duration);
+                        DMisc.addActiveEffect(pl.getUniqueId(), "Music Buff", duration);
                     }
                 }
             }
@@ -253,22 +253,22 @@ public class Bragi implements Deity {
     }
 
     private void cure() {
-        Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
-        double healamt = DMiscUtil.getMaxHP(p);
+        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        double healamt = DMisc.getMaxHP(p);
         double selfheal = healamt / 9;
-        if (DMiscUtil.getHP(p) + selfheal > DMiscUtil.getMaxHP(p)) {
-            selfheal = DMiscUtil.getMaxHP(p) - DMiscUtil.getHP(p);
+        if (DMisc.getHP(p) + selfheal > DMisc.getMaxHP(p)) {
+            selfheal = DMisc.getMaxHP(p) - DMisc.getHP(p);
         }
-        DMiscUtil.setHP(p, DMiscUtil.getHP(p) + selfheal);
+        DMisc.setHP(p, DMisc.getHP(p) + selfheal);
         p.sendMessage(ChatColor.GREEN + "Bragi has cured you for " + selfheal + " health.");
-        LivingEntity le = DMiscUtil.getTargetLivingEntity(p, 3);
+        LivingEntity le = DMisc.getTargetLivingEntity(p, 3);
         if (le instanceof Player) {
             Player pl = (Player) le;
-            if (DMiscUtil.isFullParticipant(pl) && DMiscUtil.getAllegiance(pl).equalsIgnoreCase(DMiscUtil.getAllegiance(pl))) {
-                if (DMiscUtil.getHP(pl) + healamt > DMiscUtil.getMaxHP(pl)) {
-                    healamt = DMiscUtil.getMaxHP(pl) - DMiscUtil.getHP(pl);
+            if (DMisc.isFullParticipant(pl) && DMisc.getAllegiance(pl).equalsIgnoreCase(DMisc.getAllegiance(pl))) {
+                if (DMisc.getHP(pl) + healamt > DMisc.getMaxHP(pl)) {
+                    healamt = DMisc.getMaxHP(pl) - DMisc.getHP(pl);
                 }
-                DMiscUtil.setHP(pl, DMiscUtil.getHP(pl) + healamt);
+                DMisc.setHP(pl, DMisc.getHP(pl) + healamt);
                 pl.sendMessage(ChatColor.GREEN + "Bragi has cured you for " + healamt + " health.");
                 p.sendMessage(ChatColor.YELLOW + pl.getName() + " has been cured for " + healamt + " health.");
             }
@@ -276,22 +276,22 @@ public class Bragi implements Deity {
     }
 
     private int finale(final Player p) {
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int ultrange = (int) Math.round(20 * Math.pow(devotion, 0.15));
         int ultslowduration = (int) Math.round(10 * Math.pow(devotion, 0.05)); // seconds
         int ultattacks = (int) Math.round(4 * Math.pow(devotion, 0.08)); // number of arrow "waves"
         ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
         Vector ploc = p.getLocation().toVector();
         for (LivingEntity anEntity : p.getWorld().getLivingEntities()) {
-            if (anEntity instanceof Player) if (DMiscUtil.isFullParticipant((Player) anEntity))
-                if (DMiscUtil.getAllegiance((Player) anEntity).equalsIgnoreCase(DMiscUtil.getAllegiance(p))) continue;
-            if (!DMiscUtil.canTarget(anEntity, anEntity.getLocation())) continue;
+            if (anEntity instanceof Player) if (DMisc.isFullParticipant((Player) anEntity))
+                if (DMisc.getAllegiance((Player) anEntity).equalsIgnoreCase(DMisc.getAllegiance(p))) continue;
+            if (!DMisc.canTarget(anEntity, anEntity.getLocation())) continue;
             if (anEntity.getLocation().toVector().isInSphere(ploc, ultrange)) entitylist.add(anEntity);
         }
         for (final LivingEntity target : entitylist) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, ultslowduration * 20, 1));
             for (int i = 0; i <= ultattacks * 20; i += 20) {
-                DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+                DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
                     @Override
                     public void run() {
                         if (target.isDead()) return;

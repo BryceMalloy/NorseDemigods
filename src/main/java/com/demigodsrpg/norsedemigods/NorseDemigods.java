@@ -4,28 +4,22 @@ import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
-import com.demigodsrpg.norsedemigods.util.DSave;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class NorseDemigods extends JavaPlugin implements Listener {
 
@@ -41,8 +35,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
         getLogger().info("Initializing.");
 
-        new DSettings(); // #1 (needed for DMiscUtil to load)
-        new DMiscUtil(); // #2 (needed for everything else to work)
+        new DMisc(); // #1 (needed for everything else to work)
 
         PLAYER_DATA = new PlayerDataRegistry(this);
 
@@ -66,17 +59,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        // Try to save files, if it can't, then let the Administrator know
-        try {
-            DSave.save();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            getLogger().severe("Save location error.");
-        } catch (IOException e) {
-            e.printStackTrace();
-            getLogger().severe("Save write error.");
-        }
-
         // Cancel all tasks
         int c = 0;
         for (BukkitWorker bw : getServer().getScheduler().getActiveWorkers())
@@ -85,33 +67,15 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             if (bt.getOwner().equals(this)) c++;
         this.getServer().getScheduler().cancelAllTasks();
 
-        getLogger().info("Save completed and " + c + " tasks cancelled.");
+        getLogger().info(c + " tasks cancelled.");
     }
 
     public PlayerDataRegistry getPlayerDataRegistry() {
         return PLAYER_DATA;
     }
 
-    @EventHandler
-    void saveOnExit(PlayerQuitEvent e) {
-        // Save a player file when they exit, if it can't, let the Administrator know
-        if (DMiscUtil.isFullParticipant(e.getPlayer())) try {
-            DSave.save();
-        } catch (FileNotFoundException er) {
-            er.printStackTrace();
-            getLogger().severe("Save location error.");
-        } catch (IOException er) {
-            er.printStackTrace();
-            getLogger().severe("Save write error.");
-        }
-    }
-
     void loadDependencies() {
         getLogger().info("Attempting to hook into WorldGuard.");
-
-        // Init WorldGuard stuff # 11
-        WorldGuardUtil.setWhenToOverridePVP(this, event -> event instanceof EntityDamageByEntityEvent &&
-                !DSettings.getEnabledWorlds().contains(((EntityDamageByEntityEvent) event).getEntity().getWorld()));
 
         if (WorldGuardUtil.worldGuardEnabled()) {
             getLogger().info("WorldGuard detected. Skills are disabled in no-PvP zones.");
@@ -263,110 +227,61 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     private void initializeThreads() {
         // Setup threads for saving, health, and favor
-        int startdelay = (int) (DSettings.getSettingDouble("start_delay_seconds") * 20);
-        int favorfrequency = (int) (DSettings.getSettingDouble("favor_regen_seconds") * 20);
-        int hpfrequency = (int) (DSettings.getSettingDouble("hp_regen_seconds") * 20);
-        int savefrequency = DSettings.getSettingInt("save_interval_seconds") * 20;
-        if (hpfrequency < 0) hpfrequency = 600;
+        int startdelay = Setting.START_DELAY;
+        int favorfrequency = Setting.FAVOR_FREQ;
+        int hpfrequency = Setting.HP_FREQ;
+        //if (hpfrequency < 0) hpfrequency = 600;
         if (favorfrequency < 0) favorfrequency = 600;
         if (startdelay <= 0) startdelay = 1;
-        if (savefrequency <= 0) savefrequency = 300;
 
         // Favor
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < DSettings.getEnabledWorlds().size(); i++) {
-                    World w = DSettings.getEnabledWorlds().get(i);
-                    if (w == null) continue;
-                    for (Player p : w.getPlayers())
-                        if (DMiscUtil.isFullParticipant(p)) {
-                            int regenrate = DMiscUtil.getAscensions(p); // TODO: PERK UPGRADES THIS
-                            if (regenrate < 1) regenrate = 1;
-                            DMiscUtil.setFavorQuiet(p.getUniqueId(), DMiscUtil.getFavor(p) + regenrate);
-                        }
-                }
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            for (World world : Bukkit.getWorlds()) {
+                for (Player p : world.getPlayers())
+                    if (DMisc.isFullParticipant(p)) {
+                        int regenrate = DMisc.getAscensions(p); // TODO: PERK UPGRADES THIS
+                        if (regenrate < 1) regenrate = 1;
+                        DMisc.setFavorQuiet(p.getUniqueId(), DMisc.getFavor(p) + regenrate);
+                    }
             }
         }, startdelay, favorfrequency);
 
         // Health regeneration
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < DSettings.getEnabledWorlds().size(); i++) {
-                    World w = DSettings.getEnabledWorlds().get(i);
-                    if (w == null) continue;
-                    for (Player p : w.getPlayers())
-                        if (DMiscUtil.isFullParticipant(p)) {
-                            if ((p.getHealth() < 1.0) || (DMiscUtil.getHP(p) < 1)) continue;
-                            int heal = 1; // TODO: PERK UPGRADES THIS
-                            if (DMiscUtil.getHP(p) < DMiscUtil.getMaxHP(p))
-                                DMiscUtil.setHPQuiet(p.getUniqueId(), DMiscUtil.getHP(p) + heal);
-                        }
-                }
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            for (World world : Bukkit.getWorlds()) {
+                for (Player p : world.getPlayers())
+                    if (DMisc.isFullParticipant(p)) {
+                        if (p.getHealth() < 1.0) continue;
+                        int heal = 1; // TODO: PERK UPGRADES THIS
+                        if (p.getHealth() < p.getMaxHealth())
+                            DMisc.setHPQuiet(p, p.getHealth() + heal);
+                    }
             }
         }, startdelay, hpfrequency);
 
-        // Health sync
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                if (DSettings.getEnabledWorlds() == null) return;
-                for (int i = 0; i < DSettings.getEnabledWorlds().size(); i++) {
-                    World w = DSettings.getEnabledWorlds().get(i);
-                    if (w == null) continue;
-                    for (Player p : w.getPlayers())
-                        if (DMiscUtil.isFullParticipant(p)) if (p.getHealth() > 0) DDamage.syncHealth(p);
-                }
-            }
-        }, startdelay, 2);
-
-        // Data save
-        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    DSave.save();
-                    getLogger().info("Saved data for " + DMiscUtil.getFullParticipants().size() + " Demigods players. " + DSave.getCompleteData().size() + " files total.");
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    getLogger().severe("Save location error.");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    getLogger().severe("Save write error.");
-                }
-            }
-        }, startdelay, savefrequency);
-
         // Information display
-        int frequency = (int) (DSettings.getSettingDouble("stat_display_frequency_in_seconds") * 20);
-        if (frequency > 0) {
-            getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < DSettings.getEnabledWorlds().size(); i++) {
-                        World w = DSettings.getEnabledWorlds().get(i);
-                        if (w == null) continue;
-                        for (Player p : w.getPlayers())
-                            if (DMiscUtil.isFullParticipant(p)) if (p.getHealth() > 0) {
-                                ChatColor color = ChatColor.GREEN;
-                                if ((DMiscUtil.getHP(p) / DMiscUtil.getMaxHP(p)) < 0.25) color = ChatColor.RED;
-                                else if ((DMiscUtil.getHP(p) / DMiscUtil.getMaxHP(p)) < 0.5) color = ChatColor.YELLOW;
-                                String str = "-- HP " + color + "" + DMiscUtil.getHP(p) + "/" + DMiscUtil.getMaxHP(p) + ChatColor.YELLOW + " Favor " + DMiscUtil.getFavor(p) + "/" + DMiscUtil.getFavorCap(p);
-                                p.sendMessage(str);
-                            }
-                    }
+        if (Setting.STAT_FREQ > 0) {
+            getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+                for (World world : Bukkit.getWorlds()) {
+                    for (Player p : world.getPlayers())
+                        if (DMisc.isFullParticipant(p)) if (p.getHealth() > 0) {
+                            ChatColor color = ChatColor.GREEN;
+                            if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
+                            else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
+                            String str = "-- HP " + color + "" + p.getHealth() + "/" + p.getMaxHealth() + ChatColor.YELLOW + " Favor " + DMisc.getFavor(p) + "/" + DMisc.getFavorCap(p);
+                            p.sendMessage(str);
+                        }
                 }
-            }, startdelay, frequency);
+            }, startdelay, Setting.STAT_FREQ);
         }
     }
 
     private void cleanUp() {
         // Clean things that may cause glitches
-        for (UUID player : DMiscUtil.getFullParticipants()) {
-            for (Deity d : DMiscUtil.getDeities(player)) {
-                if (DSave.hasData(player, d.getName().toUpperCase() + "_TRIBUTE_")) {
-                    DSave.removeData(player, d.getName().toUpperCase() + "_TRIBUTE_");
+        for (PlayerDataSaveable saveable : PLAYER_DATA.getFromDb().values()) {
+            for (String d : saveable.getDeityList()) {
+                if (saveable.getActiveEffects().contains(d.toUpperCase() + "_TRIBUTE_")) {
+                    saveable.removeEffect(d.toUpperCase() + "_TRIBUTE_");
                 }
             }
         }
@@ -406,19 +321,14 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     private void invalidShrines() {
         // Remove invalid shrines
-        Iterator<LocationSaveable> i = DMiscUtil.getAllShrines().iterator();
-        ArrayList<String> worldnames = new ArrayList<String>();
-        for (int j = 0; j < DSettings.getEnabledWorlds().size(); j++) {
-            World w = DSettings.getEnabledWorlds().get(j);
-            if (w == null) continue;
-            worldnames.add(w.getName());
-        }
+        Iterator<LocationSaveable> i = DMisc.getAllShrines().iterator();
+        List<String> worldnames = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
         int count = 0;
         while (i.hasNext()) {
             LocationSaveable n = i.next();
             if (!worldnames.contains(n.getWorld()) || (n.getY() < 0) || (n.getY() > 256)) {
                 count++;
-                DMiscUtil.removeShrine(n);
+                DMisc.removeShrine(n);
             }
         }
         if (count > 0) getLogger().info("Removed " + count + " invalid shrines.");
@@ -426,16 +336,14 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     private void levelPlayers() {
         // Level players
-        for (UUID player : DSave.getCompleteData().keySet())
+        for (PlayerDataSaveable player : PLAYER_DATA.getFromDb().values())
             DLevels.levelProcedure(player);
     }
 
     private void unstickFireball() {
         // Unstick Prometheus fireballs
-        for (int i = 0; i < DSettings.getEnabledWorlds().size(); i++) {
-            World w = DSettings.getEnabledWorlds().get(i);
-            if (w == null) continue;
-            Iterator<Entity> it = w.getEntities().iterator();
+        for (World world : Bukkit.getWorlds()) {
+            Iterator<Entity> it = world.getEntities().iterator();
             while (it.hasNext()) {
                 Entity e = it.next();
                 if (e instanceof Fireball) {

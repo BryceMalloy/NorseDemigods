@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -55,15 +55,15 @@ public class Dis implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.isFullParticipant(p) && DMiscUtil.hasDeity(p, getName())) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+        if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
+            int devotion = DMisc.getDevotion(p, getName());
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Use " + ChatColor.YELLOW + "qd <name>" + ChatColor.WHITE + " for detailed information about any player");
             p.sendMessage(":Click a target player or mob to switch locations with them.");
             p.sendMessage(ChatColor.GREEN + "/swap" + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((Dis) DMiscUtil.getDeity(p, getName())).SKILLBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Dis) DMiscUtil.getDeity(p, getName())).SKILLBIND.name());
+            if (((Dis) DMisc.getDeity(p, getName())).SKILLBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Dis) DMisc.getDeity(p, getName())).SKILLBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Call all AEsir and Jotunn together for an assembly at your location.");
             p.sendMessage("Players will be temporarily immune to damage after teleporting.");
@@ -85,13 +85,13 @@ public class Dis implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+            if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
             if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
                 if (SKILLTIME > System.currentTimeMillis()) return;
                 SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
-                if (DMiscUtil.getFavor(p) >= SKILLCOST) {
+                if (DMisc.getFavor(p) >= SKILLCOST) {
                     if (swap()) {
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No target found, or you are in a no-PVP zone.");
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
@@ -104,21 +104,21 @@ public class Dis implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(p, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     if (SKILLBIND == null) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                            DMisc.registerBind(p, p.getItemInHand().getType());
                             SKILLBIND = p.getItemInHand().getType();
                             p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMiscUtil.removeBind(p, SKILLBIND);
+                        DMisc.removeBind(p, SKILLBIND);
                         p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + SKILLBIND.name() + ".");
                         SKILLBIND = null;
                     }
@@ -138,19 +138,19 @@ public class Dis implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
+                if (DMisc.getFavor(p) >= ULTIMATECOST) {
                     for (Player pl : p.getWorld().getPlayers()) {
-                        if (DMiscUtil.isFullParticipant(pl) && DMiscUtil.getActiveEffectsList(pl.getUniqueId()).contains("Congregate")) {
+                        if (DMisc.isFullParticipant(pl) && DMisc.getActiveEffectsList(pl.getUniqueId()).contains("Congregate")) {
                             p.sendMessage(ChatColor.YELLOW + "Congregate is already in effect.");
                             return;
                         }
                     }
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                     ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                     int n = congregate();
                     if (n > 0) {
                         p.sendMessage(ChatColor.GOLD + "A dís has called upon " + n + " players to assemble at your location.");
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                     } else p.sendMessage(ChatColor.YELLOW + "There are no players to assemble.");
                 } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
@@ -165,32 +165,32 @@ public class Dis implements Deity {
     }
 
     private boolean swap() {
-        Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
-        if (!DMiscUtil.canTarget(p, p.getLocation())) return false;
-        LivingEntity target = DMiscUtil.getTargetLivingEntity(p, 4);
+        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        if (!DMisc.canTarget(p, p.getLocation())) return false;
+        LivingEntity target = DMisc.getTargetLivingEntity(p, 4);
         if (target == null) return false;
-        if (!DMiscUtil.canTarget(target, target.getLocation())) return false;
+        if (!DMisc.canTarget(target, target.getLocation())) return false;
         Location between = p.getLocation();
-        DMiscUtil.horseTeleport(p, target.getLocation());
-        if (target instanceof Player) DMiscUtil.horseTeleport((Player) target, between);
+        DMisc.horseTeleport(p, target.getLocation());
+        if (target instanceof Player) DMisc.horseTeleport((Player) target, between);
         else target.teleport(between);
         return true;
     }
 
     private int congregate() {
-        Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
-        DMiscUtil.addActiveEffect(p.getUniqueId(), "Congregate Call", 60);
+        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        DMisc.addActiveEffect(p.getUniqueId(), "Congregate Call", 60);
         int count = 0;
         for (Player pl : p.getWorld().getPlayers()) {
-            if (DMiscUtil.isFullParticipant(pl)) {
+            if (DMisc.isFullParticipant(pl)) {
                 count++;
-                if (!p.equals(pl) && !DMiscUtil.getActiveEffectsList(pl.getUniqueId()).contains("Congregate")) {
+                if (!p.equals(pl) && !DMisc.getActiveEffectsList(pl.getUniqueId()).contains("Congregate")) {
                     pl.sendMessage(ChatColor.GOLD + "A dís has called for an assembly of deities at " + p.getName() + "'s location.");
                     pl.sendMessage(ChatColor.GOLD + "Type " + ChatColor.WHITE + "/assemble" + ChatColor.GOLD + " to be teleported.");
                     pl.sendMessage(ChatColor.GOLD + "You will be immune to damage upon arrival for a short time.");
                     pl.sendMessage(ChatColor.GRAY + "You have one minute to answer the invitation.");
                     pl.sendMessage(ChatColor.GRAY + "To see how much time is left to respond, use " + ChatColor.WHITE + "qd" + ChatColor.GRAY + ".");
-                    DMiscUtil.addActiveEffect(pl.getUniqueId(), "Congregate", 60);
+                    DMisc.addActiveEffect(pl.getUniqueId(), "Congregate", 60);
                 }
             }
         }

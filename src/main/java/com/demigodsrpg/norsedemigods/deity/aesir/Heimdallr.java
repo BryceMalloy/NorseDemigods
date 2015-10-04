@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.deity.aesir;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -51,22 +51,22 @@ public class Heimdallr implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.isFullParticipant(p) && DMiscUtil.hasDeity(p, getName())) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
+            int devotion = DMisc.getDevotion(p, getName());
             // flash range
             int range = (int) Math.ceil(3 * Math.pow(devotion, 0.2));
             // ceasefire range
             int crange = (int) Math.floor(15 * Math.pow(devotion, 0.275));
             // ceasefire duration
             int duration = (int) Math.ceil(10 * Math.pow(devotion, 0.194));
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
             // print
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Use " + ChatColor.YELLOW + "qd <name>" + ChatColor.WHITE + " for detailed information about any player");
             p.sendMessage("you are looking at.");
             p.sendMessage(":Left-click to teleport with range " + range + "." + ChatColor.GREEN + " /flash " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((Heimdallr) DMiscUtil.getDeity(p, getName())).SKILLBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Heimdallr) DMiscUtil.getDeity(p, getName())).SKILLBIND.name());
+            if (((Heimdallr) DMisc.getDeity(p, getName())).SKILLBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Heimdallr) DMisc.getDeity(p, getName())).SKILLBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Heimdallr silences the battlefield, preventing all damage in range " + crange);
             p.sendMessage("dealt by AEsir and Jotunn alike for " + duration + " seconds." + ChatColor.GREEN + " /ceasefire");
@@ -88,14 +88,14 @@ public class Heimdallr implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+            if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
             if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
                 if (SKILLTIME > System.currentTimeMillis()) return;
                 SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
-                if (DMiscUtil.getFavor(p) >= SKILLCOST) {
+                if (DMisc.getFavor(p) >= SKILLCOST) {
                     float pitch = p.getLocation().getPitch();
                     float yaw = p.getLocation().getYaw();
-                    int range = (int) Math.ceil(3 * Math.pow(DMiscUtil.getDevotion(p, getName()), 0.2));
+                    int range = (int) Math.ceil(3 * Math.pow(DMisc.getDevotion(p, getName()), 0.2));
                     List<Block> los = p.getLineOfSight((Set) null, 100);
                     Location go = null;
                     if (los.size() - 1 < range) go = los.get(los.size() - 1).getLocation();
@@ -104,10 +104,10 @@ public class Heimdallr implements Deity {
                     go.setY(go.getBlockY() + 1);
                     go.setPitch(pitch);
                     go.setYaw(yaw);
-                    if ((go.getBlock().isLiquid() || go.getBlock().isEmpty()) && DMiscUtil.canLocationPVP(go)) {
+                    if ((go.getBlock().isLiquid() || go.getBlock().isEmpty()) && DMisc.canLocationPVP(go)) {
                         DSave.saveData(p, "temp_flash", true);
-                        DMiscUtil.horseTeleport(p, go);
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+                        DMisc.horseTeleport(p, go);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                     }
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
@@ -119,21 +119,21 @@ public class Heimdallr implements Deity {
 
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
-        if (DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(p, getName())) {
             if (str.equalsIgnoreCase("flash")) {
                 if (bind) {
                     if (SKILLBIND == null) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                            DMisc.registerBind(p, p.getItemInHand().getType());
                             SKILLBIND = p.getItemInHand().getType();
                             p.sendMessage(ChatColor.YELLOW + "Flash is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMiscUtil.removeBind(p, SKILLBIND);
+                        DMisc.removeBind(p, SKILLBIND);
                         p.sendMessage(ChatColor.YELLOW + "Flash is no longer bound to " + SKILLBIND.name() + ".");
                         SKILLBIND = null;
                     }
@@ -153,22 +153,22 @@ public class Heimdallr implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
-                    int devotion = DMiscUtil.getDevotion(p, getName());
+                if (DMisc.getFavor(p) >= ULTIMATECOST) {
+                    int devotion = DMisc.getDevotion(p, getName());
                     int crange = (int) Math.floor(15 * Math.pow(devotion, 0.275));
                     int duration = (int) Math.ceil(10 * Math.pow(devotion, 0.194));
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
                     ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                     p.sendMessage("In exchange for " + ChatColor.AQUA + ULTIMATECOST + ChatColor.WHITE + " Favor, ");
                     for (Player pl : p.getWorld().getPlayers()) {
                         if (pl.getLocation().distance(p.getLocation()) <= crange) {
-                            if (DMiscUtil.isFullParticipant(pl)) {
+                            if (DMisc.isFullParticipant(pl)) {
                                 pl.sendMessage(ChatColor.GOLD + "Heimdallr" + ChatColor.WHITE + " has mandated a ceasefire for " + duration + " seconds.");
-                                DMiscUtil.addActiveEffect(pl.getUniqueId(), "Ceasefire", duration);
+                                DMisc.addActiveEffect(pl.getUniqueId(), "Ceasefire", duration);
                             }
                         }
                     }
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                 } else p.sendMessage(ChatColor.YELLOW + "Ceasefire requires " + ULTIMATECOST + " Favor.");
             }
         }

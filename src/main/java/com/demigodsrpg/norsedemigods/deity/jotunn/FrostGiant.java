@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -56,7 +56,7 @@ public class FrostGiant implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.isFullParticipant(p) && DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
             // heal amount
             int healamt = (int) Math.ceil(0.1 * Math.pow(10000, 0.297));
             // heal interval
@@ -66,15 +66,15 @@ public class FrostGiant implements Deity {
             float radius = 1 + (int) Math.round(Math.pow(10000, 0.1142));
             // ult
             int duration = (int) Math.round(40 * Math.pow(10000, 0.15)); // seconds
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
             /*
              * Print text
 			 */
             p.sendMessage("--" + ChatColor.GOLD + getName());
             p.sendMessage(":While in the snow, heal " + healamt + " HP every " + healinterval + " seconds.");
             p.sendMessage(":Left-click to throw an ice bomb that explodes with " + radius + " radius." + ChatColor.GREEN + " /ice " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((FrostGiant) DMiscUtil.getDeity(p, getName())).SKILLBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FrostGiant) DMiscUtil.getDeity(p, getName())).SKILLBIND.name());
+            if (((FrostGiant) DMisc.getDeity(p, getName())).SKILLBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FrostGiant) DMisc.getDeity(p, getName())).SKILLBIND.name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage("Your divine frost causes a snowstorm lasting " + duration + " seconds, transforming the nearby land into tundra." + ChatColor.GREEN + " /chill");
             p.sendMessage(ChatColor.YELLOW + "Costs " + ULTIMATECOST + " Favor. Cooldown time: " + t + " seconds.");
@@ -93,12 +93,12 @@ public class FrostGiant implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p) || !DMiscUtil.hasDeity(p, getName())) return;
+            if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
             if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
                 if (SKILLTIME > System.currentTimeMillis()) return;
                 SKILLTIME = System.currentTimeMillis() + 700L;
-                if (DMiscUtil.getFavor(p) >= SKILLCOST) {
-                    if (iceSpawn(p)) DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - SKILLCOST);
+                if (DMisc.getFavor(p) >= SKILLCOST) {
+                    if (iceSpawn(p)) DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     SKILL = false;
@@ -110,21 +110,21 @@ public class FrostGiant implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (DMiscUtil.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(p, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     if (SKILLBIND == null) {
-                        if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                        if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                            DMisc.registerBind(p, p.getItemInHand().getType());
                             SKILLBIND = p.getItemInHand().getType();
                             p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMiscUtil.removeBind(p, SKILLBIND);
+                        DMisc.removeBind(p, SKILLBIND);
                         p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + SKILLBIND.name() + ".");
                         SKILLBIND = null;
                     }
@@ -144,8 +144,8 @@ public class FrostGiant implements Deity {
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMiscUtil.getFavor(p) >= ULTIMATECOST) {
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / DMiscUtil.ASCENSIONCAP)));
+                if (DMisc.getFavor(p) >= ULTIMATECOST) {
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
                     ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
 
                     for (int x = p.getLocation().getBlockX() - 14; x <= p.getLocation().getBlockX() + 14; x++)
@@ -159,7 +159,7 @@ public class FrostGiant implements Deity {
                     p.getWorld().setWeatherDuration((int) Math.round(40 * Math.pow(10000, 0.15)) * 20);
                     p.sendMessage(ChatColor.GOLD + "Your divine frost" + ChatColor.WHITE + " has started a snowstorm on your world,");
                     p.sendMessage("in exchange for " + ChatColor.AQUA + ULTIMATECOST + ChatColor.WHITE + " Favor.");
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - ULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                 } else p.sendMessage(ChatColor.YELLOW + "Chill requires " + ULTIMATECOST + " Favor.");
             }
         }
@@ -171,14 +171,14 @@ public class FrostGiant implements Deity {
         if (healinterval < 1) healinterval = 1;
         if (timeSent > LASTCHECK + (healinterval * 1000)) {
             LASTCHECK = timeSent;
-            if ((DMiscUtil.getOnlinePlayer(getPlayerId()) != null) && DMiscUtil.getOnlinePlayer(getPlayerId()).getWorld().hasStorm()) {
-                Player p = DMiscUtil.getOnlinePlayer(getPlayerId());
+            if ((DMisc.getOnlinePlayer(getPlayerId()) != null) && DMisc.getOnlinePlayer(getPlayerId()).getWorld().hasStorm()) {
+                Player p = DMisc.getOnlinePlayer(getPlayerId());
                 int x = p.getLocation().getChunk().getX(), z = p.getLocation().getChunk().getZ();
                 if (p.getWorld().getBiome(x, z).name().contains("TAIGA") || p.getWorld().getBiome(x, z).name().contains("COLD")) {
                     double healamt = Math.ceil(0.1 * Math.pow(10000, 0.297));
-                    if (DMiscUtil.getHP(getPlayerId()) + healamt > DMiscUtil.getMaxHP(getPlayerId()))
-                        healamt = DMiscUtil.getMaxHP(getPlayerId()) - DMiscUtil.getHP(getPlayerId());
-                    DMiscUtil.setHP(getPlayerId(), DMiscUtil.getHP(getPlayerId()) + healamt);
+                    if (DMisc.getHP(getPlayerId()) + healamt > DMisc.getMaxHP(getPlayerId()))
+                        healamt = DMisc.getMaxHP(getPlayerId()) - DMisc.getHP(getPlayerId());
+                    DMisc.setHP(getPlayerId(), DMisc.getHP(getPlayerId()) + healamt);
                 }
             }
         }
@@ -190,13 +190,13 @@ public class FrostGiant implements Deity {
     }
 
     private boolean iceSpawn(Player p) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
-        Location target = DMiscUtil.getTargetLocation(p);
+        Location target = DMisc.getTargetLocation(p);
         if (target == null) return false;
-        if (!DMiscUtil.canLocationPVP(target)) return false;
+        if (!DMisc.canLocationPVP(target)) return false;
         target.add(.5, .5, .5);
         Vector victor = p.getEyeLocation().toVector().add(p.getEyeLocation().getDirection().multiply(2));
         Vector path = target.toVector().subtract(p.getEyeLocation().toVector());

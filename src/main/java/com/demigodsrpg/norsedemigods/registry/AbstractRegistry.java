@@ -23,7 +23,7 @@
 package com.demigodsrpg.norsedemigods.registry;
 
 import com.demigodsrpg.norsedemigods.NorseDemigods;
-import com.demigodsrpg.norsedemigods.saveable.Saveable;
+import com.demigodsrpg.norsedemigods.Saveable;
 import com.demigodsrpg.norsedemigods.util.FJsonSection;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

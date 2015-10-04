@@ -1,7 +1,7 @@
 package com.demigodsrpg.norsedemigods.listener;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import com.demigodsrpg.norsedemigods.util.DSettings;
 import org.bukkit.ChatColor;
@@ -23,14 +23,14 @@ public class DDeities implements Listener {
      * Distributes all events to deities
      */
     public DDeities() {
-        DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncRepeatingTask(DMiscUtil.getPlugin(), new Runnable() {
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncRepeatingTask(DMisc.getPlugin(), new Runnable() {
             @Override
             public void run() {
-                for (UUID name : DMiscUtil.getFullParticipants()) {
-                    Player p = DMiscUtil.getOnlinePlayer(name);
+                for (UUID name : DMisc.getFullParticipants()) {
+                    Player p = DMisc.getOnlinePlayer(name);
                     if ((p != null) && p.isOnline()) {
                         if (DSettings.getEnabledWorlds().contains(p.getWorld())) {
-                            for (Deity d : DMiscUtil.getDeities(p))
+                            for (Deity d : DMisc.getDeities(p))
                                 d.onSyncTick(System.currentTimeMillis());
                         }
                     }
@@ -44,8 +44,8 @@ public class DDeities implements Listener {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
         // Player
         Player p = e.getPlayer();
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -55,8 +55,8 @@ public class DDeities implements Listener {
         if (!DSettings.getEnabledWorlds().contains(e.getBlock().getWorld())) return;
         // Player
         Player p = e.getPlayer();
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -64,9 +64,9 @@ public class DDeities implements Listener {
     public static void onEntityDamage(EntityDamageEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getEntity().getWorld())) return;
         for (Player pl : e.getEntity().getWorld().getPlayers()) {
-            if (DMiscUtil.isFullParticipant(pl)) {
-                if ((DMiscUtil.getDeities(pl) != null) && (DMiscUtil.getDeities(pl).size() > 0)) {
-                    for (Deity d : DMiscUtil.getDeities(pl))
+            if (DMisc.isFullParticipant(pl)) {
+                if ((DMisc.getDeities(pl) != null) && (DMisc.getDeities(pl).size() > 0)) {
+                    for (Deity d : DMisc.getDeities(pl))
                         d.onEvent(e);
                 }
             }
@@ -78,8 +78,8 @@ public class DDeities implements Listener {
         if (!DSettings.getEnabledWorlds().contains(e.getEntity().getWorld())) return;
         if (e.getEntity() instanceof Player) {
             Player p = (Player) e.getEntity();
-            if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-                for (Deity d : DMiscUtil.getDeities(p))
+            if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+                for (Deity d : DMisc.getDeities(p))
                     d.onEvent(e);
             }
         }
@@ -91,8 +91,8 @@ public class DDeities implements Listener {
         if (e.isCancelled()) return;
         if (e.getTarget() instanceof Player) {
             Player p = (Player) e.getTarget();
-            if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-                for (Deity d : DMiscUtil.getDeities(p))
+            if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+                for (Deity d : DMisc.getDeities(p))
                     d.onEvent(e);
             }
         }
@@ -102,8 +102,8 @@ public class DDeities implements Listener {
     public void onPlayerMove(PlayerMoveEvent e) {
         if (!DSettings.getEnabledWorlds().contains(e.getPlayer().getWorld())) return;
         Player p = e.getPlayer();
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -113,7 +113,7 @@ public class DDeities implements Listener {
         final Player p = e.getPlayer();
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
         if (DSettings.getSettingBoolean("motd")) {
-            p.sendMessage("This server is running NorseDemigods v" + ChatColor.YELLOW + DMiscUtil.getPlugin().getDescription().getVersion() + ChatColor.WHITE + ".");
+            p.sendMessage("This server is running NorseDemigods v" + ChatColor.YELLOW + DMisc.getPlugin().getDescription().getVersion() + ChatColor.WHITE + ".");
             p.sendMessage(ChatColor.GRAY + "Type " + ChatColor.GREEN + "/dg" + ChatColor.GRAY + " for more info.");
         }
 
@@ -134,8 +134,8 @@ public class DDeities implements Listener {
     public void onPlayerPickupItem(PlayerPickupItemEvent e) {
         Player p = e.getPlayer();
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -143,19 +143,19 @@ public class DDeities implements Listener {
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         Player p = e.getPlayer();
-        if (DMiscUtil.isFullParticipant(p)) if (DSave.hasData(p, "ALLIANCECHAT")) {
+        if (DMisc.isFullParticipant(p)) if (DSave.hasData(p, "ALLIANCECHAT")) {
             if ((Boolean) DSave.getData(p, "ALLIANCECHAT")) {
                 e.setCancelled(true);
-                Logger.getLogger("Minecraft").info("[" + DMiscUtil.getAllegiance(p) + "] " + p.getName() + ": " + e.getMessage());
-                for (Player pl : DMiscUtil.getPlugin().getServer().getOnlinePlayers()) {
-                    if (DMiscUtil.isFullParticipant(pl) && DMiscUtil.getAllegiance(pl).equalsIgnoreCase(DMiscUtil.getAllegiance(p)))
-                        pl.sendMessage(ChatColor.GREEN + "[" + DMiscUtil.getAscensions(p) + "] " + p.getName() + ": " + e.getMessage());
+                Logger.getLogger("Minecraft").info("[" + DMisc.getAllegiance(p) + "] " + p.getName() + ": " + e.getMessage());
+                for (Player pl : DMisc.getPlugin().getServer().getOnlinePlayers()) {
+                    if (DMisc.isFullParticipant(pl) && DMisc.getAllegiance(pl).equalsIgnoreCase(DMisc.getAllegiance(p)))
+                        pl.sendMessage(ChatColor.GREEN + "[" + DMisc.getAscensions(p) + "] " + p.getName() + ": " + e.getMessage());
                 }
             }
         }
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -164,8 +164,8 @@ public class DDeities implements Listener {
     public void onPlayerInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -174,8 +174,8 @@ public class DDeities implements Listener {
     public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
         Player p = e.getPlayer();
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }
@@ -184,8 +184,8 @@ public class DDeities implements Listener {
     public void onPlayerRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
         if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if ((DMiscUtil.getDeities(p) != null) && (DMiscUtil.getDeities(p).size() > 0)) {
-            for (Deity d : DMiscUtil.getDeities(p))
+        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
+            for (Deity d : DMisc.getDeities(p))
                 d.onEvent(e);
         }
     }

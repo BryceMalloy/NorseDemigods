@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.listener;
 
 import com.demigodsrpg.norsedemigods.DFixes;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.DMisc;
+import com.demigodsrpg.norsedemigods.Setting;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -24,14 +24,12 @@ public class DDamage implements Listener {
      *
      * The adjusted value should be around/less than 1 to adjust for the increased health, but not ridiculous
      */
-    private static final boolean FRIENDLYFIRE = DSettings.getSettingBoolean("friendly_fire");
 
     public static void onDamage(EntityDamageEvent e) {
         if (!(e.getEntity() instanceof Player)) return;
         Player p = (Player) e.getEntity();
-        if (!DMiscUtil.isFullParticipant(p)) return;
-        if (!DSettings.getEnabledWorlds().contains(p.getWorld())) return;
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.isFullParticipant(p)) return;
+        if (!DMisc.canTarget(p, p.getLocation())) {
             DFixes.checkAndCancel(e);
             return;
         }
@@ -39,24 +37,24 @@ public class DDamage implements Listener {
         if (e instanceof EntityDamageByEntityEvent) {
             EntityDamageByEntityEvent ee = (EntityDamageByEntityEvent) e;
             if (ee.getDamager() instanceof Player) {
-                if (!FRIENDLYFIRE && DMiscUtil.areAllied(p, (Player) ee.getDamager())) {
-                    if (DSettings.getSettingBoolean("friendly_fire_message"))
-                        ((Player) ee.getDamager()).sendMessage(ChatColor.YELLOW + "No friendly fire.");
+                if (!Setting.FRIENDLY_FIRE && DMisc.areAllied(p, (Player) ee.getDamager())) {
+                    if (Setting.FRIENDLY_FIRE_WARNING)
+                        ee.getDamager().sendMessage(ChatColor.YELLOW + "No friendly fire.");
                     DFixes.checkAndCancel(e);
                     return;
                 }
-                if (!DMiscUtil.canTarget(ee.getDamager(), ee.getDamager().getLocation())) {
+                if (!DMisc.canTarget(ee.getDamager(), ee.getDamager().getLocation())) {
                     DFixes.checkAndCancel(e);
                     return;
                 }
-                DMiscUtil.damageDemigods((Player) ee.getDamager(), p, e.getDamage(), DamageCause.ENTITY_ATTACK);
+                DMisc.damageDemigods((Player) ee.getDamager(), p, e.getDamage(), DamageCause.ENTITY_ATTACK);
                 return;
             } else if (ee.getDamager() instanceof Projectile && ((Projectile) ee.getDamager()).getShooter() instanceof Player) {
                 Projectile projectile = (Projectile) ee.getDamager();
                 if (projectile.hasMetadata("how_do_I_shot_web")) {
                     DFixes.checkAndCancel(e);
-                    double damage = e.getDamage() * (DMiscUtil.getAscensions((Player) projectile.getShooter()) + 2);
-                    DMiscUtil.damageDemigods((LivingEntity) projectile.getShooter(), p, p.getHealth() - damage >= 1 ? damage : -(1 - p.getHealth()), DamageCause.ENTITY_EXPLOSION);
+                    double damage = e.getDamage() * (DMisc.getAscensions((Player) projectile.getShooter()) + 2);
+                    DMisc.damageDemigods((LivingEntity) projectile.getShooter(), p, p.getHealth() - damage >= 1 ? damage : -(1 - p.getHealth()), DamageCause.ENTITY_EXPLOSION);
                 }
                 return;
             }
@@ -68,33 +66,21 @@ public class DDamage implements Listener {
         }
 
         if ((e.getCause() != DamageCause.ENTITY_ATTACK) && (e.getCause() != DamageCause.PROJECTILE))
-            DMiscUtil.damageDemigodsNonCombat(p, e.getDamage(), e.getCause());
+            DMisc.damageDemigodsNonCombat(p, e.getDamage(), e.getCause());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onRespawn(PlayerRespawnEvent e) {
-        if (DMiscUtil.isFullParticipant(e.getPlayer()))
-            DMiscUtil.setHP(e.getPlayer(), DMiscUtil.getMaxHP(e.getPlayer()));
+        if (DMisc.isFullParticipant(e.getPlayer()))
+            DMisc.setHP(e.getPlayer(), e.getPlayer().getMaxHealth());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onHeal(EntityRegainHealthEvent e) {
         if (!(e.getEntity() instanceof Player)) return;
         Player p = (Player) e.getEntity();
-        if (!DMiscUtil.isFullParticipant(p)) return;
-        DMiscUtil.setHP(p, DMiscUtil.getHP(p) + e.getAmount());
-    }
-
-    public static void syncHealth(Player p) {
-        double current = DMiscUtil.getHP(p);
-        if (current < 1) { // if player should be dead
-            p.setHealth(0.0);
-            return;
-        }
-        double ratio = current / DMiscUtil.getMaxHP(p);
-        double disp = Math.ceil(ratio * 20);
-        if (disp < 1) disp = 1.0;
-        p.setHealth(disp);
+        if (!DMisc.isFullParticipant(p)) return;
+        DMisc.setHP(p, p.getHealth() + e.getAmount());
     }
 
     @SuppressWarnings("incomplete-switch")
@@ -196,25 +182,13 @@ public class DDamage implements Listener {
     }
 
     public static double specialReduction(Player p, double amount) {
-        if (DMiscUtil.getActiveEffectsList(p.getUniqueId()) == null) return amount;
-        if (DMiscUtil.getActiveEffectsList(p.getUniqueId()).contains("Invincible")) {
+        if (DMisc.getActiveEffectsList(p.getUniqueId()) == null) return amount;
+        if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Invincible")) {
             amount *= 0.5;
         }
-        if (DMiscUtil.getActiveEffectsList(p.getUniqueId()).contains("Ceasefire")) {
+        if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Ceasefire")) {
             amount *= 0;
         }
         return amount;
-    }
-
-    private static void hasFull(Player p) {
-        DMiscUtil.setHP(p, DMiscUtil.getMaxHP(p));
-    }
-
-    private static void hasHalf(Player p) {
-        DMiscUtil.setHP(p, (DMiscUtil.getMaxHP(p) / 2));
-    }
-
-    private static void hasMortal(Player p) {
-        DMiscUtil.setHP(p, 20);
     }
 }

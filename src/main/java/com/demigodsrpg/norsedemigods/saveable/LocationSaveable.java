@@ -1,6 +1,7 @@
 package com.demigodsrpg.norsedemigods.saveable;
 
 import com.demigodsrpg.norsedemigods.NorseDemigods;
+import com.demigodsrpg.norsedemigods.Saveable;
 import com.demigodsrpg.norsedemigods.util.FJsonSection;
 import org.bukkit.Location;
 import org.bukkit.World;

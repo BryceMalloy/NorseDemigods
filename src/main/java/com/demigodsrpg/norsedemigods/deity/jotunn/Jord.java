@@ -1,8 +1,8 @@
 package com.demigodsrpg.norsedemigods.deity.jotunn;
 
+import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
-import com.demigodsrpg.norsedemigods.util.DMiscUtil;
 import com.demigodsrpg.norsedemigods.util.DSave;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -68,8 +68,8 @@ public class Jord implements Deity {
 
     @Override
     public void printInfo(Player p) {
-        if (DMiscUtil.hasDeity(p, "Jord") && DMiscUtil.isFullParticipant(p)) {
-            int devotion = DMiscUtil.getDevotion(p, getName());
+        if (DMisc.hasDeity(p, "Jord") && DMisc.isFullParticipant(p)) {
+            int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
 			 */
@@ -80,9 +80,9 @@ public class Jord implements Deity {
             // explosion
             float explosionsize = (float) (Math.ceil(3 * Math.pow(devotion, 0.09)));
             // ultimate
-            int range = (int) (10.84198 * Math.pow(1.01926, DMiscUtil.getAscensions(p)));
-            int ultimateduration = (int) (4.95778 * Math.pow(DMiscUtil.getAscensions(p), 0.459019));
-            int t = (int) (RHEAULTIMATECOOLDOWNMAX - ((RHEAULTIMATECOOLDOWNMAX - RHEAULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+            int range = (int) (10.84198 * Math.pow(1.01926, DMisc.getAscensions(p)));
+            int ultimateduration = (int) (4.95778 * Math.pow(DMisc.getAscensions(p), 0.459019));
+            int t = (int) (RHEAULTIMATECOOLDOWNMAX - ((RHEAULTIMATECOOLDOWNMAX - RHEAULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
 			 * The printed text
 			 */
@@ -91,17 +91,17 @@ public class Jord implements Deity {
             p.sendMessage(":Poison a target player. " + ChatColor.GREEN + "/poison");
             p.sendMessage(ChatColor.YELLOW + "Costs " + POISONCOST + " Favor.");
             p.sendMessage("Poison power: " + strength + " for " + duration + " seconds.");
-            if (((Jord) (DMiscUtil.getDeity(p, "Jord"))).POISONBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Jord) (DMiscUtil.getDeity(p, "Jord"))).POISONBIND).name());
+            if (((Jord) (DMisc.getDeity(p, "Jord"))).POISONBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).POISONBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Plant and detonate exploding trees. " + ChatColor.GREEN + "/plant, /detonate");
             p.sendMessage(ChatColor.YELLOW + "Costs " + PLANTCOST + " Favor.");
-            p.sendMessage("Explosion radius: " + explosionsize + ". Maximum trees: " + (DMiscUtil.getAscensions(p) + 1));
-            if (((Jord) (DMiscUtil.getDeity(p, "Jord"))).PLANTBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Plant bound to " + (((Jord) (DMiscUtil.getDeity(p, "Jord"))).PLANTBIND).name());
+            p.sendMessage("Explosion radius: " + explosionsize + ". Maximum trees: " + (DMisc.getAscensions(p) + 1));
+            if (((Jord) (DMisc.getDeity(p, "Jord"))).PLANTBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Plant bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).PLANTBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind plant to an item.");
-            if (((Jord) (DMiscUtil.getDeity(p, "Jord"))).DETONATEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Detonate bound to " + (((Jord) (DMiscUtil.getDeity(p, "Jord"))).DETONATEBIND).name());
+            if (((Jord) (DMisc.getDeity(p, "Jord"))).DETONATEBIND != null)
+                p.sendMessage(ChatColor.AQUA + "    Detonate bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).DETONATEBIND).name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind detonate to an item.");
             p.sendMessage(":Jord entangles nearby enemies, damaging them if they move.");
             p.sendMessage("Range: " + range + " for " + ultimateduration + " seconds. " + ChatColor.GREEN + "/entangle");
@@ -125,14 +125,14 @@ public class Jord implements Deity {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
-            if (!DMiscUtil.isFullParticipant(p)) return;
-            if (!DMiscUtil.hasDeity(p, "Jord")) return;
-            if (!DMiscUtil.canTarget(p, p.getLocation())) return;
+            if (!DMisc.isFullParticipant(p)) return;
+            if (!DMisc.hasDeity(p, "Jord")) return;
+            if (!DMisc.canTarget(p, p.getLocation())) return;
             if (POISON || ((POISONBIND != null) && (p.getItemInHand().getType() == POISONBIND))) {
                 if (POISONTIME > System.currentTimeMillis()) return;
-                if (DMiscUtil.getFavor(p) >= POISONCOST) {
+                if (DMisc.getFavor(p) >= POISONCOST) {
                     if (poison(p)) {
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - POISONCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - POISONCOST);
                         int POISONDELAY = 1500;
                         POISONTIME = System.currentTimeMillis() + POISONDELAY;
                     }
@@ -143,9 +143,9 @@ public class Jord implements Deity {
             }
             if (PLANT || ((PLANTBIND != null) && (p.getItemInHand().getType() == PLANTBIND))) {
                 if (PLANTTIME > System.currentTimeMillis()) return;
-                if (DMiscUtil.getFavor(p) >= PLANTCOST) {
+                if (DMisc.getFavor(p) >= PLANTCOST) {
                     if (plant(p)) {
-                        DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - PLANTCOST);
+                        DMisc.setFavor(p, DMisc.getFavor(p) - PLANTCOST);
                         int PLANTDELAY = 2000;
                         PLANTTIME = System.currentTimeMillis() + PLANTDELAY;
                     }
@@ -213,22 +213,22 @@ public class Jord implements Deity {
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
-        if (!DMiscUtil.isFullParticipant(p)) return;
-        if (!DMiscUtil.hasDeity(p, "Jord")) return;
+        if (!DMisc.isFullParticipant(p)) return;
+        if (!DMisc.hasDeity(p, "Jord")) return;
         if (str.equalsIgnoreCase("poison")) {
             if (bind) {
                 if (POISONBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         POISONBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Poison is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, POISONBIND);
+                    DMisc.removeBind(p, POISONBIND);
                     p.sendMessage(ChatColor.YELLOW + "Poison is no longer bound to " + POISONBIND.name() + ".");
                     POISONBIND = null;
                 }
@@ -244,17 +244,17 @@ public class Jord implements Deity {
         } else if (str.equalsIgnoreCase("plant")) {
             if (bind) {
                 if (PLANTBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         PLANTBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Plant is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, PLANTBIND);
+                    DMisc.removeBind(p, PLANTBIND);
                     p.sendMessage(ChatColor.YELLOW + "Plant is no longer bound to " + PLANTBIND.name() + ".");
                     PLANTBIND = null;
                 }
@@ -271,17 +271,17 @@ public class Jord implements Deity {
         } else if (str.equalsIgnoreCase("detonate")) {
             if (bind) {
                 if (DETONATEBIND == null) {
-                    if (DMiscUtil.isBound(p, p.getItemInHand().getType()))
+                    if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMiscUtil.registerBind(p, p.getItemInHand().getType());
+                        DMisc.registerBind(p, p.getItemInHand().getType());
                         DETONATEBIND = p.getItemInHand().getType();
                         p.sendMessage(ChatColor.YELLOW + "Detonate is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMiscUtil.removeBind(p, DETONATEBIND);
+                    DMisc.removeBind(p, DETONATEBIND);
                     p.sendMessage(ChatColor.YELLOW + "Detonate is no longer bound to " + DETONATEBIND.name() + ".");
                     DETONATEBIND = null;
                 }
@@ -294,16 +294,16 @@ public class Jord implements Deity {
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((RHEAULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMiscUtil.getFavor(p) >= RHEAULTIMATECOST) {
-                if (!DMiscUtil.canTarget(p, p.getLocation())) {
+            if (DMisc.getFavor(p) >= RHEAULTIMATECOST) {
+                if (!DMisc.canTarget(p, p.getLocation())) {
                     p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (RHEAULTIMATECOOLDOWNMAX - ((RHEAULTIMATECOOLDOWNMAX - RHEAULTIMATECOOLDOWNMIN) * ((double) DMiscUtil.getAscensions(p) / 100)));
+                int t = (int) (RHEAULTIMATECOOLDOWNMAX - ((RHEAULTIMATECOOLDOWNMAX - RHEAULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
                 int hit = entangle(p);
                 if (hit > 0) {
                     p.sendMessage(ChatColor.YELLOW + "Jord has entangled " + hit + " enemies.");
-                    DMiscUtil.setFavor(p, DMiscUtil.getFavor(p) - RHEAULTIMATECOST);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - RHEAULTIMATECOST);
                     RHEAULTIMATETIME = System.currentTimeMillis() + (t * 1000);
                 } else p.sendMessage(ChatColor.YELLOW + "No targets found.");
             } else p.sendMessage(ChatColor.YELLOW + "Entangle requires " + RHEAULTIMATECOST + " Favor.");
@@ -316,11 +316,11 @@ public class Jord implements Deity {
     }
 
     private boolean poison(Player p) {
-        if (!DMiscUtil.canTarget(p, p.getLocation())) {
+        if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
-        int devotion = DMiscUtil.getDevotion(p, getName());
+        int devotion = DMisc.getDevotion(p, getName());
         int duration = (int) Math.ceil(2.4063 * Math.pow(devotion, 0.11)); // seconds
         if (duration < 1) duration = 1;
         int strength = (int) Math.ceil(1 * Math.pow(devotion, 0.09));
@@ -328,15 +328,15 @@ public class Jord implements Deity {
         Block b = p.getTargetBlock((Set) null, 200);
         for (Player pl : b.getWorld().getPlayers()) {
             if (pl.getLocation().distance(b.getLocation()) < 4) {
-                if (!DMiscUtil.areAllied(p, pl) && DMiscUtil.canTarget(pl, pl.getLocation())) {
+                if (!DMisc.areAllied(p, pl) && DMisc.canTarget(pl, pl.getLocation())) {
                     target = pl;
                     break;
                 }
             }
         }
-        if (target != null && DMiscUtil.canTarget(target, target.getLocation())) {
+        if (target != null && DMisc.canTarget(target, target.getLocation())) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, duration * 20, strength));
-            DMiscUtil.addActiveEffect(target.getUniqueId(), "Poison", duration);
+            DMisc.addActiveEffect(target.getUniqueId(), "Poison", duration);
             p.sendMessage(ChatColor.YELLOW + target.getName() + " has been poisoned for " + duration + " seconds.");
             target.sendMessage(ChatColor.RED + "You have been poisoned for " + duration + " seconds.");
             return true;
@@ -347,23 +347,23 @@ public class Jord implements Deity {
     }
 
     private boolean plant(Player player) {
-        if (!DMiscUtil.canTarget(player, player.getLocation())) {
+        if (!DMisc.canTarget(player, player.getLocation())) {
             player.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
         Block b = player.getTargetBlock((Set) null, 200);
         if (b != null) {
-            if (!DMiscUtil.canLocationPVP(b.getLocation())) {
+            if (!DMisc.canLocationPVP(b.getLocation())) {
                 player.sendMessage(ChatColor.YELLOW + "That is a protected area.");
                 return false;
             }
-            if (TREES.size() == (DMiscUtil.getAscensions(player) + 1)) {
+            if (TREES.size() == (DMisc.getAscensions(player) + 1)) {
                 player.sendMessage(ChatColor.YELLOW + "You have reached your maximum of " + (TREES.size()) + " trees.");
                 return false;
             }
             if (player.getWorld().generateTree(b.getRelative(BlockFace.UP).getLocation(), TreeType.TREE)) {
                 player.sendMessage(ChatColor.YELLOW + "Use /detonate to create an explosion at this tree.");
-                TREES.add(DMiscUtil.toWriteLocation(b.getRelative(BlockFace.UP).getLocation()));
+                TREES.add(DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation()));
                 return true;
             } else player.sendMessage(ChatColor.YELLOW + "A tree cannot be placed there.");
         } else player.sendMessage(ChatColor.YELLOW + "That is a protected zone or an invalid location.");
@@ -371,10 +371,10 @@ public class Jord implements Deity {
     }
 
     private void detonate(Player player) {
-        float explosionsize = (float) (Math.ceil(3 * Math.pow(DMiscUtil.getDevotion(player.getUniqueId(), getName()), 0.09)));
+        float explosionsize = (float) (Math.ceil(3 * Math.pow(DMisc.getDevotion(player.getUniqueId(), getName()), 0.09)));
         if (TREES.size() > 0) {
             for (LocationSaveable w : TREES) {
-                Location l = DMiscUtil.toLocation(w);
+                Location l = DMisc.toLocation(w);
                 if (l.getBlock().getType() == Material.LOG) {
                     removelogs(l);
                     l.getWorld().createExplosion(l, explosionsize);
@@ -393,7 +393,7 @@ public class Jord implements Deity {
     }
 
     private void grow(Block b, int run) {
-        if (!DMiscUtil.canLocationPVP(b.getLocation())) return;
+        if (!DMisc.canLocationPVP(b.getLocation())) return;
         if (((b.getType() == Material.AIR) && (b.getRelative(BlockFace.DOWN).getType() == Material.GRASS)) && (run > 0)) {
             switch ((int) (Math.random() * 50)) {
                 case 0:
@@ -441,23 +441,23 @@ public class Jord implements Deity {
     }
 
     private int entangle(Player p) {
-        int range = (int) (10.84198 * Math.pow(1.01926, DMiscUtil.getAscensions(p)));
-        int duration = (int) (4.95778 * Math.pow(DMiscUtil.getAscensions(p), 0.459019));
+        int range = (int) (10.84198 * Math.pow(1.01926, DMisc.getAscensions(p)));
+        int duration = (int) (4.95778 * Math.pow(DMisc.getAscensions(p), 0.459019));
         int count = 0;
-        if (!DMiscUtil.canTarget(p, p.getLocation())) return count;
+        if (!DMisc.canTarget(p, p.getLocation())) return count;
 
         for (LivingEntity le : p.getWorld().getLivingEntities()) {
             if (le.getLocation().distance(p.getLocation()) < range) {
                 if (le instanceof Player) {
                     Player pl = (Player) le;
-                    if (DMiscUtil.isFullParticipant(pl)) {
-                        if (!DMiscUtil.areAllied(p, pl) && DMiscUtil.canTarget(le, le.getLocation())) {
+                    if (DMisc.isFullParticipant(pl)) {
+                        if (!DMisc.areAllied(p, pl) && DMisc.canTarget(le, le.getLocation())) {
                             trap(le, duration, p);
                             count++;
                         } else continue;
                     }
                 }
-                if (DMiscUtil.canTarget(le, le.getLocation())) {
+                if (DMisc.canTarget(le, le.getLocation())) {
                     count++;
                     trap(le, duration, p);
                 }
@@ -528,7 +528,7 @@ public class Jord implements Deity {
             }
         }
         for (int i = 0; i < durationseconds * 20; i += 10) {
-            DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
                 @Override
                 public void run() {
                     if (le.isDead() && le instanceof Player) {
@@ -539,14 +539,14 @@ public class Jord implements Deity {
                             if (DSave.hasData((Player) le, "temp_trap_died")) return;
                             ((Player) le).sendMessage(ChatColor.YELLOW + "You take damage from moving while entangled!");
                         }
-                        DMiscUtil.damageDemigods(p, le, 5, DamageCause.ENTITY_ATTACK);
+                        DMisc.damageDemigods(p, le, 5, DamageCause.ENTITY_ATTACK);
                     }
-                    if (le instanceof Player) DMiscUtil.horseTeleport((Player) le, originalloc);
+                    if (le instanceof Player) DMisc.horseTeleport((Player) le, originalloc);
                     else le.teleport(originalloc);
                 }
             }, i);
         }
-        DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
             @Override
             public void run() {
                 for (Location l : toreset)
