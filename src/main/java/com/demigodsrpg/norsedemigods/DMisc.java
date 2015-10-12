@@ -1297,7 +1297,7 @@ public class DMisc {
         if (!(player instanceof Player)) return true;
         else if (!Setting.USE_NEW_PVP) return canWorldGuardPVP(location);
         else if (!isFullParticipant((Player) player)) return canWorldGuardPVP(location);
-        else return (DSave.hasData((Player) player, "temp_was_PVP")) || canWorldGuardPVP(location);
+        else return getPlugin().getPlayerDataRegistry().fromPlayer((Player) player).getTempStatus("temp_was_PVP");
     }
 
     /**
@@ -1357,11 +1357,11 @@ public class DMisc {
     public static void horseTeleport(Player player, Location location) {
         if (player.isInsideVehicle() && player.getVehicle() instanceof Horse) {
             Horse horse = (Horse) player.getVehicle();
-            DSave.saveData(player, "temp_horse", true);
+            getPlugin().getPlayerDataRegistry().fromPlayer(player).setTempStatus("temp_horse", true);
             horse.eject();
             horse.teleport(location);
             horse.setPassenger(player);
-            DSave.removeData(player, "temp_horse");
+            getPlugin().getPlayerDataRegistry().fromPlayer(player).removeTempStatus("temp_horse");
         } else player.teleport(location);
     }
 }

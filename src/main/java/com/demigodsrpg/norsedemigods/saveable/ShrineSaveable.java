@@ -12,19 +12,21 @@ public class ShrineSaveable extends LocationSaveable {
     // -- DATA -- //
 
     String deity;
+    String name;
     String ownerId;
     List<String> guestIds;
 
     // -- CONSTRUCTORS -- //
 
-    public ShrineSaveable(String deity, String mojangId, Location location) {
-        this(deity, mojangId, location.getWorld().getName(), location.getBlockX(),
+    public ShrineSaveable(String deity, String name, String mojangId, Location location) {
+        this(deity, name, mojangId, location.getWorld().getName(), location.getBlockX(),
                 location.getBlockY(), location.getBlockZ());
     }
 
-    public ShrineSaveable(String deity, String ownerId, String world, int x, int y, int z) {
+    public ShrineSaveable(String deity, String name, String ownerId, String world, int x, int y, int z) {
         super(world, x, y, z);
         this.deity = deity;
+        this.name = name;
         this.ownerId = ownerId;
         guestIds = new ArrayList<>();
     }
@@ -32,6 +34,7 @@ public class ShrineSaveable extends LocationSaveable {
     public ShrineSaveable(FJsonSection section) {
         super(section);
         deity = section.getString("deity");
+        name = section.getString("name");
         ownerId = section.getString("ownerId");
         guestIds = section.getStringList("guestIds");
     }
@@ -40,6 +43,10 @@ public class ShrineSaveable extends LocationSaveable {
 
     public String getDeity() {
         return deity;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getOwnerId() {
@@ -58,6 +65,7 @@ public class ShrineSaveable extends LocationSaveable {
     public Map<String, Object> serialize() {
         Map<String, Object> map = super.serialize();
         map.put("deity", deity);
+        map.put("name", name);
         map.put("ownerId", ownerId);
         map.put("guestIds", guestIds);
         return map;

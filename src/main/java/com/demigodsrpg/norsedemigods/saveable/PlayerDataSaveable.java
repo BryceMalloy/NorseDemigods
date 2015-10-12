@@ -8,6 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class PlayerDataSaveable implements Saveable {
@@ -22,7 +24,7 @@ public class PlayerDataSaveable implements Saveable {
     Map<String, Map<String, Object>> ABILITY_DATA;
     Map<String, String> BIND_DATA;
 
-    transient Map<String, Boolean>
+    transient ConcurrentMap<String, Boolean> TEMP_DATA;
 
     double lastLoginTime;
     double lastLogoutTime;
@@ -45,6 +47,8 @@ public class PlayerDataSaveable implements Saveable {
         DEITIES = new HashMap<>();
         ABILITY_DATA = new HashMap<>();
         BIND_DATA = new HashMap<>();
+
+        TEMP_DATA = new ConcurrentHashMap<>();
 
         lastLoginTime = System.currentTimeMillis();
         lastLogoutTime = -1;
@@ -83,6 +87,7 @@ public class PlayerDataSaveable implements Saveable {
         } else {
             BIND_DATA = new HashMap<>();
         }
+        TEMP_DATA = new ConcurrentHashMap<>();
         lastLoginTime = section.getDouble("lastLoginTime");
         lastLogoutTime = section.getDouble("lastLogoutTime");
         favor = section.getInt("favor");
@@ -135,6 +140,10 @@ public class PlayerDataSaveable implements Saveable {
 
     public List<Material> getBound() {
         return BIND_DATA.values().stream().map(Material::valueOf).distinct().collect(Collectors.toList());
+    }
+
+    public boolean getTempStatus(String status) {
+        return TEMP_DATA.getOrDefault(status, false);
     }
 
     public double getLastLoginTime() {
@@ -271,6 +280,22 @@ public class PlayerDataSaveable implements Saveable {
     public void setBind(String ability, Material type) {
         // Set the bind data tot he map
         BIND_DATA.put(ability, type.name());
+
+        // Put this version of the data object into the registry
+        getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
+    }
+
+    public void setTempStatus(String status, boolean value) {
+        // Set the temp status
+        TEMP_DATA.put(status, value);
+
+        // Put this version of the data object into the registry
+        getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
+    }
+
+    public void removeTempStatus(String status) {
+        // Set the temp status
+        TEMP_DATA.remove(status);
 
         // Put this version of the data object into the registry
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
