@@ -1054,11 +1054,12 @@ public class DMisc {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static ArrayList<LocationSaveable> getAccessibleShrines(UUID player) {
+    public static List<ShrineSaveable> getAccessibleShrines(UUID player) {
         if (!isFullParticipant(player)) return null;
-        if (!DSave.hasData(player, "S_GUESTAT")) DSave.saveData(player, "S_GUESTAT", new ArrayList<LocationSaveable>());
-        return (ArrayList<LocationSaveable>) DSave.getData(player, "S_GUESTAT");
-
+        List<ShrineSaveable> toReturn = new ArrayList<>(getShrines(player));
+        toReturn.addAll(getPlugin().getShrineRegistry().getFromDb().values().stream().filter(s -> s.getGuestIds().
+                contains(player.toString())).collect(Collectors.toList()));
+        return toReturn;
     }
 
     /**
@@ -1067,14 +1068,12 @@ public class DMisc {
      * @param shrine
      * @return
      */
-    public static ArrayList<UUID> getShrineGuestlist(LocationSaveable shrine) {
-        ArrayList<UUID> list = new ArrayList<UUID>();
-        for (UUID p : getFullParticipants()) {
-            for (LocationSaveable w : DMisc.getAccessibleShrines(p)) {
-                if (w.equalsApprox(shrine)) list.add(p);
-            }
+    public static List<UUID> getShrineGuestList(Location shrine) {
+        Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (saveable.isPresent()) {
+            return saveable.get().getGuestIds().stream().map(UUID::fromString).collect(Collectors.toList());
         }
-        return list;
+        return new ArrayList<>();
     }
 
     /**

@@ -1358,7 +1358,7 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "Player not found.");
             } else if (toadd.equals(p.getUniqueId())) {
                 p.sendMessage(ChatColor.YELLOW + "You are already the shrine owner.");
-            } else if (DMisc.getShrineGuestlist(shrine).contains(toadd)) {
+            } else if (DMisc.getShrineGuestList(shrine).contains(toadd)) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(toadd) + " already has permission to warp to this shrine.");
             } else if (!DMisc.getAllegiance(toadd).equals(DMisc.getAllegiance(p))) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(toadd) + " is not in your alliance.");
@@ -1374,7 +1374,7 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "Player not found.");
             } else if (remove.equals(p.getUniqueId())) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot remove yourself as an owner.");
-            } else if (!DMisc.getShrineGuestlist(shrine).contains(remove)) {
+            } else if (!DMisc.getShrineGuestList(shrine).contains(remove)) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(remove) + " is not an owner of this shrine.");
             } else {
                 if (DMisc.removeGuest(shrine, remove))
@@ -2143,7 +2143,7 @@ public class DCommandExecutor implements CommandExecutor {
                     try {
                         LocationSaveable w = DMisc.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
-                        for (UUID player : DMisc.getShrineGuestlist(w))
+                        for (UUID player : DMisc.getShrineGuestList(w))
                             names.append(player).append(" ");
                         cm.sendMessage(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
                     } catch (Exception e) {
@@ -2248,7 +2248,7 @@ public class DCommandExecutor implements CommandExecutor {
                     try {
                         LocationSaveable w = DMisc.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
-                        for (UUID player : DMisc.getShrineGuestlist(w))
+                        for (UUID player : DMisc.getShrineGuestList(w))
                             names.append(DMisc.getLastKnownName(player)).append(" ");
                         cm.info(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
                     } catch (Exception e) {
@@ -2356,7 +2356,7 @@ public class DCommandExecutor implements CommandExecutor {
                     try {
                         LocationSaveable w = DMisc.getShrines(p).get(name);
                         String names = "";
-                        for (UUID player : DMisc.getShrineGuestlist(w))
+                        for (UUID player : DMisc.getShrineGuestList(w))
                             names += player + " ";
                         names = names.trim();
                         s += (name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names + "\r\n");
@@ -2469,7 +2469,7 @@ public class DCommandExecutor implements CommandExecutor {
                     try {
                         LocationSaveable w = DMisc.getShrines(p).get(name);
                         String names = "";
-                        for (UUID player : DMisc.getShrineGuestlist(w))
+                        for (UUID player : DMisc.getShrineGuestList(w))
                             names += player + " ";
                         names = names.trim();
                         s += (name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names + "\r\n");

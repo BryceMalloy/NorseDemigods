@@ -22,6 +22,8 @@ public class PlayerDataSaveable implements Saveable {
     Map<String, Map<String, Object>> ABILITY_DATA;
     Map<String, String> BIND_DATA;
 
+    transient Map<String, Boolean>
+
     double lastLoginTime;
     double lastLogoutTime;
 
