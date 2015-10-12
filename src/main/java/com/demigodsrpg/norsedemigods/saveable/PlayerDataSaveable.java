@@ -3,6 +3,7 @@ package com.demigodsrpg.norsedemigods.saveable;
 import com.demigodsrpg.norsedemigods.Saveable;
 import com.demigodsrpg.norsedemigods.util.FJsonSection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -16,7 +17,7 @@ public class PlayerDataSaveable implements Saveable {
     String MOJANG_ID;
     String LAST_KNOWN_NAME;
     String ALLIANCE;
-    List<String> ACTIVE_EFFECTS;
+    Map<String, Double> ACTIVE_EFFECTS;
     Map<String, Integer> DEITIES;
     Map<String, Map<String, Object>> ABILITY_DATA;
     Map<String, String> BIND_DATA;
@@ -38,7 +39,7 @@ public class PlayerDataSaveable implements Saveable {
         MOJANG_ID = player.getUniqueId().toString();
         LAST_KNOWN_NAME = player.getName();
         ALLIANCE = "Human";
-        ACTIVE_EFFECTS = new ArrayList<>();
+        ACTIVE_EFFECTS = new HashMap<>();
         DEITIES = new HashMap<>();
         ABILITY_DATA = new HashMap<>();
         BIND_DATA = new HashMap<>();
@@ -60,10 +61,10 @@ public class PlayerDataSaveable implements Saveable {
         MOJANG_ID = mojangId;
         LAST_KNOWN_NAME = section.getString("lastKnownName");
         ALLIANCE = section.getString("alliance");
-        if (section.isList("activeEffects")) {
-            ACTIVE_EFFECTS = section.getStringList("activeEffects");
+        if (section.isSection("activeEffects")) {
+            ACTIVE_EFFECTS = (Map) section.getSectionNullable("activeEffects").getValues();
         } else {
-            ACTIVE_EFFECTS = new ArrayList<>();
+            ACTIVE_EFFECTS = new HashMap<>();
         }
         if (section.isSection("deityData")) {
             DEITIES = (Map) section.getSectionNullable("deityData").getValues();
@@ -109,8 +110,8 @@ public class PlayerDataSaveable implements Saveable {
         return ALLIANCE;
     }
 
-    public ImmutableList<String> getActiveEffects() {
-        return ImmutableList.copyOf(ACTIVE_EFFECTS);
+    public ImmutableMap<String, Double> getActiveEffects() {
+        return ImmutableMap.copyOf(ACTIVE_EFFECTS);
     }
 
     public ImmutableList<String> getDeityList() {
@@ -154,7 +155,7 @@ public class PlayerDataSaveable implements Saveable {
         return ascensions;
     }
 
-    public int getUnclamedDevotion() {
+    public int getUnclaimedDevotion() {
         return unclamedDevotion;
     }
 
@@ -202,9 +203,9 @@ public class PlayerDataSaveable implements Saveable {
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
     }
 
-    public void addEffect(String effect) {
-        if (!ACTIVE_EFFECTS.contains(effect)) {
-            ACTIVE_EFFECTS.add(effect);
+    public void addEffect(String effect, Long time) {
+        if (!ACTIVE_EFFECTS.containsKey(effect)) {
+            ACTIVE_EFFECTS.put(effect, time.doubleValue());
         }
 
         // Put this version of the data object into the registry
@@ -213,6 +214,13 @@ public class PlayerDataSaveable implements Saveable {
 
     public void removeEffect(String effect) {
         ACTIVE_EFFECTS.remove(effect);
+
+        // Put this version of the data object into the registry
+        getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
+    }
+
+    public void setActiveEffects(Map<String, Double> map) {
+        ACTIVE_EFFECTS = map;
 
         // Put this version of the data object into the registry
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);

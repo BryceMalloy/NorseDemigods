@@ -5,9 +5,9 @@ import com.demigodsrpg.norsedemigods.listener.DDamage;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import org.bukkit.*;
@@ -413,13 +413,13 @@ public class DMisc {
      */
     public static int getUnclaimedDevotion(Player p) {
         PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
-        return saveable.getUnclamedDevotion();
+        return saveable.getUnclaimedDevotion();
     }
 
     public static int getUnclaimedDevotion(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
         if (opSave.isPresent()) {
-            return opSave.get().getUnclamedDevotion();
+            return opSave.get().getUnclaimedDevotion();
         }
         return -1;
     }
@@ -952,20 +952,17 @@ public class DMisc {
         setDeaths(player, 0);
         setKills(player, 0);
         giveDeity(player, deity);
-        setActiveEffects(player.getUniqueId(), new HashMap<>());
+        setActiveEffects(player, new HashMap<>());
         setShrines(player.getUniqueId(), new HashMap<>());
     }
 
     /**
      * If the given location is a shrine, returns the deity the shrine is for
      */
-    public static String getDeityAtShrine(LocationSaveable shrine) {
-        for (UUID player : getFullParticipants()) {
-            for (String shrinename : getShrines(player).keySet()) {
-                if (shrine.equalsApprox(getShrines(player).get(shrinename))) {
-                    if (shrinename.charAt(0) != '#') return shrinename;
-                }
-            }
+    public static String getDeityAtShrine(Location shrine) {
+        Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (opSave.isPresent()) {
+            return opSave.get().getDeity();
         }
         return null;
     }
@@ -989,13 +986,10 @@ public class DMisc {
      * @param shrine
      * @return
      */
-    public static UUID getOwnerOfShrine(LocationSaveable shrine) {
-        for (UUID player : getFullParticipants()) {
-            for (String shrinename : getShrines(player).keySet()) {
-                if (shrine.equalsApprox(getShrines(player).get(shrinename))) {
-                    return player;
-                }
-            }
+    public static UUID getOwnerOfShrine(Location shrine) {
+        Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (opSave.isPresent()) {
+            return UUID.fromString(opSave.get().getOwnerId());
         }
         return null;
     }
@@ -1005,7 +999,7 @@ public class DMisc {
      * register the player as a guest
      */
     @SuppressWarnings("unchecked")
-    public static void addGuest(LocationSaveable shrine, UUID guest) {
+    public static void addGuest(Location shrine, UUID guest) {
         if (!isFullParticipant(guest)) return;
         if (!getAllegiance(guest).equalsIgnoreCase(getAllegiance(getOwnerOfShrine(shrine)))) return;
         if (!DSave.hasData(guest, "S_GUESTAT")) DSave.saveData(guest, "S_GUESTAT", new ArrayList<LocationSaveable>());
@@ -1168,7 +1162,7 @@ public class DMisc {
     }
 
     @SuppressWarnings("unchecked")
-    public static void addShrine(UUID p, String deityname, LocationSaveable loc) {
+    public static void addShrine(UUID p, String deityname,) {
         if (DSave.hasData(p, "P_SHRINES")) {
             ((HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES")).put(deityname, loc);
             return;
@@ -1176,15 +1170,15 @@ public class DMisc {
     }
 
     @SuppressWarnings("unchecked")
-    public static HashMap<String, LocationSaveable> getShrines(UUID p) {
-        if (DSave.hasData(p, "P_SHRINES")) return (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
-        return null;
+    public static List<ShrineSaveable> getShrines(UUID mojangId) {
+        return getPlugin().getShrineRegistry().getFromDb().values().stream().filter(shrine -> shrine.getOwnerId().
+                equals(mojangId.toString())).collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
     public static LocationSaveable getShrine(UUID p, String deityname) {
         if (DSave.hasData(p, "P_SHRINES")) {
-            HashMap<String, LocationSaveable> original = (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
+            Map<String, LocationSaveable> original = (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
             for (Map.Entry<String, LocationSaveable> s : original.entrySet()) {
                 if (s.getKey().equalsIgnoreCase(deityname)) return s.getValue();
             }
@@ -1195,11 +1189,11 @@ public class DMisc {
     /**
      * Set a player's active effects
      *
-     * @param p
+     * @param player
      * @param data
      */
-    public static void setActiveEffects(UUID p, HashMap<String, Long> data) {
-        DSave.saveData(p, "A_EFFECTS", data);
+    public static void setActiveEffects(Player player, Map<String, Double> data) {
+        getPlugin().getPlayerDataRegistry().fromPlayer(player).setActiveEffects(data);
     }
 
     /**
@@ -1211,15 +1205,27 @@ public class DMisc {
      * @return
      */
     @SuppressWarnings("unchecked")
+    public static void addActiveEffect(Player p, String effectname, int lengthInSeconds) {
+        PlayerDataSaveable save = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        save.addEffect(effectname, System.currentTimeMillis() + lengthInSeconds * 1000);
+    }
+
+    public static void removeActiveEffect(Player p, String effectname) {
+        PlayerDataSaveable save = getPlugin().getPlayerDataRegistry().fromPlayer(p);
+        save.removeEffect(effectname);
+    }
+
     public static void addActiveEffect(UUID p, String effectname, int lengthInSeconds) {
-        if (DSave.hasData(p, "A_EFFECTS")) {
-            ((HashMap<String, Long>) DSave.getData(p, "A_EFFECTS")).put(effectname, System.currentTimeMillis() + lengthInSeconds * 1000);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().addEffect(effectname, System.currentTimeMillis() + lengthInSeconds * 1000);
         }
     }
 
     public static void removeActiveEffect(UUID p, String effectname) {
-        for (String effect : DMisc.getActiveEffectsList(p)) {
-            if (effect.equals(effectname)) DMisc.getActiveEffects(p).remove(effect);
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().removeEffect(effectname);
         }
     }
 
@@ -1227,31 +1233,22 @@ public class DMisc {
      * Returns the effects on a player that are still active
      */
     @SuppressWarnings("unchecked")
-    public static HashMap<String, Long> getActiveEffects(UUID p) {
-        if (DSave.hasData(p, "A_EFFECTS")) {
-            HashMap<String, Long> original = ((HashMap<String, Long>) DSave.getData(p, "A_EFFECTS"));
-            HashMap<String, Long> toreturn = new HashMap<String, Long>();
-            for (Map.Entry<String, Long> s : original.entrySet()) {
-                if (s.getValue() > System.currentTimeMillis()) toreturn.put(s.getKey(), s.getValue());
-            }
-            setActiveEffects(p, toreturn); // clean original
-            return toreturn;
+    public static Map<String, Double> getActiveEffects(UUID p) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            Map<String, Double> toReturn = opSave.get().getActiveEffects().entrySet().stream().filter(e -> e.getValue()
+                    > System.currentTimeMillis()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            opSave.get().setActiveEffects(toReturn);
+            return toReturn;
         }
-        return null;
+        return new HashMap<>();
     }
 
     /**
      * Returns the effects on a player that are still active
      */
-    public static ArrayList<String> getActiveEffectsList(UUID p) {
-        if (DSave.hasData(p, "A_EFFECTS")) {
-            HashMap<String, Long> original = getActiveEffects(p);
-            ArrayList<String> toreturn = new ArrayList<String>();
-            for (Map.Entry<String, Long> s : original.entrySet())
-                if (s.getValue() > System.currentTimeMillis()) toreturn.add(s.getKey());
-            return toreturn;
-        }
-        return null;
+    public static List<String> getActiveEffectsList(UUID p) {
+        return new ArrayList<>(getActiveEffects(p).keySet());
     }
 
     /**
@@ -1259,35 +1256,24 @@ public class DMisc {
      *
      * @return
      */
-    public static List<LocationSaveable> getAllShrines() {
-        return new ArrayList<LocationSaveable>() {
-            {
-                for (UUID player : getFullParticipants())
-                    for (LocationSaveable w : getShrines(player).values())
-                        add(w);
-            }
-        };
+    public static List<ShrineSaveable> getAllShrines() {
+        return new ArrayList<>(getPlugin().getShrineRegistry().getFromDb().values());
     }
 
     /**
-     * Get the names of all "full participants"
+     * Get the ids of all "full participants"
      *
      * @return
      */
-    public static Collection<UUID> getFullParticipants() {
-        return Collections2.filter(DSave.getCompleteData().keySet(), new Predicate<UUID>() {
-            @Override
-            public boolean apply(UUID s) {
-                return isFullParticipant(s);
-            }
-        });
+    public static Set<String> getFullParticipants() {
+        return getPlugin().getPlayerDataRegistry().getFromDb().keySet();
     }
 
     /*
      * WORLDGUARD SUPPORT START
      */
     public static boolean canWorldGuardPVP(Location l) {
-        return ALLOWPVPEVERYWHERE || WorldGuardUtil.worldGuardEnabled() && WorldGuardUtil.canPVP(l);
+        return Setting.ALLOW_PVP_EVERYWHERE || WorldGuardUtil.worldGuardEnabled() && WorldGuardUtil.canPVP(l);
     }
 
     @Deprecated
@@ -1310,7 +1296,7 @@ public class DMisc {
 
     public static boolean canTarget(Entity player, Location location) {
         if (!(player instanceof Player)) return true;
-        else if (!USENEWPVP) return canWorldGuardPVP(location);
+        else if (!Setting.USE_NEW_PVP) return canWorldGuardPVP(location);
         else if (!isFullParticipant((Player) player)) return canWorldGuardPVP(location);
         else return (DSave.hasData((Player) player, "temp_was_PVP")) || canWorldGuardPVP(location);
     }
@@ -1323,14 +1309,13 @@ public class DMisc {
         if (target instanceof Player && isFullParticipant((Player) target)) {
             if (((Player) target).getGameMode() == GameMode.CREATIVE) return;
             if (!canTarget(target, target.getLocation())) return;
-            double hp = getHP((Player) target);
+            double hp = target.getHealth();
             if (amount < 1) return;
             amount -= DDamage.armorReduction((Player) target);
             amount = DDamage.specialReduction((Player) target, amount);
             if (amount < 1) return;
             setHP(((Player) target), hp - amount);
             if (source instanceof Player) DFixes.setLastDamageBy(source, target, cause, amount);
-            DDamage.syncHealth(((Player) target));
         } else {
             EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(source, target, cause, amount);
             DFixes.processed.add(event); // Demigods should ignore this event from here out.
@@ -1344,7 +1329,7 @@ public class DMisc {
 
     public static void damageDemigodsNonCombat(Player target, double amount, DamageCause cause) {
         if ((target).getGameMode() == GameMode.CREATIVE) return;
-        double hp = getHP(target);
+        double hp = target.getHealth();
         if (amount < 1) return;
         amount -= DDamage.armorReduction(target);
         amount = DDamage.specialReduction(target, amount);
