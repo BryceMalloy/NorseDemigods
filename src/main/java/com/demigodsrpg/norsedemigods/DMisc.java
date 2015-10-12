@@ -1004,7 +1004,7 @@ public class DMisc {
         if (!getAllegiance(guest).equalsIgnoreCase(getAllegiance(getOwnerOfShrine(shrine)))) return;
         Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
         if (saveable.isPresent()) {
-            saveable.get().addGuest(guest.toString());  
+            saveable.get().addGuest(guest.toString());   
         }
     }
 
