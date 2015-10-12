@@ -20,7 +20,7 @@ public class DFixes implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     private void onImportantDamage(EntityDamageEvent event) {
-        if (isProcessed(event) || !DSettings.getEnabledWorlds().contains(event.getEntity().getLocation().getWorld()))
+        if (isProcessed(event))
             return;
         if (event instanceof EntityDamageByEntityEvent && ((EntityDamageByEntityEvent) event).getDamager() instanceof Player && DMisc.isFullParticipant((Player) ((EntityDamageByEntityEvent) event).getDamager()))
             important.add(event);
