@@ -967,9 +967,9 @@ public class DMisc {
         return null;
     }
 
-    public static LocationSaveable getNearbyShrine(Location l) {
-        LocationSaveable shrine = null;
-        for (LocationSaveable w : getAllShrines()) {
+    public static ShrineSaveable getNearbyShrine(Location l) {
+        ShrineSaveable shrine = null;
+        for (ShrineSaveable w : getAllShrines()) {
             if (!w.getWorld().equals(l.getWorld().getName())) continue;
             Location l1 = DMisc.toLocation(w);
             if (l1.distance(l) < DShrines.RADIUS) {
