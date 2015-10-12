@@ -165,7 +165,7 @@ public class Dis implements Deity {
     }
 
     private boolean swap() {
-        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        Player p = Bukkit.getPlayer(getPlayerId());
         if (!DMisc.canTarget(p, p.getLocation())) return false;
         LivingEntity target = DMisc.getTargetLivingEntity(p, 4);
         if (target == null) return false;
@@ -178,7 +178,7 @@ public class Dis implements Deity {
     }
 
     private int congregate() {
-        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        Player p = Bukkit.getPlayer(getPlayerId());
         DMisc.addActiveEffect(p.getUniqueId(), "Congregate Call", 60);
         int count = 0;
         for (Player pl : p.getWorld().getPlayers()) {

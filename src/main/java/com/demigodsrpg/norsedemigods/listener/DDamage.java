@@ -182,7 +182,7 @@ public class DDamage implements Listener {
     }
 
     public static double specialReduction(Player p, double amount) {
-        if (DMisc.getActiveEffectsList(p.getUniqueId()) == null) return amount;
+        if (DMisc.getActiveEffectsList(p.getUniqueId()).isEmpty()) return amount;
         if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Invincible")) {
             amount *= 0.5;
         }

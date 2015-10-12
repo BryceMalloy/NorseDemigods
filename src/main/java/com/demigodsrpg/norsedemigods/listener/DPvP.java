@@ -1,10 +1,7 @@
 package com.demigodsrpg.norsedemigods.listener;
 
-import com.demigodsrpg.norsedemigods.DFixes;
-import com.demigodsrpg.norsedemigods.DMisc;
-import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DSave;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.*;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.google.common.collect.Lists;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -27,8 +24,13 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 public class DPvP implements Listener {
-    private static final double MULTIPLIER = DSettings.getSettingDouble("pvp_exp_bonus"); // bonus for dealing damage
     private static final int pvpkillreward = 1500; // Devotion
+
+    NorseDemigods ndg;
+
+    public DPvP(NorseDemigods plugin) {
+        ndg = plugin;
+    }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onArrowLaunch(ProjectileLaunchEvent e) {
@@ -64,7 +66,6 @@ public class DPvP implements Listener {
             attacker = (Player) ((Arrow) e.getDamager()).getShooter();
         else if (e.getDamager() instanceof Player) attacker = (Player) e.getDamager();
         else return;
-        if (!DSettings.getEnabledWorlds().contains(attacker.getWorld())) return;
         if (!(DMisc.isFullParticipant(attacker) && DMisc.isFullParticipant(target))) {
             if (!DMisc.canTarget(target, target.getLocation())) {
                 attacker.sendMessage(ChatColor.YELLOW + "This is a no-PvP zone.");
@@ -88,7 +89,7 @@ public class DPvP implements Listener {
             List<Deity> deities = Lists.newArrayList(DMisc.getTributeableDeities(attacker));
             if (!deities.isEmpty()) {
                 Deity d = deities.get((int) Math.floor(Math.random() * deities.size()));
-                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (e.getDamage() * MULTIPLIER));
+                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (e.getDamage() * Setting.PVP_MULTIPLIER));
                 DLevels.levelProcedure(attacker);
             }
         } catch (Exception ignored) {
@@ -102,8 +103,6 @@ public class DPvP implements Listener {
             public void run() {
                 if (!(e1.getEntity() instanceof Player)) return;
                 Player attacked = (Player) e1.getEntity();
-                if (!DSettings.getEnabledWorlds().contains(attacked.getWorld())) return;
-
                 if ((attacked.getLastDamageCause() != null) && (attacked.getLastDamageCause() instanceof EntityDamageByEntityEvent)) {
                     EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) attacked.getLastDamageCause();
                     if (!(e.getDamager() instanceof Player)) return;
@@ -125,7 +124,7 @@ public class DPvP implements Listener {
                             if (adjusted > 5) adjusted = 5;
                             if (adjusted < 0.2) adjusted = 0.2;
                             for (Deity d : DMisc.getDeities(attacker)) {
-                                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (pvpkillreward * MULTIPLIER * adjusted));
+                                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (pvpkillreward * Setting.PVP_MULTIPLIER * adjusted));
                             }
                         }
                     } else { // regular player
@@ -138,7 +137,8 @@ public class DPvP implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerMove(PlayerMoveEvent event) {
-        onPlayerLineJump(event.getPlayer(), event.getTo(), event.getFrom(), DSettings.getSettingInt("pvp_area_delay_time"));
+        PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer(event.getPlayer());
+        onPlayerLineJump(event.getPlayer(), save, event.getTo(), event.getFrom(), Setting.PVP_DELAY);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -147,41 +147,39 @@ public class DPvP implements Listener {
         final Player player = event.getPlayer();
         Location to = event.getTo();
         Location from = event.getFrom();
-        int delayTime = DSettings.getSettingInt("pvp_area_delay_time");
-
-        if (DSave.hasData(player, "temp_flash") || event.getCause() == TeleportCause.ENDER_PEARL) {
-            onPlayerLineJump(player, to, from, delayTime);
+        int delayTime = Setting.PVP_DELAY;
+        PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer(player);
+        if (save.getTempStatus("temp_flash") || event.getCause() == TeleportCause.ENDER_PEARL) {
+            onPlayerLineJump(player, save, to, from, delayTime);
         } else if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from)) {
-            DSave.removeData(player, "temp_was_PVP");
+            save.removeTempStatus("temp_was_PVP");
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
         } else if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
             player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
     }
 
-    void onPlayerLineJump(final Player player, Location to, Location from, int delayTime) {
+    void onPlayerLineJump(final Player player, PlayerDataSaveable save, Location to, Location from, int delayTime) {
         // NullPointer Check
         if (to == null || from == null) return;
 
-        if (DSave.hasData(player, "temp_was_PVP") || !DMisc.isFullParticipant(player)) return;
+        if (save.getTempStatus("temp_was_PVP") || !DMisc.isFullParticipant(player)) return;
 
         // No Spawn Line-Jumping
-        if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from) && delayTime > 0 && !DMisc.hasPermission(player, "demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
-            DSave.saveData(player, "temp_was_PVP", true);
-            if (DSave.hasData(player, "temp_flash")) DSave.removeData(player, "temp_flash");
+        if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from) && delayTime > 0 && !player.hasPermission("demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
+            save.setTempStatus("temp_was_PVP", true);
+            save.removeTempStatus("temp_flash");
 
-            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                @Override
-                public void run() {
-                    DSave.removeData(player, "temp_was_PVP");
-                    if (!DMisc.canLocationPVP(player.getLocation()))
-                        player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
-                }
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+                PlayerDataSaveable newSave = ndg.getPlayerDataRegistry().fromPlayer(player);
+                newSave.removeTempStatus("temp_was_PVP");
+                if (!DMisc.canLocationPVP(player.getLocation()))
+                    player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
             }, (delayTime * 20));
-        } else if (!DSave.hasData(player, "temp_was_PVP") && !DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from))
+        } else if (!save.getTempStatus("temp_was_PVP") && !DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from))
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
 
         // Let players know where they can PVP
-        if (!DSave.hasData(player, "temp_was_PVP") && DMisc.canLocationPVP(to) && !DMisc.canLocationPVP(from)) {
+        if (!save.getTempStatus("temp_was_PVP") && DMisc.canLocationPVP(to) && !DMisc.canLocationPVP(from)) {
             if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
                 player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
         }

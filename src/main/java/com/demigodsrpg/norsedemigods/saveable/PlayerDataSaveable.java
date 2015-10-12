@@ -129,6 +129,14 @@ public class PlayerDataSaveable implements Saveable {
         return DEITIES.getOrDefault(deity, -1);
     }
 
+    public int getTotalDevotion() {
+        int total = 0;
+        for (int i : DEITIES.values()) {
+            total += i;
+        }
+        return total;
+    }
+
     public Optional<Object> getAbilityData(String ability, String key) {
         return Optional.ofNullable(ABILITY_DATA.getOrDefault(ability, new HashMap<>()).
                 getOrDefault(key, null));
@@ -144,6 +152,20 @@ public class PlayerDataSaveable implements Saveable {
 
     public boolean getTempStatus(String status) {
         return TEMP_DATA.getOrDefault(status, false);
+    }
+
+    public String getTempData(String status, boolean remove) {
+        String dataKey = null;
+        for (String key : TEMP_DATA.keySet()) {
+            if (key.startsWith(status)) {
+                dataKey = key;
+                break;
+            }
+        }
+        if (remove) {
+            removeTempStatus(dataKey);
+        }
+        return dataKey != null ? dataKey.replace(status, "") : null;
     }
 
     public double getLastLoginTime() {
@@ -216,6 +238,15 @@ public class PlayerDataSaveable implements Saveable {
 
     public void addEffect(String effect, Long time) {
         if (!ACTIVE_EFFECTS.containsKey(effect)) {
+            ACTIVE_EFFECTS.put(effect, time.doubleValue());
+        }
+
+        // Put this version of the data object into the registry
+        getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
+    }
+
+    public void addEffect(String effect, Long time, boolean override) {
+        if (!override || !ACTIVE_EFFECTS.containsKey(effect)) {
             ACTIVE_EFFECTS.put(effect, time.doubleValue());
         }
 

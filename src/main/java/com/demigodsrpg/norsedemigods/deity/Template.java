@@ -6,7 +6,7 @@ import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
+import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.Optional;
@@ -45,26 +45,28 @@ public class Template implements Deity {
         p.sendMessage(ChatColor.YELLOW + "Select item: ");
     }
 
-    @EventHandler
-    public void onInteractEvent(PlayerInteractEvent e) {
-        Player p = e.getPlayer();
-        PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
-        if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
-        Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
-        Optional<Material> opBind = saveable.getBind(skillname);
-        if (opEnabled.isPresent() && (boolean) opEnabled.get() || ((p.getItemInHand() != null) &&
-                (opBind.isPresent() && p.getItemInHand().getType() == opBind.get()))) {
-            Optional opTime = saveable.getAbilityData(skillname, "time");
-            if (opTime.isPresent() && (double) opTime.get() > System.currentTimeMillis()) return;
-            saveable.setAbilityData(skillname, "time", System.currentTimeMillis() + SKILLDELAY);
-            if (DMisc.getFavor(p) >= SKILLCOST) {
+    @Override
+    public void onEvent(Event ee) {
+        if (ee instanceof PlayerInteractEvent) {
+            Player p = ((PlayerInteractEvent) ee).getPlayer();
+            PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
+            Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
+            Optional<Material> opBind = saveable.getBind(skillname);
+            if (opEnabled.isPresent() && (boolean) opEnabled.get() || ((p.getItemInHand() != null) &&
+                    (opBind.isPresent() && p.getItemInHand().getType() == opBind.get()))) {
+                Optional opTime = saveable.getAbilityData(skillname, "time");
+                if (opTime.isPresent() && (double) opTime.get() > System.currentTimeMillis()) return;
+                saveable.setAbilityData(skillname, "time", System.currentTimeMillis() + SKILLDELAY);
+                if (DMisc.getFavor(p) >= SKILLCOST) {
                 /*
                  * Skill
                  */
-                DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
-            } else {
-                p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                saveable.setAbilityData(skillname, "enabled", false);
+                    DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
+                } else {
+                    p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
+                    saveable.setAbilityData(skillname, "enabled", false);
+                }
             }
         }
     }

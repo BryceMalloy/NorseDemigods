@@ -171,8 +171,8 @@ public class FrostGiant implements Deity {
         if (healinterval < 1) healinterval = 1;
         if (timeSent > LASTCHECK + (healinterval * 1000)) {
             LASTCHECK = timeSent;
-            if ((DMisc.getOnlinePlayer(getPlayerId()) != null) && DMisc.getOnlinePlayer(getPlayerId()).getWorld().hasStorm()) {
-                Player p = DMisc.getOnlinePlayer(getPlayerId());
+            if ((Bukkit.getPlayer(getPlayerId()) != null) && Bukkit.getPlayer(getPlayerId()).getWorld().hasStorm()) {
+                Player p = Bukkit.getPlayer(getPlayerId());
                 int x = p.getLocation().getChunk().getX(), z = p.getLocation().getChunk().getZ();
                 if (p.getWorld().getBiome(x, z).name().contains("TAIGA") || p.getWorld().getBiome(x, z).name().contains("COLD")) {
                     double healamt = Math.ceil(0.1 * Math.pow(10000, 0.297));

@@ -223,7 +223,7 @@ public class Jormungand implements Deity {
         if (healinterval < 1) healinterval = 1;
         if (timeSent > LASTCHECK + (healinterval * 1000)) {
             LASTCHECK = timeSent;
-            Player p = DMisc.getOnlinePlayer(getPlayerId());
+            Player p = Bukkit.getPlayer(getPlayerId());
             if ((p != null) && p.isOnline()) {
                 if ((p.getLocation().getBlock().getType() == Material.WATER) || (p.getEyeLocation().getBlock().getType() == Material.WATER)) {
                     double healamt = Math.ceil(0.1 * Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.297));

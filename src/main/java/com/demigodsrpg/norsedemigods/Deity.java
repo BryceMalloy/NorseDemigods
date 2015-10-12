@@ -1,6 +1,7 @@
 package com.demigodsrpg.norsedemigods;
 
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.Listener;
 
 public interface Deity extends Listener {
@@ -16,6 +17,8 @@ public interface Deity extends Listener {
     void onSyncTick(long timeSent);
 
     boolean canTribute();
+
+    void onEvent(Event ee);
 
     default NorseDemigods getBackend() {
         return NorseDemigods.INST;

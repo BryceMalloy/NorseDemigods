@@ -133,7 +133,7 @@ public class Dwarf implements Deity, Listener {
     public static void onSmelt(FurnaceSmeltEvent e) {
         if (e.getBlock() == null) return;
         for (UUID s : DMisc.getFullParticipants()) {
-            Player p = DMisc.getOnlinePlayer(s);
+            Player p = Bukkit.getPlayer(s);
             if ((p == null) || p.isDead()) continue;
             if (DMisc.hasDeity(p, "Dwarf")) {
                 if (p.getLocation().getWorld().equals(e.getBlock().getLocation().getWorld()))

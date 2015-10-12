@@ -2,6 +2,7 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Arrow;
@@ -213,11 +214,11 @@ public class Bragi implements Deity {
     public void onSyncTick(long timeSent) {
         if (timeSent > LASTCHECK + 10000) {
             LASTCHECK = timeSent;
-            if ((DMisc.getOnlinePlayer(getPlayerId()) != null) && !DMisc.getOnlinePlayer(getPlayerId()).isDead()) {
-                Player p = DMisc.getOnlinePlayer(getPlayerId());
+            if ((Bukkit.getPlayer(getPlayerId()) != null) && !Bukkit.getPlayer(getPlayerId()).isDead()) {
+                Player p = Bukkit.getPlayer(getPlayerId());
                 if (DMisc.getActiveEffectsList(getPlayerId()).contains("Bragi health regeneration")) {
-                    DMisc.setHP(p, DMisc.getHP(p) + 1);
-                    if (DMisc.getHP(p) > DMisc.getMaxHP(p)) DMisc.setHP(p, DMisc.getMaxHP(p));
+                    DMisc.setHP(p, p.getHealth() + 1);
+                    if (p.getHealth() > p.getMaxHealth()) DMisc.setHP(p, p.getMaxHealth());
                 } else if (DMisc.getActiveEffectsList(getPlayerId()).contains("Bragi Favor regeneration")) {
                     DMisc.setFavor(p, DMisc.getFavor(p) + 5);
                     if (DMisc.getFavor(p) > DMisc.getFavorCap(p))
@@ -229,7 +230,7 @@ public class Bragi implements Deity {
 
     private void applyEffect(PotionEffectType e, String description) {
         int duration = (int) Math.round(60 * Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.09));
-        Player p = DMisc.getOnlinePlayer(getPlayerId());
+        Player p = Bukkit.getPlayer(getPlayerId());
         if (DMisc.getActiveEffectsList(p.getUniqueId()).contains("Music Buff")) {
             p.sendMessage(ChatColor.YELLOW + "You have already received a Music Buff from Bragi.");
             return;
@@ -253,13 +254,13 @@ public class Bragi implements Deity {
     }
 
     private void cure() {
-        Player p = DMisc.getOnlinePlayer(getPlayerId());
-        double healamt = DMisc.getMaxHP(p);
+        Player p = Bukkit.getPlayer(getPlayerId());
+        double healamt = p.getMaxHealth();
         double selfheal = healamt / 9;
-        if (DMisc.getHP(p) + selfheal > DMisc.getMaxHP(p)) {
-            selfheal = DMisc.getMaxHP(p) - DMisc.getHP(p);
+        if (p.getHealth() + selfheal > p.getMaxHealth()) {
+            selfheal = p.getMaxHealth() - p.getHealth();
         }
-        DMisc.setHP(p, DMisc.getHP(p) + selfheal);
+        DMisc.setHP(p, p.getHealth() + selfheal);
         p.sendMessage(ChatColor.GREEN + "Bragi has cured you for " + selfheal + " health.");
         LivingEntity le = DMisc.getTargetLivingEntity(p, 3);
         if (le instanceof Player) {

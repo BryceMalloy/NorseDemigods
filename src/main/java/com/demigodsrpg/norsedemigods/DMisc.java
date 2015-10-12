@@ -26,6 +26,26 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class DMisc {
+
+    @Deprecated
+    public static UUID getDemigodsPlayerId(String name) {
+        PlayerDataSaveable found = null;
+        String lowerName = name.toLowerCase();
+        int delta = Integer.MAX_VALUE;
+        for (PlayerDataSaveable data : getPlugin().getPlayerDataRegistry().getFromDb().values()) {
+            String playername = data.getLastKnownName();
+            if (playername.toLowerCase().startsWith(lowerName)) {
+                int curDelta = playername.length() - lowerName.length();
+                if (curDelta < delta) {
+                    found = data;
+                    delta = curDelta;
+                }
+                if (curDelta == 0) break;
+            }
+        }
+        return found != null ? found.getPlayerId() : null;
+    }
+
     @Deprecated
     public static PlayerDataSaveable getDemigodsPlayer(String name) {
         PlayerDataSaveable found = null;
@@ -104,8 +124,29 @@ public class DMisc {
         getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance("aesir");
     }
 
+    public static void setJotunn(UUID p) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setAlliance("jotunn");
+        }
+    }
+
+    public static void setAEsir(UUID p) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setAlliance("aesir");
+        }
+    }
+
     public static void setAllegiance(Player p, String allegiance) {
         getPlugin().getPlayerDataRegistry().fromPlayer(p).setAlliance(allegiance);
+    }
+
+    public static void setAllegiance(UUID p, String allegiance) {
+        Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
+        if (opSave.isPresent()) {
+            opSave.get().setAlliance(allegiance);
+        }
     }
 
     public static boolean areAllied(Player p1, Player p2) {
@@ -701,6 +742,13 @@ public class DMisc {
     }
 
     /**
+     * Checks if a player has all required attributes (should not give nulls).
+     */
+    public static boolean isFullParticipant(String name) {
+        return isFullParticipant(getDemigodsPlayerId(name));
+    }
+
+    /**
      * Check if a player has all required attributes.
      */
     public static boolean isFullParticipant(UUID p) {
@@ -953,7 +1001,6 @@ public class DMisc {
         setKills(player, 0);
         giveDeity(player, deity);
         setActiveEffects(player, new HashMap<>());
-        setShrines(player.getUniqueId(), new HashMap<>());
     }
 
     /**
@@ -1017,19 +1064,12 @@ public class DMisc {
      * @return if the removal was successful
      */
     @SuppressWarnings("unchecked")
-    public static boolean removeGuest(LocationSaveable shrine, UUID name) {
-        if (!isFullParticipant(name)) return false;
-        if (!DSave.hasData(name, "S_GUESTAT")) DSave.saveData(name, "S_GUESTAT", new ArrayList<LocationSaveable>());
-        ArrayList<LocationSaveable> list = (ArrayList<LocationSaveable>) DSave.getData(name, "S_GUESTAT");
-        Iterator<LocationSaveable> it = list.iterator();
-        boolean success = false;
-        while (it.hasNext()) {
-            if ((it.next()).equalsApprox(shrine)) {
-                it.remove();
-                success = true;
-            }
+    public static void removeGuest(Location shrine, UUID name) {
+        if (!isFullParticipant(name)) return;
+        Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (saveable.isPresent()) {
+            saveable.get().removeGuest(name.toString());
         }
-        return success;
     }
 
     /**
@@ -1039,10 +1079,11 @@ public class DMisc {
      * @param player
      * @return
      */
-    public static boolean isGuest(LocationSaveable shrine, UUID player) {
+    public static boolean isGuest(Location shrine, UUID player) {
         if (!isFullParticipant(player)) return false;
-        for (LocationSaveable w : getAccessibleShrines(player)) {
-            if (w.equalsApprox(shrine)) return true;
+        Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (saveable.isPresent()) {
+            return saveable.get().getGuestIds().contains(player.toString());
         }
         return false;
     }
@@ -1082,22 +1123,12 @@ public class DMisc {
      * @param shrine
      * @return the shrine that was removed
      */
-    public static void removeShrine(LocationSaveable shrine) {
+    public static void removeShrine(ShrineSaveable shrine) {
         try {
-            toLocation(shrine).getBlock().setType(Material.AIR);
+            shrine.toLocation(getPlugin()).getBlock().setType(Material.AIR);
         } catch (NullPointerException ignored) {
         }
-        for (UUID p : getFullParticipants()) {
-            // remove from main lists
-            HashMap<String, LocationSaveable> replace = new HashMap<String, LocationSaveable>();
-            for (String key : getShrines(p).keySet()) {
-                if (!getShrines(p).get(key).equalsApprox(shrine)) replace.put(key, getShrines(p).get(key));
-            }
-            DMisc.setShrines(p, replace);
-            // remove from guest lists
-            while (getAccessibleShrines(p).contains(shrine))
-                getAccessibleShrines(p).remove(shrine);
-        }
+        getPlugin().getShrineRegistry().remove(shrine.getKey());
     }
 
     /**
@@ -1106,9 +1137,11 @@ public class DMisc {
      * @param shrinename
      * @return
      */
-    public static LocationSaveable getShrineByKey(String shrinename) {
-        for (UUID p : getFullParticipants()) {
-            if (getShrines(p).containsKey(shrinename)) return getShrines(p).get(shrinename);
+    public static ShrineSaveable getShrineByName(String shrinename) {
+        Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().getFromDb().values().stream().filter(s ->
+                s.getName().equalsIgnoreCase(shrinename)).findAny();
+        if (opSave.isPresent()) {
+            return opSave.get();
         }
         return null;
     }
@@ -1118,25 +1151,18 @@ public class DMisc {
      *
      * @param shrine
      * @param newname
-     * @return if it worked (cannot begin with "#", name cannot already be used)
+     * @return if it worked
      */
-    public static boolean renameShrine(LocationSaveable shrine, String newname) {
-        if (newname.charAt(0) == '#') return false;
-        for (UUID p : getFullParticipants()) {
-            if (getShrines(p).containsKey(newname)) return false;
-        }
-        UUID owner = DMisc.getOwnerOfShrine(shrine);
-        String tomodify = null;
-        for (String shrinename : getShrines(owner).keySet()) {
-            if (getShrines(owner).get(shrinename).equalsApprox(shrine)) {
-                if (shrinename.charAt(0) == '#') tomodify = shrinename;
+    public static boolean renameShrine(Location shrine, String newname) {
+        if (!getPlugin().getShrineRegistry().getFromDb().values().stream().anyMatch(s -> s.getName().
+                equalsIgnoreCase(newname))) {
+            Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
+            if (saveable.isPresent()) {
+                saveable.get().setName(newname);
+                return true;
             }
         }
-        if (tomodify == null) return false;
-        // rename
-        getShrines(owner).remove(tomodify);
-        getShrines(owner).put("#" + newname, shrine);
-        return true;
+        return false;
     }
 
     /**
@@ -1145,27 +1171,17 @@ public class DMisc {
      * @param shrine
      * @return
      */
-    public static String getShrineName(LocationSaveable shrine) {
-        UUID owner = getOwnerOfShrine(shrine);
-        if ((shrine == null) || (owner == null)) return null;
-        for (String shrinename : getShrines(owner).keySet()) {
-            if (getShrines(owner).get(shrinename).equalsApprox(shrine)) {
-                if (shrinename.charAt(0) == '#') return shrinename.substring(1);
-            }
+    public static String getShrineName(Location shrine) {
+        Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (opSave.isPresent()) {
+            return opSave.get().getName();
         }
-        return "[" + owner + " " + getDeityAtShrine(shrine) + "]";
-    }
-
-    private static void setShrines(UUID p, HashMap<String, LocationSaveable> data) {
-        DSave.saveData(p, "P_SHRINES", data);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
-    public static void addShrine(UUID p, String deityname,) {
-        if (DSave.hasData(p, "P_SHRINES")) {
-            ((HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES")).put(deityname, loc);
-            return;
-        }
+    public static void addShrine(UUID p, String deityname, String name, Location loc) {
+        getPlugin().getShrineRegistry().newShrine(deityname, name, p.toString(), loc);
     }
 
     @SuppressWarnings("unchecked")
@@ -1175,12 +1191,10 @@ public class DMisc {
     }
 
     @SuppressWarnings("unchecked")
-    public static LocationSaveable getShrine(UUID p, String deityname) {
-        if (DSave.hasData(p, "P_SHRINES")) {
-            Map<String, LocationSaveable> original = (HashMap<String, LocationSaveable>) DSave.getData(p, "P_SHRINES");
-            for (Map.Entry<String, LocationSaveable> s : original.entrySet()) {
-                if (s.getKey().equalsIgnoreCase(deityname)) return s.getValue();
-            }
+    public static ShrineSaveable getShrine(UUID p, String deityname) {
+        Optional<ShrineSaveable> opSave = getShrines(p).stream().filter(s -> s.getDeity().equals(deityname)).findAny();
+        if (opSave.isPresent()) {
+            return opSave.get();
         }
         return null;
     }

@@ -73,6 +73,12 @@ public class ShrineSaveable extends LocationSaveable {
 
     // -- MUTATORS -- //
 
+
+    public void setName(String name) {
+        this.name = name;
+        getBackend().getShrineRegistry().put(getKey(), this);
+    }
+
     public void addGuest(String guestId) {
         if (!guestIds.contains(guestId)) {
             guestIds.add(guestId);

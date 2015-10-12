@@ -4,8 +4,8 @@ import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
 import com.demigodsrpg.norsedemigods.registry.ShrineRegistry;
-import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -49,7 +49,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         loadDependencies(); // #7 compatibility with protection plugins
         cleanUp(); // #8
         invalidShrines(); // #9
-        levelPlayers(); // #10
 
         getLogger().info("Attempting to hook into WorldGuard.");
 
@@ -223,9 +222,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new DLevels(), this);
         getServer().getPluginManager().registerEvents(new DChatCommands(), this);
         getServer().getPluginManager().registerEvents(new DDamage(), this);
-        getServer().getPluginManager().registerEvents(new DPvP(), this);
-        getServer().getPluginManager().registerEvents(new DShrines(), this);
-        getServer().getPluginManager().registerEvents(new DDeities(), this);
+        getServer().getPluginManager().registerEvents(new DPvP(this), this);
+        getServer().getPluginManager().registerEvents(new DShrines(this), this);
+        getServer().getPluginManager().registerEvents(new DDeities(this), this);
         getServer().getPluginManager().registerEvents(new DBlockChangeListener(), this);
         for (Deity deity : Deities.values()) {
             getServer().getPluginManager().registerEvents(deity, this);
@@ -286,11 +285,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
     private void cleanUp() {
         // Clean things that may cause glitches
         for (PlayerDataSaveable saveable : PLAYER_DATA.getFromDb().values()) {
-            for (String d : saveable.getDeityList()) {
-                if (saveable.getActiveEffects().contains(d.toUpperCase() + "_TRIBUTE_")) {
-                    saveable.removeEffect(d.toUpperCase() + "_TRIBUTE_");
-                }
-            }
+            saveable.getDeityList().stream().filter(d -> saveable.getActiveEffects().keySet().contains(d.toUpperCase() + "_TRIBUTE_")).forEach(d -> {
+                saveable.removeEffect(d.toUpperCase() + "_TRIBUTE_");
+            });
         }
     }
 
@@ -328,23 +325,17 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     private void invalidShrines() {
         // Remove invalid shrines
-        Iterator<LocationSaveable> i = DMisc.getAllShrines().iterator();
+        Iterator<ShrineSaveable> i = DMisc.getAllShrines().iterator();
         List<String> worldnames = Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
         int count = 0;
         while (i.hasNext()) {
-            LocationSaveable n = i.next();
+            ShrineSaveable n = i.next();
             if (!worldnames.contains(n.getWorld()) || (n.getY() < 0) || (n.getY() > 256)) {
                 count++;
                 DMisc.removeShrine(n);
             }
         }
         if (count > 0) getLogger().info("Removed " + count + " invalid shrines.");
-    }
-
-    private void levelPlayers() {
-        // Level players
-        for (PlayerDataSaveable player : PLAYER_DATA.getFromDb().values())
-            DLevels.levelProcedure(player);
     }
 
     private void unstickFireball() {

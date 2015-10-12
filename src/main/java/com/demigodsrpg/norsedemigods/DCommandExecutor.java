@@ -1,13 +1,14 @@
 package com.demigodsrpg.norsedemigods;
 
+import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.deity.aesir.*;
 import com.demigodsrpg.norsedemigods.deity.jotunn.*;
-import com.demigodsrpg.norsedemigods.deity.testing.Kvasir;
 import com.demigodsrpg.norsedemigods.listener.DLevels;
 import com.demigodsrpg.norsedemigods.listener.DShrines;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
-import com.demigodsrpg.norsedemigods.util.DSave;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,9 +20,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -29,7 +27,6 @@ public class DCommandExecutor implements CommandExecutor {
     private final NorseDemigods plugin;
     public static final double ADVANTAGEPERCENT = 1.3;
     private static final double TRANSFERTAX = 0.9;
-    private final boolean BALANCETEAMS = DSettings.getSettingBoolean("balance_teams");
 
     public DCommandExecutor(NorseDemigods d) {
         plugin = d;
@@ -67,16 +64,9 @@ public class DCommandExecutor implements CommandExecutor {
             else if (c.getName().equalsIgnoreCase("setdevotion")) return setDevotion(args);
             else if (c.getName().equalsIgnoreCase("adddevotion")) return addDevotion(args);
             else if (c.getName().equalsIgnoreCase("addunclaimeddevotion")) return addUnclaimedDevotion(args);
-            else if (c.getName().equalsIgnoreCase("debugplayer")) return debugPlayer(args);
-            else if (c.getName().equalsIgnoreCase("exportdata")) return debugEveryPlayer();
 
             return false;
         } else {
-            if (!DSettings.getEnabledWorlds().contains(p.getWorld())) {
-                p.sendMessage(ChatColor.YELLOW + "Demigods is not enabled in your world.");
-                return true;
-            }
-
             // Non-deity-specific Player commands
             if (c.getName().equalsIgnoreCase("dg")) return infoDG(p, args);
             else if (c.getName().equalsIgnoreCase("check")) return checkCode(p);
@@ -114,10 +104,6 @@ public class DCommandExecutor implements CommandExecutor {
                 // else if (c.getName().equalsIgnoreCase("setlore")) return setLore(p);
 
             else if (c.isRegistered()) {
-                if (!DSettings.getEnabledWorlds().contains(p.getWorld())) {
-                    p.sendMessage(ChatColor.YELLOW + "Demigods is not enabled in this world.");
-                    return true;
-                }
                 boolean bind = false;
                 if (args.length == 1) if (args[0].contains("bind")) bind = true;
                 if (DMisc.getDeities(p) != null) for (Deity d : DMisc.getDeities(p))
@@ -262,10 +248,10 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean addHP(String[] args) {
         if (args.length != 2) return false;
         try {
-            UUID pl = DMisc.getDemigodsPlayerId(args[0]);
+            Player pl = Bukkit.getPlayer(args[0]);
             int amt = Integer.parseInt(args[1]);
-            DMisc.setHP(pl, amt + DMisc.getHP(pl));
-            Logger.getLogger("Minecraft").info("[Demigods] Increased " + pl + "'s hp by " + amt + " to " + DMisc.getHP(pl) + ".");
+            DMisc.setHP(pl, amt + pl.getHealth());
+            Logger.getLogger("Minecraft").info("[Demigods] Increased " + pl + "'s hp by " + amt + " to " + pl.getHealth() + ".");
             return true;
         } catch (Exception error) {
             Logger.getLogger("Minecraft").warning("[Demigods] Unable to parse command.");
@@ -286,7 +272,7 @@ public class DCommandExecutor implements CommandExecutor {
         } else if (args.length == 2) {
             try {
                 UUID pl = DMisc.getDemigodsPlayerId(args[0]);
-                Deity deity = DMisc.getDeity(pl, args[1]);
+                Deity deity = Deities.valueOf(args[0]);
                 Logger.getLogger("Minecraft").info(DMisc.getDevotion(pl, deity) + "");
                 return true;
             } catch (Exception error) {
@@ -300,7 +286,7 @@ public class DCommandExecutor implements CommandExecutor {
         if (args.length != 3) return false;
         try {
             UUID pl = DMisc.getDemigodsPlayerId(args[0]);
-            Deity deity = DMisc.getDeity(pl, args[1]);
+            Deity deity = Deities.valueOf(args[0]);
             int amt = Integer.parseInt(args[2]);
             DMisc.setDevotion(pl, deity, amt);
             Logger.getLogger("Minecraft").info("[Demigods] Set " + pl + "'s devotion for " + deity.getName() + " to " + amt + ".");
@@ -315,7 +301,7 @@ public class DCommandExecutor implements CommandExecutor {
         if (args.length != 3) return false;
         try {
             UUID pl = DMisc.getDemigodsPlayerId(args[0]);
-            Deity deity = DMisc.getDeity(pl, args[1]);
+            Deity deity = Deities.valueOf(args[0]);
             int amt = Integer.parseInt(args[2]);
             int before = DMisc.getDevotion(pl, deity);
             DMisc.setDevotion(pl, deity, before + amt);
@@ -342,88 +328,15 @@ public class DCommandExecutor implements CommandExecutor {
         }
     }
 
-    private boolean debugPlayer(String[] args) {
-        if (args.length == 1) {
-            UUID player = DMisc.getDemigodsPlayerId(args[0]);
-            if (player == null) {
-                Logger.getLogger("Minecraft").info("[Demigods] Player not found.");
-                return true;
-            }
-            DDebug.printData(Logger.getLogger("Minecraft"), player);
-            return true;
-        } else if (args.length == 2) {
-            if (args[1].equalsIgnoreCase("print")) {
-                UUID player = DMisc.getDemigodsPlayerId(args[0]);
-                if (player == null) {
-                    Logger.getLogger("Minecraft").info("[Demigods] Player not found.");
-                    return true;
-                }
-                DDebug.printData(Logger.getLogger("Minecraft"), player);
-                return true;
-            } else if (args[1].equalsIgnoreCase("write")) {
-                UUID player = DMisc.getDemigodsPlayerId(args[0]);
-                if (player == null) {
-                    Logger.getLogger("Minecraft").info("[Demigods] Player not found.");
-                    return true;
-                }
-                try {
-                    DDebug.writeData(player);
-                    return true;
-                } catch (IOException e) {
-                    Logger.getLogger("Minecraft").warning("[Demigods] Error writing debug for " + player + ".");
-                    e.printStackTrace();
-                    Logger.getLogger("Minecraft").warning("[Demigods] End stack trace for debug.");
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean debugEveryPlayer() {
-        int count = 0;
-        DMisc.consoleMSG("info", "Exporting Legacy data...");
-        for (UUID player : DSave.getCompleteData().keySet()) {
-            try {
-                DDebug.writeLegacyData(player);
-                count++;
-            } catch (IOException e) {
-                Logger.getLogger("Minecraft").warning("[Demigods] Error writing debug for " + player + ".");
-                e.printStackTrace();
-                Logger.getLogger("Minecraft").warning("[Demigods] End stack trace for debug.");
-            }
-        }
-        DMisc.consoleMSG("info", "Finished exporting Legacy data for " + count + " players.");
-        return true;
-    }
-
     private boolean infoDG(Player p, String[] args) {
         if ((args.length == 2) || (args.length == 3)) {
             if (args[0].equalsIgnoreCase("debug") && DMisc.hasPermissionOrOP(p)) {
                 UUID target = DMisc.getDemigodsPlayerId(args[1]);
-                if (args.length == 3) {
-                    if (args[2].equalsIgnoreCase("write")) {
-                        if (target == null) {
-                            p.sendMessage(ChatColor.YELLOW + "Player not found.");
-                            return true;
-                        }
-                        try {
-                            p.sendMessage(ChatColor.YELLOW + "Writing debug data for " + target + "...");
-                            DDebug.writeData(target);
-                        } catch (IOException e) {
-                            Logger.getLogger("Minecraft").warning("[Demigods] Error writing debug data for " + target + ".");
-                            e.printStackTrace();
-                            Logger.getLogger("Minecraft").warning("[Demigods] End stack trace.");
-                            p.sendMessage(ChatColor.RED + "Error writing data. Check the log for a stack trace.");
-                        }
-                        p.sendMessage(ChatColor.YELLOW + "Debug data for " + target + " should have been written to file.");
-                    }
-                } else {
-                    if (target == null) {
-                        p.sendMessage(ChatColor.YELLOW + "Player not found.");
-                        return true;
-                    }
-                    DDebug.printData(p, target);
+                if (target == null) {
+                    p.sendMessage(ChatColor.YELLOW + "Player not found.");
+                    return true;
                 }
+                DDebug.printData(p, target);
             }
         }
         if (args.length == 0) {
@@ -540,12 +453,12 @@ public class DCommandExecutor implements CommandExecutor {
                 ArrayList<UUID> onlinegods = new ArrayList<UUID>();
                 ArrayList<UUID> onlinetitans = new ArrayList<UUID>();
                 ArrayList<UUID> onlineother = new ArrayList<UUID>();
-                for (UUID id : DSave.getCompleteData().keySet()) {
+                for (PlayerDataSaveable save : plugin.getPlayerDataRegistry().getFromDb().values()) {
                     try {
+                        UUID id = save.getPlayerId();
                         if (!DMisc.isFullParticipant(id)) continue;
-                        if (DSave.hasData(id, "LASTLOGINTIME"))
-                            if ((Long) DSave.getData(id, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
-                                continue;
+                        if (save.getLastLoginTime() < System.currentTimeMillis() - 604800000)
+                            continue;
                         if (DMisc.getAllegiance(id).equalsIgnoreCase("Jotunn")) {
                             titancount++;
                             titankills += DMisc.getKills(id);
@@ -616,19 +529,21 @@ public class DCommandExecutor implements CommandExecutor {
                 ArrayList<UUID> titans = new ArrayList<UUID>();
                 ArrayList<Long> gr = new ArrayList<Long>();
                 ArrayList<Long> tr = new ArrayList<Long>();
-                for (UUID s : DMisc.getFullParticipants()) {
-                    if (DMisc.getAllegiance(s).equalsIgnoreCase("AEsir")) {
-                        if (DSave.hasData(s, "LASTLOGINTIME"))
-                            if ((Long) DSave.getData(s, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
+                for (String s : DMisc.getFullParticipants()) {
+                    Optional<PlayerDataSaveable> opSave = plugin.getPlayerDataRegistry().fromKey(s);
+                    if (opSave.isPresent()) {
+                        UUID id = UUID.fromString(s);
+                        if (DMisc.getAllegiance(id).equalsIgnoreCase("AEsir")) {
+                            if (opSave.get().getLastLoginTime() < System.currentTimeMillis() - 604800000)
                                 continue;
-                        gods.add(s);
-                        gr.add(DMisc.getRanking(s));
-                    } else if (DMisc.getAllegiance(s).equalsIgnoreCase("Jotunn")) {
-                        if (DSave.hasData(s, "LASTLOGINTIME"))
-                            if ((Long) DSave.getData(s, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
+                            gods.add(id);
+                            gr.add(DMisc.getRanking(id));
+                        } else if (DMisc.getAllegiance(id).equalsIgnoreCase("Jotunn")) {
+                            if (opSave.get().getLastLoginTime() < System.currentTimeMillis() - 604800000)
                                 continue;
-                        titans.add(s);
-                        tr.add(DMisc.getRanking(s));
+                            titans.add(id);
+                            tr.add(DMisc.getRanking(id));
+                        }
                     }
                 }
                 String[] Gods = new String[gods.size()];
@@ -686,7 +601,7 @@ public class DCommandExecutor implements CommandExecutor {
                 if (gp > 5) gp = 5;
                 p.sendMessage(ChatColor.GOLD + "-- AEsir");
                 for (int i = 0; i < gp; i++) {
-                    if (DMisc.getOnlinePlayer(Gods[i]) != null)
+                    if (Bukkit.getPlayer(Gods[i]) != null)
                         p.sendMessage(ChatColor.GREEN + "  " + (i + 1) + ". " + Gods[i] + " :: " + GR[i]);
                     else p.sendMessage(ChatColor.GRAY + "  " + (i + 1) + ". " + Gods[i] + " :: " + GR[i]);
                 }
@@ -694,17 +609,17 @@ public class DCommandExecutor implements CommandExecutor {
                 if (tp > 5) tp = 5;
                 p.sendMessage(ChatColor.DARK_RED + "-- Jotunn");
                 for (int i = 0; i < tp; i++) {
-                    if (DMisc.getOnlinePlayer(Titans[i]) != null)
+                    if (Bukkit.getPlayer(Titans[i]) != null)
                         p.sendMessage(ChatColor.GREEN + "  " + (i + 1) + ". " + Titans[i] + " :: " + TR[i]);
                     else p.sendMessage(ChatColor.GRAY + "  " + (i + 1) + ". " + Titans[i] + " :: " + TR[i]);
                 }
             } else {
-                for (Deity deity : DSave.getGlobalList()) {
+                for (Deity deity : Deities.values()) {
                     if (deity.getName().equalsIgnoreCase(args[0])) deity.printInfo(p);
                 }
             }
         } else if (args.length == 2) {
-            for (Deity deity : DSave.getGlobalList()) {
+            for (Deity deity : Deities.values()) {
                 if (deity.getName().equalsIgnoreCase(args[0] + " " + args[1])) deity.printInfo(p);
             }
             if (args[0].equalsIgnoreCase("ranking") || args[0].equalsIgnoreCase("rankings")) {
@@ -712,13 +627,16 @@ public class DCommandExecutor implements CommandExecutor {
                     // get list of gods
                     ArrayList<UUID> gods = new ArrayList<UUID>();
                     ArrayList<Long> gr = new ArrayList<Long>();
-                    for (UUID s : DMisc.getFullParticipants()) {
-                        if (DMisc.getAllegiance(s).equalsIgnoreCase("AEsir")) {
-                            if (DSave.hasData(s, "LASTLOGINTIME"))
-                                if ((Long) DSave.getData(s, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
+                    for (String s : DMisc.getFullParticipants()) {
+                        Optional<PlayerDataSaveable> opSave = plugin.getPlayerDataRegistry().fromKey(s);
+                        if (opSave.isPresent()) {
+                            UUID id = UUID.fromString(s);
+                            if (DMisc.getAllegiance(id).equalsIgnoreCase("AEsir")) {
+                                if (opSave.get().getLastLoginTime() < System.currentTimeMillis() - 604800000)
                                     continue;
-                            gods.add(s);
-                            gr.add(DMisc.getRanking(s));
+                                gods.add(id);
+                                gr.add(DMisc.getRanking(id));
+                            }
                         }
                     }
                     if (gods.size() < 1) {
@@ -752,7 +670,7 @@ public class DCommandExecutor implements CommandExecutor {
                     p.sendMessage(ChatColor.GRAY + "----AEsir Rankings----");
                     p.sendMessage(ChatColor.GRAY + "Rankings are determined by Devotion, Deities, and Kills.");
                     for (int i = 0; i < Gods.length; i++) {
-                        if (DMisc.getOnlinePlayer(Gods[i]) != null)
+                        if (Bukkit.getPlayer(Gods[i]) != null)
                             p.sendMessage(ChatColor.GREEN + "  " + (i + 1) + ". " + Gods[i] + " :: " + GR[i]);
                         else p.sendMessage(ChatColor.GRAY + "  " + (i + 1) + ". " + Gods[i] + " :: " + GR[i]);
                     }
@@ -760,13 +678,16 @@ public class DCommandExecutor implements CommandExecutor {
                     // get list of titans
                     ArrayList<UUID> titans = new ArrayList<UUID>();
                     ArrayList<Long> tr = new ArrayList<Long>();
-                    for (UUID s : DMisc.getFullParticipants()) {
-                        if (DMisc.getAllegiance(s).equalsIgnoreCase("Jotunn")) {
-                            if (DSave.hasData(s, "LASTLOGINTIME"))
-                                if ((Long) DSave.getData(s, "LASTLOGINTIME") < System.currentTimeMillis() - 604800000)
+                    for (String s : DMisc.getFullParticipants()) {
+                        Optional<PlayerDataSaveable> opSave = plugin.getPlayerDataRegistry().fromKey(s);
+                        if (opSave.isPresent()) {
+                            UUID id = UUID.fromString(s);
+                            if (DMisc.getAllegiance(id).equalsIgnoreCase("Jotunn")) {
+                                if (opSave.get().getLastLoginTime() < System.currentTimeMillis() - 604800000)
                                     continue;
-                            titans.add(s);
-                            tr.add(DMisc.getRanking(s));
+                                titans.add(id);
+                                tr.add(DMisc.getRanking(id));
+                            }
                         }
                     }
                     if (titans.size() < 1) {
@@ -801,7 +722,7 @@ public class DCommandExecutor implements CommandExecutor {
                     p.sendMessage(ChatColor.GRAY + "----Jotunn Rankings----");
                     p.sendMessage(ChatColor.GRAY + "Rankings are determined by Devotion, Deities, and Kills.");
                     for (int i = 0; i < Titans.length; i++) {
-                        if (DMisc.getOnlinePlayer(Titans[i]) != null)
+                        if (Bukkit.getPlayer(Titans[i]) != null)
                             p.sendMessage(ChatColor.GREEN + "  " + (i + 1) + ". " + Titans[i] + " :: " + TR[i]);
                         else p.sendMessage(ChatColor.GRAY + "  " + (i + 1) + ". " + Titans[i] + " :: " + TR[i]);
                     }
@@ -832,9 +753,9 @@ public class DCommandExecutor implements CommandExecutor {
         p.sendMessage(ChatColor.YELLOW + "--" + p.getName() + "--" + DMisc.getRank(p) + "");
         // HP
         ChatColor color = ChatColor.GREEN;
-        if ((DMisc.getHP(p) / DMisc.getMaxHP(p)) < 0.25) color = ChatColor.RED;
-        else if ((DMisc.getHP(p) / DMisc.getMaxHP(p)) < 0.5) color = ChatColor.YELLOW;
-        p.sendMessage("HP: " + color + DMisc.getHP(p) + "/" + DMisc.getMaxHP(p));
+        if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
+        else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
+        p.sendMessage("HP: " + color + p.getHealth() + "/" + p.getMaxHealth());
         // List deities
         String send = "You are empowered by:";
         for (Deity d : DMisc.getDeities(p)) {
@@ -844,7 +765,7 @@ public class DCommandExecutor implements CommandExecutor {
         // Display Favor/Ascensions and K/D
         // float percentage = (DMiscUtil.getDevotion(p)-DMiscUtil.costForNextAscension(DMiscUtil.getAscensions(p)-1))/(float)(DMiscUtil.costForNextAscension(p)-DMiscUtil.costForNextAscension(DMiscUtil.getAscensions(p)-1))*100;
         String op = ChatColor.YELLOW + "   |   " + (DMisc.costForNextAscension(DMisc.getAscensions(p)) - DMisc.getDevotion(p)) + " until next Ascension";
-        if (DMisc.getAscensions(p) >= DMisc.ASCENSIONCAP) op = "";
+        if (DMisc.getAscensions(p) >= Setting.ASCENSION_CAP) op = "";
         p.sendMessage("Devotion: " + DMisc.getDevotion(p) + op);
         p.sendMessage("Favor: " + DMisc.getFavor(p) + ChatColor.YELLOW + "/" + DMisc.getFavorCap(p));
         p.sendMessage("Ascensions: " + DMisc.getAscensions(p));
@@ -858,8 +779,8 @@ public class DCommandExecutor implements CommandExecutor {
         // Effects
         if (DMisc.getActiveEffects(p.getUniqueId()).size() > 0) {
             String printout = ChatColor.YELLOW + "Active effects:";
-            HashMap<String, Long> fx = DMisc.getActiveEffects(p.getUniqueId());
-            for (Map.Entry<String, Long> str : fx.entrySet()) {
+            Map<String, Double> fx = DMisc.getActiveEffects(p.getUniqueId());
+            for (Map.Entry<String, Double> str : fx.entrySet()) {
                 printout += " " + str.getKey() + "[" + (Math.round(str.getValue() - System.currentTimeMillis()) / 1000) + "s]";
             }
             p.sendMessage(printout);
@@ -897,7 +818,7 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         } else if (args.length == 2) {
             try {
-                Player pl = DMisc.getOnlinePlayer(args[0]);
+                Player pl = Bukkit.getPlayer(args[0]);
                 if (pl.getUniqueId().equals(p.getUniqueId())) {
                     p.sendMessage(ChatColor.YELLOW + "You cannot send Favor to yourself.");
                     return true;
@@ -928,24 +849,23 @@ public class DCommandExecutor implements CommandExecutor {
 
     private boolean alliance(Player p) {
         if (!DMisc.isFullParticipant(p)) return true;
-        if (DSave.hasData(p, "ALLIANCECHAT")) {
-            if ((Boolean) DSave.getData(p, "ALLIANCECHAT")) {
-                p.sendMessage(ChatColor.YELLOW + "Alliance chat has been turned off.");
-                DSave.saveData(p, "ALLIANCECHAT", false);
-                return true;
-            }
+        PlayerDataSaveable save = plugin.getPlayerDataRegistry().fromPlayer(p);
+        if (save.getTempStatus("ALLIANCECHAT")) {
+            p.sendMessage(ChatColor.YELLOW + "Alliance chat has been turned off.");
+            save.removeTempStatus("ALLIANCECHAT");
+            return true;
         }
         p.sendMessage(ChatColor.YELLOW + "Alliance chat has been turned on.");
-        DSave.saveData(p, "ALLIANCECHAT", true);
+        save.setTempStatus("ALLIANCECHAT", true);
         return true;
     }
 
     private boolean checkPlayer(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.checkplayer") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.checkplayer") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 1) return false;
         try {
-            Player ptarget = DMisc.getOnlinePlayer(args[0]);
+            Player ptarget = Bukkit.getPlayer(args[0]);
             UUID target = DMisc.getDemigodsPlayerId(args[0]);
             if (DMisc.isFullParticipant(target)) {
                 p.sendMessage(ChatColor.YELLOW + "--" + target + "--");
@@ -957,9 +877,11 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(send);
                 // HP
                 ChatColor color = ChatColor.GREEN;
-                if ((DMisc.getHP(target) / DMisc.getMaxHP(target)) < 0.25) color = ChatColor.RED;
-                else if ((DMisc.getHP(target) / DMisc.getMaxHP(target)) < 0.5) color = ChatColor.YELLOW;
-                p.sendMessage("HP: " + color + DMisc.getHP(target) + "/" + DMisc.getMaxHP(target));
+                if (ptarget != null) {
+                    if ((ptarget.getHealth() / ptarget.getMaxHealth()) < 0.25) color = ChatColor.RED;
+                    else if (ptarget.getHealth() / ptarget.getMaxHealth() < 0.5) color = ChatColor.YELLOW;
+                    p.sendMessage("HP: " + color + ptarget.getHealth() + "/" + ptarget.getMaxHealth());
+                }
                 // Display Favor/Ascensions and K/D
                 p.sendMessage("Devotion: " + DMisc.getDevotion(target) + ChatColor.YELLOW + "   |   " + (DMisc.costForNextAscension(DMisc.getAscensions(target)) - DMisc.getDevotion(target)) + " until next Ascension");
                 p.sendMessage("Favor: " + DMisc.getFavor(target) + ChatColor.YELLOW + "/" + DMisc.getFavorCap(target));
@@ -992,19 +914,18 @@ public class DCommandExecutor implements CommandExecutor {
         if (!DMisc.isFullParticipant(p)) return true;
         // player has shrines for these deities
         String str1 = "Shrines:";
-        for (String name : DMisc.getShrines(p.getUniqueId()).keySet()) {
-            if (name.charAt(0) != '#')
-                str1 += " " + DMisc.getDeityAtShrine(DMisc.getShrines(p.getUniqueId()).get(name));
+        for (ShrineSaveable shrine : DMisc.getShrines(p.getUniqueId())) {
+            str1 += " " + shrine.getDeity();
         }
         // player's named shrines
         String str2 = "Named shrines:";
-        for (String name : DMisc.getShrines(p.getUniqueId()).keySet()) {
-            if (name.charAt(0) == '#') str2 += " " + name.substring(1);
+        for (ShrineSaveable shrine : DMisc.getShrines(p.getUniqueId())) {
+            str2 += " " + shrine.getName();
         }
         // player can warp to these shrines
         String str3 = "Other shrines you may warp to:";
-        for (LocationSaveable shrine : DMisc.getAccessibleShrines(p.getUniqueId())) {
-            str3 += " " + DMisc.getShrineName(shrine);
+        for (ShrineSaveable shrine : DMisc.getAccessibleShrines(p.getUniqueId())) {
+            str3 += " " + shrine.getName();
         }
         p.sendMessage(ChatColor.YELLOW + str1);
         p.sendMessage(ChatColor.YELLOW + str2);
@@ -1013,9 +934,9 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean shrineWarp(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.shrinewarp") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.shrinewarp") || p.hasPermission("demigods.admin")))
             return true;
-        LocationSaveable target = null;
+        ShrineSaveable target = null;
         if ((args.length != 1) && (args.length != 2)) return false;
         if (args.length == 1)
             // try matching the name to deities the player has
@@ -1026,22 +947,15 @@ public class DCommandExecutor implements CommandExecutor {
                 target = DMisc.getShrine(DMisc.getDemigodsPlayerId(args[0]), args[1]);
             }
         }
-        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByKey("#" + args[0]);
+        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName("#" + args[0]);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "Target shrine not found. Shrine names are case sensitive.");
             return true;
         }
         // check for permission
-        if (!DMisc.isGuest(target, p.getUniqueId()) && !DMisc.getOwnerOfShrine(target).equals(p.getUniqueId())) {
+        String playerId = p.getUniqueId().toString();
+        if (!target.getGuestIds().contains(playerId) && !target.getOwnerId().equals(playerId)) {
             p.sendMessage(ChatColor.YELLOW + "You do not have permission for that warp.");
-            return true;
-        }
-        // check if warp is valid
-        if (!DSettings.getEnabledWorlds().contains(p.getWorld())) {
-            return true;
-        }
-        if (!DSettings.getEnabledWorlds().contains(DMisc.toLocation(target).getWorld())) {
-            p.sendMessage(ChatColor.YELLOW + "Demigods is not enabled in the target world.");
             return true;
         }
         // check if warp is clear
@@ -1051,97 +965,47 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         }
         // warp code
-        target = DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
         final LocationSaveable current = DMisc.toWriteLocation(p.getLocation());
-        final double hp = DMisc.getHP(p);
+        final double hp = p.getHealth();
         final float pitch = p.getLocation().getPitch();
         final float yaw = p.getLocation().getYaw();
         final Player pt = p;
-        final LocationSaveable TARGET = target;
+        final LocationSaveable TARGET = DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
         DMisc.addActiveEffect(p.getUniqueId(), "Warping", 1000);
         p.sendMessage(ChatColor.YELLOW + "Don't move, warping in progress...");
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
+        for (int i = 20; i <= 80; i += 20) {
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
                 if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
                     if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
                         pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
                         DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
                     }
-                    if (DMisc.getHP(pt) < hp) {
+                    if (pt.getHealth() < hp) {
                         pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
                         DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
                     }
                 }
-            }
-        }, 20);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 40);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 60);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 80);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    Location newloc = DMisc.toLocation(TARGET);
-                    newloc.setPitch(pitch);
-                    newloc.setYaw(yaw);
-                    newloc.setX(newloc.getX() + 0.5);
-                    newloc.setZ(newloc.getZ() + 0.5);
-                    DMisc.horseTeleport(pt, newloc);
-                    pt.sendMessage(ChatColor.YELLOW + "Shrine warp successful.");
-                    DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                }
+            }, i);
+        }
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+            if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
+                Location newloc = DMisc.toLocation(TARGET);
+                newloc.setPitch(pitch);
+                newloc.setYaw(yaw);
+                newloc.setX(newloc.getX() + 0.5);
+                newloc.setZ(newloc.getZ() + 0.5);
+                DMisc.horseTeleport(pt, newloc);
+                pt.sendMessage(ChatColor.YELLOW + "Shrine warp successful.");
+                DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
             }
         }, 90);
         return true;
     }
 
     private boolean forceShrineWarp(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.shrinewarp") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.shrinewarp") || p.hasPermission("demigods.admin")))
             return true;
-        LocationSaveable target = null;
+        ShrineSaveable target = null;
         if ((args.length != 1) && (args.length != 2)) return false;
         if (args.length == 1)
             // try matching the name to deities the player has
@@ -1152,202 +1016,71 @@ public class DCommandExecutor implements CommandExecutor {
                 target = DMisc.getShrine(DMisc.getDemigodsPlayerId(args[0]), args[1]);
             }
         }
-        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByKey("#" + args[0]);
+        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName("#" + args[0]);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "Target shrine not found. Shrine names are case sensitive.");
             return true;
         }
         // check for permission
-        if (!DMisc.isGuest(target, p.getUniqueId()) && !DMisc.getOwnerOfShrine(target).equals(p.getUniqueId())) {
+        String playerId = p.getUniqueId().toString();
+        if (!target.getGuestIds().contains(playerId) && !target.getOwnerId().equals(playerId)) {
             p.sendMessage(ChatColor.YELLOW + "You do not have permission for that warp.");
-            return true;
-        }
-        // check if warp is valid
-        if (!DSettings.getEnabledWorlds().contains(p.getWorld())) {
-            return true;
-        }
-        if (!DSettings.getEnabledWorlds().contains(DMisc.toLocation(target).getWorld())) {
-            p.sendMessage(ChatColor.YELLOW + "Demigods is not enabled in the target world.");
             return true;
         }
         // check if warp is clear
         Block b = DMisc.toLocation(target).getBlock();
         if ((b.getRelative(BlockFace.UP).getType() != Material.AIR) || (b.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR)) {
-            p.sendMessage(ChatColor.YELLOW + "The target location is blocked, warping anyways.");
+            p.sendMessage(ChatColor.YELLOW + "The target location is blocked.");
+            return true;
         }
         // warp code
-        target = DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
         final LocationSaveable current = DMisc.toWriteLocation(p.getLocation());
-        final double hp = DMisc.getHP(p);
+        final double hp = p.getHealth();
         final float pitch = p.getLocation().getPitch();
         final float yaw = p.getLocation().getYaw();
         final Player pt = p;
-        final LocationSaveable TARGET = target;
+        final LocationSaveable TARGET = DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation());
         DMisc.addActiveEffect(p.getUniqueId(), "Warping", 1000);
         p.sendMessage(ChatColor.YELLOW + "Don't move, warping in progress...");
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
+        for (int i = 20; i <= 180; i += 20) {
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
                 if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
                     if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
                         pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
                         DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
                     }
-                    if (DMisc.getHP(pt) < hp) {
+                    if (pt.getHealth() < hp) {
                         pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
                         DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
                     }
                 }
-            }
-        }, 20);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 40);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 60);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 80);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 100);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 120);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 140);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 160);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    if (!current.equalsApprox(DMisc.toWriteLocation(pt.getLocation()))) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to movement.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                    if (DMisc.getHP(pt) < hp) {
-                        pt.sendMessage(ChatColor.RED + "Warp cancelled due to loss of health.");
-                        DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                    }
-                }
-            }
-        }, 180);
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
-                    Location newloc = DMisc.toLocation(TARGET);
-                    newloc.setPitch(pitch);
-                    newloc.setYaw(yaw);
-                    newloc.setX(newloc.getX() + 0.5);
-                    newloc.setZ(newloc.getZ() + 0.5);
-                    DMisc.horseTeleport(pt, newloc);
-                    pt.sendMessage(ChatColor.YELLOW + "Shrine warp successful.");
-                    DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
-                }
+            }, i);
+        }
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+            if (DMisc.getActiveEffectsList(pt.getUniqueId()).contains("Warping")) {
+                Location newloc = DMisc.toLocation(TARGET);
+                newloc.setPitch(pitch);
+                newloc.setYaw(yaw);
+                newloc.setX(newloc.getX() + 0.5);
+                newloc.setZ(newloc.getZ() + 0.5);
+                DMisc.horseTeleport(pt, newloc);
+                pt.sendMessage(ChatColor.YELLOW + "Shrine warp successful.");
+                DMisc.removeActiveEffect(pt.getUniqueId(), "Warping");
             }
         }, 190);
         return true;
     }
 
     private boolean shrineOwner(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.shrineowner") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.shrineowner") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
-        LocationSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
+        ShrineSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
         }
-        if (!DMisc.getOwnerOfShrine(shrine).equals(p.getUniqueId()) && !DMisc.hasPermission(p, "demigods.admin")) {
+        if (!shrine.getOwnerId().equals(p.getUniqueId().toString()) && !p.hasPermission("demigods.admin")) {
             p.sendMessage(ChatColor.YELLOW + "Only admins and the creator of a shrine can modify it.");
             return true;
         }
@@ -1358,13 +1091,13 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "Player not found.");
             } else if (toadd.equals(p.getUniqueId())) {
                 p.sendMessage(ChatColor.YELLOW + "You are already the shrine owner.");
-            } else if (DMisc.getShrineGuestList(shrine).contains(toadd)) {
+            } else if (shrine.getGuestIds().contains(toadd.toString())) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(toadd) + " already has permission to warp to this shrine.");
             } else if (!DMisc.getAllegiance(toadd).equals(DMisc.getAllegiance(p))) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(toadd) + " is not in your alliance.");
             } else {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(toadd) + " now has permission to warp to this shrine.");
-                DMisc.addGuest(shrine, toadd);
+                shrine.addGuest(toadd.toString());
             }
         }
         // remove <name>
@@ -1374,12 +1107,11 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "Player not found.");
             } else if (remove.equals(p.getUniqueId())) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot remove yourself as an owner.");
-            } else if (!DMisc.getShrineGuestList(shrine).contains(remove)) {
+            } else if (!shrine.getGuestIds().contains(remove.toString())) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(remove) + " is not an owner of this shrine.");
             } else {
-                if (DMisc.removeGuest(shrine, remove))
-                    p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(remove) + " no longer has permission to warp to this shrine.");
-                else p.sendMessage(ChatColor.YELLOW + "Error while removing " + remove + "'s permission.");
+                shrine.removeGuest(remove.toString());
+                p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(remove) + " no longer has permission to warp to this shrine.");
             }
         }
         // set <name>
@@ -1387,28 +1119,27 @@ public class DCommandExecutor implements CommandExecutor {
             UUID newowner = DMisc.getDemigodsPlayerId(args[1]);
             if (newowner == null) {
                 p.sendMessage(ChatColor.YELLOW + "Player not found.");
-            } else if (newowner.equals(DMisc.getOwnerOfShrine(shrine))) {
+            } else if (newowner.toString().equals(shrine.getOwnerId())) {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(newowner) + " is already the shrine's owner.");
             } else {
                 p.sendMessage(ChatColor.YELLOW + DMisc.getLastKnownName(newowner) + " is the new owner of the shrine.");
-                String deity = DMisc.getDeityAtShrine(shrine);
-                String shrinename = DMisc.getShrineName(shrine);
+                String deity = shrine.getDeity();
+                String shrinename = shrine.getName();
                 DMisc.removeShrine(shrine);
-                DMisc.addShrine(newowner, deity, shrine);
-                DMisc.addShrine(newowner, shrinename, shrine);
+                DMisc.addShrine(newowner, shrinename, deity, shrine.toLocation(plugin));
             }
         } else return false;
         return true;
     }
 
     private boolean fixShrine(Player p) {
-        LocationSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
+        ShrineSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
         }
         // check if creator/admin
-        if (!DMisc.getOwnerOfShrine(shrine).equals(p.getUniqueId()) && !DMisc.hasPermission(p, "demigods.admin")) {
+        if (!shrine.getOwnerId().equals(p.getUniqueId().toString()) && !p.hasPermission("demigods.admin")) {
             p.sendMessage(ChatColor.YELLOW + "Only admins and the creator of a shrine can modify it.");
             return true;
         }
@@ -1419,11 +1150,11 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean listShrines(Player p) {
-        if (!(DMisc.hasPermission(p, "demigods.listshrines") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.listshrines") || p.hasPermission("demigods.admin")))
             return true;
         String str = "";
-        for (LocationSaveable w : DMisc.getAllShrines()) {
-            String toadd = DMisc.getShrineName(w);
+        for (ShrineSaveable w : DMisc.getAllShrines()) {
+            String toadd = w.getName();
             if (!str.contains(toadd)) str += toadd + ", ";
         }
         if (str.length() > 3) str = str.substring(0, str.length() - 2);
@@ -1433,11 +1164,11 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean removeShrine(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.removeshrine") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.removeshrine") || p.hasPermission("demigods.admin")))
             return true;
-        if ((args.length == 1) && DMisc.hasPermission(p, "demigods.admin") && args[0].equals("all")) {
-            for (LocationSaveable w : DMisc.getAllShrines()) {
-                p.sendMessage("Deleting " + DMisc.getShrineName(w));
+        if ((args.length == 1) && p.hasPermission("demigods.admin") && args[0].equals("all")) {
+            for (ShrineSaveable w : DMisc.getAllShrines()) {
+                p.sendMessage("Deleting " + w.getName());
                 DMisc.toLocation(w).getBlock().setType(Material.AIR);
                 DMisc.removeShrine(w);
             }
@@ -1445,22 +1176,22 @@ public class DCommandExecutor implements CommandExecutor {
         }
         if (args.length != 0) return false;
         // find nearby shrine
-        LocationSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
+        ShrineSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
         }
         // check if creator/admin
-        if (!DMisc.getOwnerOfShrine(shrine).equals(p.getUniqueId()) && !DMisc.hasPermission(p, "demigods.admin")) {
+        if (!shrine.getOwnerId().equals(p.getUniqueId().toString()) && !p.hasPermission("demigods.admin")) {
             p.sendMessage(ChatColor.YELLOW + "Only admins and the creator of a shrine can modify it.");
             return true;
         }
         // remove
-        String deity = DMisc.getDeityAtShrine(shrine);
+        String deity = shrine.getDeity();
         DMisc.toLocation(shrine).getBlock().setType(Material.AIR);
-        p.sendMessage(ChatColor.YELLOW + "The shrine " + DMisc.getShrineName(shrine) + " has been removed.");
+        p.sendMessage(ChatColor.YELLOW + "The shrine " + shrine.getName() + " has been removed.");
         DMisc.removeShrine(shrine);
-        if (!DMisc.hasPermission(p, "demigods.admin")) {
+        if (!p.hasPermission("demigods.admin")) {
             // penalty
             DMisc.setDevotion(p, deity, (int) (DMisc.getDevotion(p, deity) * 0.75));
             p.sendMessage(ChatColor.RED + "Your Devotion for " + deity + " has been reduced to " + DMisc.getDevotion(p, deity) + ".");
@@ -1469,29 +1200,29 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean nameShrine(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.nameshrine") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.nameshrine") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 1) return false;
         // find nearby shrine
-        LocationSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
+        ShrineSaveable shrine = DMisc.getNearbyShrine(p.getLocation());
         if (shrine == null) {
             p.sendMessage(ChatColor.YELLOW + "No shrine nearby.");
             return true;
         }
         // check if creator/admin
-        if (!DMisc.getOwnerOfShrine(shrine).equals(p.getUniqueId()) && !DMisc.hasPermission(p, "demigods.admin")) {
+        if (!shrine.getOwnerId().equals(p.getUniqueId().toString()) && !p.hasPermission("demigods.admin")) {
             p.sendMessage(ChatColor.YELLOW + "Only admins and the creator of a shrine can modify it.");
             return true;
         }
         // remove
-        if (DMisc.renameShrine(shrine, args[0]))
+        if (DMisc.renameShrine(shrine.toLocation(plugin), args[0]))
             p.sendMessage(ChatColor.YELLOW + "The shrine has been renamed to " + args[0] + ".");
         else p.sendMessage(ChatColor.YELLOW + "Error. Is there already a shrine named " + args[1] + "?");
         return true;
     }
 
     private boolean giveDeity(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.givedeity") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.givedeity") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length < 2) return false;
         UUID target = DMisc.getDemigodsPlayerId(args[0]);
@@ -1552,10 +1283,6 @@ public class DCommandExecutor implements CommandExecutor {
                     DMisc.giveDeity(target, new Dis(target));
                     success = ChatColor.YELLOW + "Success! " + targetName + " has joined the dísir.";
                     break;
-                case "kvasir":
-                    DMisc.giveDeity(target, new Kvasir(target));
-                    success = ChatColor.YELLOW + "Success! " + targetName + " is ready for a world of pain.";
-                    break;
                 default:
                     return false;
             }
@@ -1566,14 +1293,15 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean removeDeity(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.removedeity") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.removedeity") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         UUID target = DMisc.getDemigodsPlayerId(args[0]);
         if (!DMisc.hasDeity(target, args[1])) {
             p.sendMessage(ChatColor.YELLOW + "" + target + " does not have that deity.");
         } else {
-            DMisc.getDeities(target).remove(DMisc.getDeity(target, args[1]));
+            PlayerDataSaveable save = plugin.getPlayerDataRegistry().fromPlayer(p);
+            save.removeDeity(args[1]);
             p.sendMessage(ChatColor.YELLOW + "Success! " + target + " no longer has that deity.");
         }
         return true;
@@ -1603,7 +1331,7 @@ public class DCommandExecutor implements CommandExecutor {
             p.sendMessage(ChatColor.YELLOW + "Why would you want to do that?");
             return true;
         }
-        Deity d = DMisc.getDeity(p, deity);
+        Deity d = Deities.valueOf(deity);
         DMisc.setUnclaimedDevotion(p, DMisc.getUnclaimedDevotion(p) - amount);
         DMisc.setDevotion(p, d, DMisc.getDevotion(p, d) + amount);
         p.sendMessage(ChatColor.YELLOW + "Your Devotion for " + d.getName() + " has increased to " + DMisc.getDevotion(p, d) + ".");
@@ -1613,17 +1341,14 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean forsake(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.forsake") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.forsake") || p.hasPermission("demigods.admin")))
             return true;
         if (!DMisc.isFullParticipant(p)) return true;
         if (args.length == 1 || args.length == 2) {
             if (args[0].equalsIgnoreCase("all")) {
                 DMisc.getPlugin().getServer().broadcastMessage(ChatColor.RED + p.getName() + " has forsaken their deities.");
                 p.kickPlayer(ChatColor.RED + "You are mortal.");
-                for (LocationSaveable w : DMisc.getShrines(p.getUniqueId()).values())
-                    DMisc.removeShrine(w);
-                DSave.removePlayer(p);
-                DSave.addPlayer(p);
+                DMisc.getShrines(p.getUniqueId()).forEach(DMisc::removeShrine);
                 return true;
             }
             String deityName = args[0];
@@ -1635,18 +1360,19 @@ public class DCommandExecutor implements CommandExecutor {
             } else {
                 if (DMisc.getDeities(p).size() >= 2) {
                     String str = "";
-                    Deity toremove = DMisc.getDeity(p, deityName);
+                    Deity toremove = Deities.valueOf(deityName);
                     DLevels.levelProcedure(p);
                     p.sendMessage(ChatColor.YELLOW + "You have forsaken " + toremove.getName() + "." + str);
                     DMisc.getPlugin().getServer().broadcastMessage(ChatColor.RED + p.getName() + " has forsaken " + toremove.getName() + ".");
-                    DMisc.getDeities(p).remove(toremove);
+                    PlayerDataSaveable save = plugin.getPlayerDataRegistry().fromPlayer(p);
+                    save.removeDeity(args[1]);
                 } else {
-                    Deity toremove = DMisc.getDeity(p, deityName);
+                    Deity toremove = Deities.valueOf(deityName);
                     p.sendMessage(ChatColor.YELLOW + "You have forsaken " + toremove.getName() + ".");
                     p.kickPlayer(ChatColor.YELLOW + "You have forsaken " + toremove.getName() + ChatColor.WHITE + " -- " + ChatColor.RED + "You are mortal.");
                     DMisc.getPlugin().getServer().broadcastMessage(ChatColor.RED + p.getName() + " has forsaken " + toremove.getName() + ".");
-                    DSave.removePlayer(p);
-                    DSave.addPlayer(p);
+                    plugin.getPlayerDataRegistry().remove(p.getUniqueId().toString());
+                    plugin.getPlayerDataRegistry().fromPlayer(p);
                 }
             }
             return true;
@@ -1655,7 +1381,7 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean setFavor(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setfavor") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setfavor") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1665,19 +1391,16 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setFavor(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " Favor.");
-                return true;
-            }
-            return false;
+            DMisc.setFavor(target, amt);
+            p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " Favor.");
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
     private boolean setMaxFavor(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setfavor") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setfavor") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1687,54 +1410,50 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setFavorCap(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " max Favor.");
-                return true;
-            }
-            return false;
+            DMisc.setFavorCap(target, amt);
+            p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " max Favor.");
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
     private boolean setHP(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.sethp") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.sethp") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
-            UUID target = DMisc.getDemigodsPlayerId(args[0]);
-            int amt = Integer.parseInt(args[1]);
-            if (amt < 0) {
-                p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
+            Player ptarget = Bukkit.getPlayer(args[0]);
+            if (ptarget != null) {
+                int amt = Integer.parseInt(args[1]);
+                if (amt < 0) {
+                    p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
+                    return true;
+                }
+                if (amt > ptarget.getMaxHealth()) DMisc.setMaxHP(ptarget, amt);
+                DMisc.setHP(ptarget, amt);
+                p.sendMessage(ChatColor.YELLOW + "Success! " + args[0] + " now has " + amt + " HP.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                if (amt > DMisc.getMaxHP(target)) DMisc.setMaxHP(target, amt);
-                DMisc.setHP(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " HP.");
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
+        } catch (Exception ignored) {
         }
+        return false;
     }
 
     private boolean setMaxHP(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setmaxhp") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setmaxhp") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
-            UUID target = DMisc.getDemigodsPlayerId(args[0]);
-            int amt = Integer.parseInt(args[1]);
-            if (amt < 0) {
-                p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
-                return true;
-            }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setMaxHP(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " max HP.");
+            Player ptarget = Bukkit.getPlayer(args[0]);
+            if (ptarget != null) {
+                int amt = Integer.parseInt(args[1]);
+                if (amt < 0) {
+                    p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
+                    return true;
+                }
+                DMisc.setMaxHP(ptarget, amt);
+                p.sendMessage(ChatColor.YELLOW + "Success! " + args[0] + " now has " + amt + " max HP.");
                 return true;
             }
             return false;
@@ -1744,7 +1463,7 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean setDevotion(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setdevotion") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setdevotion") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 3) return false;
         UUID target = DMisc.getDemigodsPlayerId(args[0]);
@@ -1758,7 +1477,7 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         }
         if (DMisc.hasDeity(target, args[1])) {
-            DMisc.setDevotion(target, DMisc.getDeity(target, args[1]), amt);
+            DMisc.setDevotion(target, Deities.valueOf(args[1]), amt);
             p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " Devotion for " + args[1].toUpperCase() + ".");
             return true;
         }
@@ -1766,7 +1485,7 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean setAscensions(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setascensions") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setascensions") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1776,25 +1495,22 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "The number must be greater than 0.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setAscensions(target, amt);
-                long oldtotal = DMisc.getDevotion(target);
-                int newtotal = DMisc.costForNextAscension(amt - 1);
-                for (Deity d : DMisc.getDeities(target)) {
-                    int devotion = DMisc.getDevotion(target, d);
-                    DMisc.setDevotion(target, d, (int) Math.ceil((newtotal * 1.0 * devotion) / oldtotal));
-                }
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " Ascensions.");
-                return true;
+            DMisc.setAscensions(target, amt);
+            long oldtotal = DMisc.getDevotion(target);
+            int newtotal = DMisc.costForNextAscension(amt - 1);
+            for (Deity d : DMisc.getDeities(target)) {
+                int devotion = DMisc.getDevotion(target, d);
+                DMisc.setDevotion(target, d, (int) Math.ceil((newtotal * 1.0 * devotion) / oldtotal));
             }
-            return false;
+            p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " Ascensions.");
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
     private boolean setKills(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setkills") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setkills") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1804,19 +1520,16 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setKills(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " kills.");
-                return true;
-            }
-            return false;
+            DMisc.setKills(target, amt);
+            p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " kills.");
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
     private boolean setDeaths(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setdeaths") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setdeaths") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1826,19 +1539,16 @@ public class DCommandExecutor implements CommandExecutor {
                 p.sendMessage(ChatColor.YELLOW + "The amount must be greater than 0.");
                 return true;
             }
-            if (DSave.hasPlayer(target)) {
-                DMisc.setDeaths(target, amt);
-                p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " deaths.");
-                return true;
-            }
-            return false;
+            DMisc.setDeaths(target, amt);
+            p.sendMessage(ChatColor.YELLOW + "Success! " + target + " now has " + amt + " deaths.");
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
     private boolean setAlliance(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.setalliance") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.setalliance") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 2) return false;
         try {
@@ -1856,15 +1566,15 @@ public class DCommandExecutor implements CommandExecutor {
     }
 
     private boolean removePlayer(Player p, String[] args) {
-        if (!(DMisc.hasPermission(p, "demigods.removeplayer") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.removeplayer") || p.hasPermission("demigods.admin")))
             return true;
         if (args.length != 1) return false;
+        UUID id = DMisc.getDemigodsPlayerId(args[0]);
+        plugin.getPlayerDataRegistry().remove(id.toString());
+        p.sendMessage(ChatColor.YELLOW + args[0] + " was successfully removed from the save.");
         Player toremove = plugin.getServer().getPlayer(args[0]);
-        if (DSave.hasPlayer(toremove)) {
-            p.sendMessage(ChatColor.YELLOW + toremove.getName() + " was successfully removed from the save.");
-            DSave.removePlayer(toremove);
+        if (toremove != null) {
             toremove.kickPlayer("Save removed. Please log in again.");
-
         } else p.sendMessage(ChatColor.YELLOW + "That player is not in the save.");
         return true;
     }
@@ -1899,12 +1609,12 @@ public class DCommandExecutor implements CommandExecutor {
                     break;
             }
             if (choice != null) {
-                if (!DMisc.hasPermission(p, choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!DMisc.hasPermission(p, choice.getDefaultAlliance().toLowerCase() + ".all"))) {
+                if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
                     p.sendMessage(ChatColor.RED + "You do not have permission to claim this deity.");
                     return true;
                 }
                 p.sendMessage(ChatColor.YELLOW + "The great powers ponder your decision...");
-                if (BALANCETEAMS && DMisc.hasAdvantage(choice.getDefaultAlliance())) {
+                if (Setting.BALANCE_TEAMS && DMisc.hasAdvantage(choice.getDefaultAlliance())) {
                     p.sendMessage(ChatColor.RED + "Your selection would unbalance the order of the universe.");
                     p.sendMessage(ChatColor.RED + "Try again later or select a different deity.");
                     return true;
@@ -1918,7 +1628,7 @@ public class DCommandExecutor implements CommandExecutor {
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You have been accepted to the lineage of " + choice.getName() + ".");
                 }
-                DMisc.initializePlayer(p.getUniqueId(), choice.getDefaultAlliance(), choice);
+                DMisc.initializePlayer(p, choice.getDefaultAlliance(), choice);
                 p.getWorld().strikeLightningEffect(p.getLocation());
                 for (int i = 0; i < 20; i++)
                     p.getWorld().spawn(p.getLocation(), ExperienceOrb.class);
@@ -1986,12 +1696,12 @@ public class DCommandExecutor implements CommandExecutor {
             p.sendMessage(ChatColor.YELLOW + "That is not a valid selection item.");
             return true;
         }
-        if (!DMisc.hasPermission(p, choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!DMisc.hasPermission(p, choice.getDefaultAlliance().toLowerCase() + ".all"))) {
+        if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
             p.sendMessage(ChatColor.RED + "You do not have permission to claim this deity.");
             return true;
         }
         if (!choice.getDefaultAlliance().equalsIgnoreCase(DMisc.getAllegiance(p))) {
-            if (DMisc.hasPermission(p, "demigods.bypassclaim")) {
+            if (p.hasPermission("demigods.bypassclaim")) {
                 p.sendMessage(ChatColor.YELLOW + choice.getName() + " has offered you power in exchange for loyalty.");
             } else {
                 p.sendMessage(ChatColor.RED + "That deity is not of your alliance.");
@@ -2027,9 +1737,9 @@ public class DCommandExecutor implements CommandExecutor {
 
     private boolean bindings(Player p) {
         if (!DMisc.isFullParticipant(p)) return true;
-        if (!(DMisc.hasPermission(p, "demigods.bindings") || DMisc.hasPermission(p, "demigods.admin")))
+        if (!(p.hasPermission("demigods.bindings") || p.hasPermission("demigods.admin")))
             return true;
-        ArrayList<Material> items = DMisc.getBindings(p);
+        List<Material> items = DMisc.getBindings(p);
         if ((items != null) && (items.size() > 0)) {
             String disp = ChatColor.YELLOW + "Bound items:";
             for (Material m : items)
@@ -2074,14 +1784,12 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.sendMessage(ChatColor.RED + "Alliance is missing/null.");
             }
             try {
-                cm.sendMessage("Current HP: " + DMisc.getHP(p));
-            } catch (NullPointerException ne) {
-                cm.sendMessage(ChatColor.RED + "HP is missing/null.");
+                cm.sendMessage("Current HP: " + Bukkit.getPlayer(p).getHealth());
+            } catch (Exception ignored) {
             }
             try {
-                cm.sendMessage("Max HP: " + DMisc.getMaxHP(p));
-            } catch (NullPointerException ne) {
-                cm.sendMessage(ChatColor.RED + "Max HP is missing/null.");
+                cm.sendMessage("Max HP: " + Bukkit.getPlayer(p).getMaxHealth());
+            } catch (Exception ignored) {
             }
             try {
                 cm.sendMessage("Current Favor: " + DMisc.getFavor(p));
@@ -2124,8 +1832,8 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 cm.sendMessage("Accessible:");
-                for (LocationSaveable w : DMisc.getAccessibleShrines(p)) {
-                    String name = DMisc.getShrineName(w);
+                for (ShrineSaveable w : DMisc.getAccessibleShrines(p)) {
+                    String name = w.getName();
                     try {
                         cm.sendMessage(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld());
                     } catch (Exception e) {
@@ -2139,26 +1847,19 @@ public class DCommandExecutor implements CommandExecutor {
             // Effects will be cleared
             try {
                 cm.sendMessage("Shrines:");
-                for (String name : DMisc.getShrines(p).keySet()) {
+                for (ShrineSaveable w : DMisc.getShrines(p)) {
                     try {
-                        LocationSaveable w = DMisc.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
-                        for (UUID player : DMisc.getShrineGuestList(w))
-                            names.append(player).append(" ");
-                        cm.sendMessage(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
+                        for (String playerId : w.getGuestIds())
+                            names.append(playerId).append(" ");
+                        cm.sendMessage(w.getName() + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
                     } catch (Exception e) {
-                        cm.sendMessage(ChatColor.RED + "Error loading shrine \"" + name + "\".");
+                        cm.sendMessage(ChatColor.RED + "Error loading shrine \"" + w.getName() + "\".");
                     }
                 }
             } catch (NullPointerException ne) {
                 cm.sendMessage(ChatColor.RED + "Shrines are missing/null.");
             }
-            // All keys
-            String keys = "";
-            for (String key : DSave.getAllData(p).keySet())
-                keys += key + ", ";
-            if (keys.length() > 0) keys = keys.substring(0, keys.length() - 2);
-            cm.sendMessage(ChatColor.YELLOW + "All keys in save: " + keys);
         }
 
         /**
@@ -2179,14 +1880,12 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.warning(ChatColor.RED + "Alliance is missing/null.");
             }
             try {
-                cm.info("Current HP: " + DMisc.getHP(p));
-            } catch (NullPointerException ne) {
-                cm.warning(ChatColor.RED + "HP is missing/null.");
+                cm.info("Current HP: " + Bukkit.getPlayer(p).getHealth());
+            } catch (Exception ignored) {
             }
             try {
-                cm.info("Max HP: " + DMisc.getMaxHP(p));
-            } catch (NullPointerException ne) {
-                cm.warning(ChatColor.RED + "Max HP is missing/null.");
+                cm.info("Max HP: " + Bukkit.getPlayer(p).getMaxHealth());
+            } catch (Exception ignored) {
             }
             try {
                 cm.info("Current Favor: " + DMisc.getFavor(p));
@@ -2229,12 +1928,12 @@ public class DCommandExecutor implements CommandExecutor {
             }
             try {
                 cm.info("Accessible:");
-                for (LocationSaveable w : DMisc.getAccessibleShrines(p)) {
-                    String name = DMisc.getShrineName(w);
+                for (ShrineSaveable w : DMisc.getAccessibleShrines(p)) {
+                    String name = w.getName();
                     try {
                         cm.info(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld());
                     } catch (Exception e) {
-                        cm.info(ChatColor.RED + "Error loading " + name + ".");
+                        cm.warning(ChatColor.RED + "Error loading " + name + ".");
                     }
                 }
             } catch (NullPointerException ne) {
@@ -2244,250 +1943,19 @@ public class DCommandExecutor implements CommandExecutor {
             // Effects will be cleared
             try {
                 cm.info("Shrines:");
-                for (String name : DMisc.getShrines(p).keySet()) {
+                for (ShrineSaveable w : DMisc.getShrines(p)) {
                     try {
-                        LocationSaveable w = DMisc.getShrines(p).get(name);
                         StringBuilder names = new StringBuilder();
-                        for (UUID player : DMisc.getShrineGuestList(w))
-                            names.append(DMisc.getLastKnownName(player)).append(" ");
-                        cm.info(name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
+                        for (String playerId : w.getGuestIds())
+                            names.append(playerId).append(" ");
+                        cm.info(w.getName() + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names.toString().trim());
                     } catch (Exception e) {
-                        cm.warning(ChatColor.RED + "Error loading shrine \"" + name + "\".");
+                        cm.warning(ChatColor.RED + "Error loading shrine \"" + w.getName() + "\".");
                     }
                 }
             } catch (NullPointerException ne) {
                 cm.warning(ChatColor.RED + "Shrines are missing/null.");
             }
-            // All keys
-            String keys = "";
-            for (String key : DSave.getAllData(p).keySet())
-                keys += key + ", ";
-            if (keys.length() > 0) keys = keys.substring(0, keys.length() - 2);
-            cm.info(ChatColor.YELLOW + "All keys in save: " + keys);
-        }
-
-        /**
-         * Saves a player's data as a text file.
-         *
-         * @param p
-         * @throws IOException
-         */
-        public static void writeData(UUID p) throws IOException {
-            Logger.getLogger("Minecraft").info("[Demigods] Writing debug data for " + p + "...");
-            FileWriter f = new FileWriter(new File(DSave.getPlayerSavePath() + p + ".txt"));
-            try {
-                f.write("Name: " + DMisc.getLastKnownName(p) + "\r\n");
-            } catch (NullPointerException ne) {
-            }
-            f.write("UUID: " + p.toString());
-            try {
-                f.write("Alliance: " + DMisc.getAllegiance(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Alliance: NULL" + "\r\n");
-            }
-            try {
-                f.write("Current_HP: " + DMisc.getHP(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Current_HP: NULL" + "\r\n");
-            }
-            try {
-                f.write("Max_HP: " + DMisc.getMaxHP(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Max_HP: NULL" + "\r\n");
-            }
-            try {
-                f.write("Current_Favor: " + DMisc.getFavor(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Current_Favor: NULL" + "\r\n");
-            }
-            try {
-                f.write("Max_Favor: " + DMisc.getFavorCap(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Max_Favor: NULL" + "\r\n");
-            }
-            try {
-                String s = "";
-                for (Deity d : DMisc.getDeities(p)) {
-                    String name = d.getName();
-                    try {
-                        s += " " + name + ";" + DMisc.getDevotion(p, name);
-                    } catch (Exception e) {
-                        s += " " + name + ";NULL";
-                    }
-                }
-                f.write("Deities:" + s + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Deities:\r\n");
-            }
-            try {
-                f.write("Ascensions: " + DMisc.getAscensions(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Ascensions: NULL" + "\r\n");
-            }
-            try {
-                f.write("Kills: " + DMisc.getKills(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Kills: NULL" + "\r\n");
-            }
-            try {
-                f.write("Deaths: " + DMisc.getDeaths(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Deaths: NULL" + "\r\n");
-            }
-            try {
-                String s = "Accessible:\r\n";
-                for (LocationSaveable wr : DMisc.getAccessibleShrines(p)) {
-                    String name = DMisc.getShrineName(wr);
-                    try {
-                        s += name + " " + wr.getX() + " " + wr.getY() + " " + wr.getZ() + " " + wr.getWorld() + "\r\n";
-                    } catch (Exception e) {
-                        s += name + " " + "ERROR" + "\r\n";
-                    }
-                }
-                f.write(s);
-            } catch (NullPointerException ne) {
-                f.write("Accessible:\r\n");
-            }
-            // Bindings will be cleared on load
-            // Effects will be cleared on load
-            try {
-                String s = "Shrines:\r\n";
-                for (String name : DMisc.getShrines(p).keySet()) {
-                    try {
-                        LocationSaveable w = DMisc.getShrines(p).get(name);
-                        String names = "";
-                        for (UUID player : DMisc.getShrineGuestList(w))
-                            names += player + " ";
-                        names = names.trim();
-                        s += (name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names + "\r\n");
-                    } catch (Exception e) {
-                        s += (name + " " + "ERROR" + "\r\n");
-                    }
-                }
-                f.write(s);
-            } catch (NullPointerException ne) {
-                f.write("Shrines:\r\n");
-            }
-            // All keys
-            String keys = "";
-            for (String key : DSave.getAllData(p).keySet())
-                keys += key + ", ";
-            if (keys.length() > 0) keys = keys.substring(0, keys.length() - 2);
-            f.write("All keys in save: " + keys);
-            f.close();
-            Logger.getLogger("Minecraft").info("[Demigods] Finished writing debug data.");
-        }
-
-        public static void writeLegacyData(UUID p) throws IOException {
-            // Legacy folder.
-            File legacyFolder = new File("plugins/NorseDemigods/Legacy");
-            legacyFolder.mkdir();
-
-            // Delete file if it exists.
-            File file = new File("plugins/NorseDemigods/Legacy/" + p + ".txt");
-            if (file.exists()) file.delete();
-
-            FileWriter f = new FileWriter(file);
-            try {
-                f.write("Name: " + DMisc.getLastKnownName(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Name: " + p + "/r/n");
-            }
-            try {
-                f.write("Alliance: " + DMisc.getAllegiance(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Alliance: NULL" + "\r\n");
-            }
-            try {
-                f.write("Current_HP: " + DMisc.getHP(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Current_HP: NULL" + "\r\n");
-            }
-            try {
-                f.write("Max_HP: " + DMisc.getMaxHP(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Max_HP: NULL" + "\r\n");
-            }
-            try {
-                f.write("Current_Favor: " + DMisc.getFavor(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Current_Favor: NULL" + "\r\n");
-            }
-            try {
-                f.write("Max_Favor: " + DMisc.getFavorCap(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Max_Favor: NULL" + "\r\n");
-            }
-            try {
-                String s = "";
-                for (Deity d : DMisc.getDeities(p)) {
-                    String name = d.getName();
-                    try {
-                        s += " " + name + ";" + DMisc.getDevotion(p, name);
-                    } catch (Exception e) {
-                        s += " " + name + ";NULL";
-                    }
-                }
-                f.write("Deities:" + s + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Deities:\r\n");
-            }
-            try {
-                f.write("Ascensions: " + DMisc.getAscensions(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Ascensions: NULL" + "\r\n");
-            }
-            try {
-                f.write("Kills: " + DMisc.getKills(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Kills: NULL" + "\r\n");
-            }
-            try {
-                f.write("Deaths: " + DMisc.getDeaths(p) + "\r\n");
-            } catch (NullPointerException ne) {
-                f.write("Deaths: NULL" + "\r\n");
-            }
-            try {
-                String s = "Accessible:\r\n";
-                for (LocationSaveable wr : DMisc.getAccessibleShrines(p)) {
-                    String name = DMisc.getShrineName(wr);
-                    try {
-                        s += name + " " + wr.getX() + " " + wr.getY() + " " + wr.getZ() + " " + wr.getWorld() + "\r\n";
-                    } catch (Exception e) {
-                        s += name + " " + "ERROR" + "\r\n";
-                    }
-                }
-                f.write(s);
-            } catch (NullPointerException ne) {
-                f.write("Accessible:\r\n");
-            }
-            // Bindings will be cleared on load
-            // Effects will be cleared on load
-            try {
-                String s = "Shrines:\r\n";
-                for (String name : DMisc.getShrines(p).keySet()) {
-                    try {
-                        LocationSaveable w = DMisc.getShrines(p).get(name);
-                        String names = "";
-                        for (UUID player : DMisc.getShrineGuestList(w))
-                            names += player + " ";
-                        names = names.trim();
-                        s += (name + " " + w.getX() + " " + w.getY() + " " + w.getZ() + " " + w.getWorld() + " " + names + "\r\n");
-                    } catch (Exception e) {
-                        s += (name + " " + "ERROR" + "\r\n");
-                    }
-                }
-                f.write(s);
-            } catch (NullPointerException ne) {
-                f.write("Shrines:\r\n");
-            }
-            // All keys
-            String keys = "";
-            for (String key : DSave.getAllData(p).keySet())
-                keys += key + ", ";
-            if (keys.length() > 0) keys = keys.substring(0, keys.length() - 2);
-            f.write("All keys in save: " + keys);
-            f.close();
         }
     }
 }

@@ -2,12 +2,14 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public class Thrymr implements Deity {
@@ -19,24 +21,9 @@ public class Thrymr implements Deity {
     private final int ULTIMATECOOLDOWNMAX = 400;
     private final int ULTIMATECOOLDOWNMIN = 300;
 
-    /* Specific to player */
-    private final UUID PLAYER;
-    private boolean SKILL = false;
-    private long ULTIMATETIME;
-
-    public Thrymr(UUID name) {
-        PLAYER = name;
-        ULTIMATETIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getName() {
         return "Thrymr";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -62,11 +49,13 @@ public class Thrymr implements Deity {
             /*
 			 * The printed text
 			 */
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             p.sendMessage("--" + ChatColor.GOLD + "Thrymr" + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Reduce incoming combat damage by " + reduction + ".");
             p.sendMessage(":Temporarily increase jump height.");
             p.sendMessage("Duration: " + length + " Jump multiplier: " + jump + ChatColor.GREEN + " /unburden " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((Thrymr) DMisc.getDeity(p, "Thrymr")).SKILL)
+            Optional op = save.getAbilityData("unburden", "active");
+            if (op.isPresent() && (boolean) op.get())
                 p.sendMessage(ChatColor.AQUA + "    Skill is active.");
             p.sendMessage(":Thrymr shields you and nearby allies from harm.");
             p.sendMessage("50% damage reduction with range " + radius + " for " + duration + " seconds.");
@@ -92,9 +81,10 @@ public class Thrymr implements Deity {
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
         if (!DMisc.isFullParticipant(p)) return;
         if (!DMisc.hasDeity(p, "Thrymr")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("unburden")) {
             if (DMisc.getActiveEffects(p.getUniqueId()).containsKey("Unburden")) {
-                SKILL = false;
+                save.setAbilityData("unburden", "active", false);
                 p.sendMessage(ChatColor.YELLOW + "Unburden is already active.");
             } else {
                 if (DMisc.getFavor(p) < SKILLCOST) {
@@ -106,12 +96,10 @@ public class Thrymr implements Deity {
                 int length = (int) Math.ceil(4 * Math.pow(devotion, 0.2475));
                 p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, length * 20, jump));
                 DMisc.addActiveEffect(p.getUniqueId(), "Unburden", length);
-                SKILL = true;
-                DMisc.getPlugin().getServer().getScheduler().scheduleAsyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                    @Override
-                    public void run() {
-                        SKILL = false;
-                    }
+                save.setAbilityData("unburden", "active", true);
+                DMisc.getPlugin().getServer().getScheduler().scheduleAsyncDelayedTask(DMisc.getPlugin(), () -> {
+                    PlayerDataSaveable save1 = getBackend().getPlayerDataRegistry().fromPlayer(p);
+                    save1.setAbilityData("unburden", "active", false);
                 }, length * 20);
                 DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                 p.sendMessage(ChatColor.YELLOW + "Unburden is now active.");
@@ -130,7 +118,7 @@ public class Thrymr implements Deity {
                 final int seconds = (int) (Math.ceil(35.819821 * Math.pow(DMisc.getAscensions(p), 0.26798863)));
                 int INVINCIBLERANGE = (int) (Math.ceil(4.957781 * Math.pow(DMisc.getAscensions(p), 0.45901927)));
                 for (UUID s : DMisc.getFullParticipants()) {
-                    final Player pl = DMisc.getOnlinePlayer(s);
+                    final Player pl = Bukkit.getPlayer(s);
                     if ((pl != null) && !pl.isDead() && (pl.getLocation().toVector().isInSphere(p.getLocation().toVector(), INVINCIBLERANGE))) {
                         pl.sendMessage(ChatColor.DARK_AQUA + "Thrymr" + ChatColor.GRAY + " shields you and your allies from harm.");
                         DMisc.addActiveEffect(pl.getUniqueId(), "Invincible", seconds);
