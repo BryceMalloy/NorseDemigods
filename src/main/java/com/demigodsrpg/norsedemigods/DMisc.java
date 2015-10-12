@@ -994,7 +994,7 @@ public class DMisc {
         return null;
     }
 
-    /**
+    /*
      * If given location is shrine and given player is valid (same alliance),
      * register the player as a guest
      */
@@ -1002,10 +1002,10 @@ public class DMisc {
     public static void addGuest(Location shrine, UUID guest) {
         if (!isFullParticipant(guest)) return;
         if (!getAllegiance(guest).equalsIgnoreCase(getAllegiance(getOwnerOfShrine(shrine)))) return;
-        if (!DSave.hasData(guest, "S_GUESTAT")) DSave.saveData(guest, "S_GUESTAT", new ArrayList<LocationSaveable>());
-        ArrayList<LocationSaveable> list = ((ArrayList<LocationSaveable>) DSave.getData(guest, "S_GUESTAT"));
-        list.add(shrine);
-        DSave.saveData(guest, "S_GUESTAT", list);
+        Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
+        if (saveable.isPresent()) {
+            saveable.get().addGuest(guest.toString());
+        }
     }
 
     /**
