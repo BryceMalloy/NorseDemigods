@@ -142,8 +142,9 @@ public class PlayerDataSaveable implements Saveable {
                 getOrDefault(key, null));
     }
 
-    public Object getAbilityData(String ability, String key, Object def) {
-        return ABILITY_DATA.getOrDefault(ability, new HashMap<>()).
+    @SuppressWarnings("unchecked")
+    public <V> V getAbilityData(String ability, String key, V def) {
+        return (V) ABILITY_DATA.getOrDefault(ability, new HashMap<>()).
                 getOrDefault(key, def);
     }
 
