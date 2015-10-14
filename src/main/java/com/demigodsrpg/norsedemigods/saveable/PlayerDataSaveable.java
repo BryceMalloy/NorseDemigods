@@ -142,6 +142,11 @@ public class PlayerDataSaveable implements Saveable {
                 getOrDefault(key, null));
     }
 
+    public Object getAbilityData(String ability, String key, Object def) {
+        return ABILITY_DATA.getOrDefault(ability, new HashMap<>()).
+                getOrDefault(key, def);
+    }
+
     public Optional<Material> getBind(String ability) {
         return Optional.ofNullable(Material.valueOf(BIND_DATA.getOrDefault(ability, "")));
     }

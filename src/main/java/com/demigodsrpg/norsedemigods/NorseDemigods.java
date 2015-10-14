@@ -2,6 +2,7 @@ package com.demigodsrpg.norsedemigods;
 
 import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
+import com.demigodsrpg.norsedemigods.registry.LocationRegistry;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
 import com.demigodsrpg.norsedemigods.registry.ShrineRegistry;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
@@ -28,6 +29,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     PlayerDataRegistry PLAYER_DATA;
     ShrineRegistry SHRINE_DATA;
+    LocationRegistry LOCATION_DATA;
 
     @Override
     public void onEnable() {
@@ -41,6 +43,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
         PLAYER_DATA = new PlayerDataRegistry(this);
         SHRINE_DATA = new ShrineRegistry(this);
+        LOCATION_DATA = new LocationRegistry(this);
 
         loadFixes(); // #3.5
         loadListeners(); // #4
@@ -78,6 +81,10 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     public ShrineRegistry getShrineRegistry() {
         return SHRINE_DATA;
+    }
+
+    public LocationRegistry getLocationRegistry() {
+        return LOCATION_DATA;
     }
 
     void loadDependencies() {

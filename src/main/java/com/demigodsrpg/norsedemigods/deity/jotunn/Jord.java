@@ -21,6 +21,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,7 +36,7 @@ public class Jord implements Deity {
 
     /* Specific to owner */
     private final UUID PLAYER;
-    private final ArrayList<LocationSaveable> TREES;
+    private final List<LocationSaveable> TREES;
     private boolean PLANT = false;
     private boolean POISON = false;
     private long PLANTTIME, POISONTIME, RHEAULTIMATETIME;
@@ -45,7 +46,7 @@ public class Jord implements Deity {
 
     public Jord(UUID name) {
         PLAYER = name;
-        TREES = new ArrayList<LocationSaveable>();
+        TREES = new ArrayList<>();
         PLANTTIME = System.currentTimeMillis();
         POISONTIME = System.currentTimeMillis();
         RHEAULTIMATETIME = System.currentTimeMillis();
