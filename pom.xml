@@ -16,6 +16,7 @@
         <spigot.version>1.8.8-R0.1-SNAPSHOT</spigot.version>
         <worldedit.version>5.5.8-SNAPSHOT</worldedit.version>
         <worldguard.version>6.0.0-SNAPSHOT</worldguard.version>
+        <chitchat.version>2.0-SNAPSHOT</chitchat.version>
     </properties>
 
     <repositories>
@@ -48,6 +49,12 @@
             <scope>compile</scope>
             <type>jar</type>
             <optional>false</optional>
+        </dependency>
+        <!-- Chitchat -->
+        <dependency>
+            <groupId>com.demigodsrpg</groupId>
+            <artifactId>chitchat</artifactId>
+            <version>${chitchat.version}</version>
         </dependency>
     </dependencies>
 

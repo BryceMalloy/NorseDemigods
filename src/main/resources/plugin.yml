@@ -3,6 +3,7 @@ main: com.demigodsrpg.norsedemigods.NorseDemigods
 version: ${project.version}
 description: Ally yourself with mythical deities and battle in the name of the AEsir or Jotunn.
 authors: [marinating, HmmmQuestionMark]
+depend: [Chitchat]
 softdepend: [WorldGuard, WorldEdit]
 commands:
     dg:
