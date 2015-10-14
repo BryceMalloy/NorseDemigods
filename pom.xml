@@ -45,12 +45,6 @@
             <groupId>com.sk89q</groupId>
             <artifactId>worldguard</artifactId>
             <version>${worldguard.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
             <scope>compile</scope>
             <type>jar</type>
             <optional>false</optional>

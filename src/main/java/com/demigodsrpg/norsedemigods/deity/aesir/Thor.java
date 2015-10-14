@@ -2,6 +2,8 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,8 +17,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /*
  * Affected by level:
@@ -26,12 +28,6 @@ import java.util.UUID;
  */
 
 public class Thor implements Deity {
-    /**
-     *
-     */
-    private static final long serialVersionUID = 2242753324910371936L;
-
-    private final UUID PLAYER;
     private static final int SHOVECOST = 170;
     private static final int SHOVEDELAY = 1500; // milliseconds
     private static final int LIGHTNINGCOST = 140;
@@ -39,19 +35,6 @@ public class Thor implements Deity {
     private static final int ZEUSULTIMATECOST = 3700;
     private static final int ZEUSULTIMATECOOLDOWNMAX = 600; // seconds
     private static final int ZEUSULTIMATECOOLDOWNMIN = 60;
-
-    private long ZEUSSHOVETIME;
-    private long ZEUSLIGHTNINGTIME;
-    private boolean SHOVE = false;
-    private boolean LIGHTNING = false;
-    private Material SHOVEBIND = null;
-    private Material LIGHTNINGBIND = null;
-
-    public Thor(UUID player) {
-        PLAYER = player;
-        ZEUSSHOVETIME = System.currentTimeMillis();
-        ZEUSLIGHTNINGTIME = System.currentTimeMillis();
-    }
 
     @Override
     public String getDefaultAlliance() {
@@ -61,6 +44,7 @@ public class Thor implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Thor") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
@@ -77,14 +61,14 @@ public class Thor implements Deity {
             p.sendMessage(":Immune to fall damage.");
             p.sendMessage(":Strike lightning at a target location. " + ChatColor.GREEN + "/lightning");
             p.sendMessage(ChatColor.YELLOW + "Costs " + LIGHTNINGCOST + " Favor.");
-            if (((Thor) (DMisc.getDeity(p, "Thor"))).LIGHTNINGBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMisc.getDeity(p, "Thor"))).LIGHTNINGBIND.name());
+            if (save.getBind("lightning").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("lightning").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to designate an item as Thor's hammer.");
             p.sendMessage(":Use the force of Thor's hammer to knock back enemies. " + ChatColor.GREEN + "/slam");
             p.sendMessage(ChatColor.YELLOW + "Costs " + SHOVECOST + " Favor.");
             p.sendMessage("Affects up to " + targets + " targets with power " + (int) (Math.round(multiply * 10)) + ".");
-            if (((Thor) (DMisc.getDeity(p, "Thor"))).SHOVEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Thor) (DMisc.getDeity(p, "Thor"))).SHOVEBIND.name());
+            if (save.getBind("slam").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("shove").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             return;
         }
@@ -103,37 +87,35 @@ public class Thor implements Deity {
     }
 
     @Override
-    public UUID getPlayerId() {
-        return PLAYER;
-    }
-
-    @Override
     public void onEvent(Event ee) {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
             if (!DMisc.hasDeity(p, "Thor") || !DMisc.isFullParticipant(p)) return;
-            if (SHOVE || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SHOVEBIND))) {
-                if (ZEUSSHOVETIME > System.currentTimeMillis()) return;
-                ZEUSSHOVETIME = System.currentTimeMillis() + SHOVEDELAY;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("slam", AD.ACTIVE, false) || ((p.getItemInHand() != null) && save.getBind("slam").isPresent() && (p.getItemInHand().getType() == save.getBind("slam").get()))) {
+                if (save.getAbilityData("slam", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
+                save.setAbilityData("slam", AD.TIME, System.currentTimeMillis() + SHOVEDELAY);
                 if (DMisc.getFavor(p) >= SHOVECOST) {
                     shove(p);
                     DMisc.setFavor(p, DMisc.getFavor(p) - SHOVECOST);
                     return;
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                    SHOVE = false;
+                    save.setAbilityData("slam", AD.ACTIVE, false);
                 }
             }
-            if (LIGHTNING || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == LIGHTNINGBIND))) {
-                if (ZEUSLIGHTNINGTIME > System.currentTimeMillis()) return;
-                ZEUSLIGHTNINGTIME = System.currentTimeMillis() + LIGHTNINGDELAY;
+            if (save.getAbilityData("lightning", AD.ACTIVE, false) || ((p.getItemInHand() != null) && save.getBind("lightning").isPresent() && (p.getItemInHand().getType() == save.getBind("lightning").get()))) {
+                if (save.getAbilityData("lightning", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
+                save.setAbilityData("lightning", AD.TIME, System.currentTimeMillis() + LIGHTNINGDELAY);
                 if (DMisc.getFavor(p) >= LIGHTNINGCOST) {
                     lightning(p, e.getClickedBlock());
                     DMisc.setFavor(p, DMisc.getFavor(p) - LIGHTNINGCOST);
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                    LIGHTNING = false;
+                    save.setAbilityData("lightning", AD.ACTIVE, false);
                 }
             }
         }
@@ -148,56 +130,53 @@ public class Thor implements Deity {
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         final Player p = P;
         if (!DMisc.hasDeity(p, "Thor")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("lightning")) {
             if (bind) {
-                if (LIGHTNINGBIND == null) {
+                if (!save.getBind("lightning").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        LIGHTNINGBIND = p.getItemInHand().getType();
+                        save.setBind("lightning", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Lightning is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, LIGHTNINGBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Lightning is no longer bound to " + LIGHTNINGBIND.name() + ".");
-                    LIGHTNINGBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Lightning is no longer bound to " + save.getBind("lightning").get().name() + ".");
+                    save.removeBind("lightning");
                 }
                 return;
             }
-            if (LIGHTNING) {
-                LIGHTNING = false;
+            if (save.getAbilityData("lightning", AD.ACTIVE, false)) {
+                save.setAbilityData("lightning", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Lightning is no longer active.");
             } else {
-                LIGHTNING = true;
+                save.setAbilityData("lightning", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Lightning is now active.");
             }
         } else if (str.equalsIgnoreCase("slam")) {
             if (bind) {
-                if (SHOVEBIND == null) {
+                if (!save.getBind("slam").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        SHOVEBIND = p.getItemInHand().getType();
+                        save.setBind("slam", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Slam is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, SHOVEBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Slam is no longer bound to " + SHOVEBIND.name() + ".");
-                    SHOVEBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Slam is no longer bound to " + save.getBind("slam").get().name() + ".");
+                    save.removeBind("slam");
                 }
                 return;
             }
-            if (SHOVE) {
-                SHOVE = false;
+            if (save.getAbilityData("slam", AD.ACTIVE, false)) {
+                save.setAbilityData("slam", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Slam is no longer active.");
             } else {
-                SHOVE = true;
+                save.setAbilityData("slam", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Slam is now active.");
             }
         }
@@ -217,7 +196,8 @@ public class Thor implements Deity {
         int devotion = DMisc.getDevotion(p, getName());
         int targets = (int) Math.ceil(1.561 * Math.pow(devotion, 0.128424));
         double multiply = 0.1753 * Math.pow(devotion, 0.322917);
-        for (Block b : p.getLineOfSight((Set) null, 10)) {
+        List<Block> bL = p.getLineOfSight((Set) null, 10);
+        for (Block b : bL) {
             for (LivingEntity le : p.getWorld().getLivingEntities()) {
                 if (targets == hit.size()) break;
                 if (le instanceof Player) {

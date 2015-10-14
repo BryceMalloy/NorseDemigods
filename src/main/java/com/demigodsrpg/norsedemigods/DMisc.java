@@ -85,7 +85,8 @@ public class DMisc {
      */
     public static LivingEntity getTargetLivingEntity(Player p, int offset) {
         LivingEntity e = null;
-        for (Block b : p.getLineOfSight((Set) null, Setting.MAX_TARGET_RANGE)) {
+        List<Block> bL = p.getLineOfSight((Set) null, Setting.MAX_TARGET_RANGE);
+        for (Block b : bL) {
             for (Entity t : b.getChunk().getEntities()) {
                 if (t.getWorld() != b.getWorld()) continue;
                 if (t instanceof LivingEntity)

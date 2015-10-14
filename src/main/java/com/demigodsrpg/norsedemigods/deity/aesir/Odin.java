@@ -2,6 +2,8 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -17,32 +19,14 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.Set;
-import java.util.UUID;
 
 public class Odin implements Deity {
-
-    private static final long serialVersionUID = -6160291350540472542L;
-
     // global vars
     private static final int STABCOST = 100;
     private static final int SLOWCOST = 180;
     private static final int CRONUSULTIMATECOST = 5000;
     private static final int CRONUSULTIMATECOOLDOWNMAX = 500;
     private static final int CRONUSULTIMATECOOLDOWNMIN = 120;
-
-    // per player
-    private final UUID PLAYER;
-    private boolean STAB = false;
-    private boolean SLOW = false;
-    private Material SLOWITEM = null;
-    private long CRONUSULTIMATETIME;
-    private long STABTIME;
-
-    public Odin(UUID player) {
-        PLAYER = player;
-        CRONUSULTIMATETIME = System.currentTimeMillis();
-        STABTIME = System.currentTimeMillis();
-    }
 
     @Override
     public String getName() {
@@ -57,6 +41,7 @@ public class Odin implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Odin") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
@@ -81,8 +66,8 @@ public class Odin implements Deity {
             p.sendMessage(":Slow time to reduce movement speed of an enemy player. " + ChatColor.GREEN + "/slow");
             p.sendMessage(ChatColor.YELLOW + "Costs " + SLOWCOST + " Favor.");
             p.sendMessage("Slow power: " + strength + " for " + duration + " seconds.");
-            if (((Odin) (DMisc.getDeity(p, "Odin"))).SLOWITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Odin) (DMisc.getDeity(p, "Odin"))).SLOWITEM).name());
+            if (save.getBind("slow").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("slow").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Odin slows enemies' perception of time, slowing their");
             p.sendMessage("movement by " + slowamount + " for " + stopduration + " seconds. " + ChatColor.GREEN + "/timestop");
@@ -102,11 +87,6 @@ public class Odin implements Deity {
     }
 
     @Override
-    public UUID getPlayerId() {
-        return PLAYER;
-    }
-
-    @Override
     public void onEvent(Event ee) {
         if (ee instanceof EntityDamageEvent) {
             if (ee instanceof EntityDamageByEntityEvent && !((EntityDamageByEntityEvent) ee).isCancelled()) {
@@ -114,6 +94,7 @@ public class Odin implements Deity {
                 if (e.getDamager() instanceof Player) {
                     Player p = (Player) e.getDamager();
                     if (DMisc.isFullParticipant(p)) {
+                        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
                         if (!DMisc.hasDeity(p, "Odin")) return;
                         if (!p.getItemInHand().getType().name().contains("_SPADE")) return;
                         if (!DMisc.canTarget(p, p.getLocation())) return;
@@ -133,16 +114,16 @@ public class Odin implements Deity {
 						/*
 						 * Cleave
 						 */
-                        if (STAB) {
+                        if (save.getAbilityData("stab", AD.ACTIVE, false)) {
                             if (DMisc.getFavor(p) >= STABCOST) {
                                 if (!(e.getEntity() instanceof LivingEntity)) return;
-                                if (System.currentTimeMillis() < STABTIME + 100) return;
+                                if (System.currentTimeMillis() < save.getAbilityData("stab", AD.TIME, 0) + 100) return;
                                 if (!DMisc.canTarget(e.getEntity(), e.getEntity().getLocation())) return;
                                 DMisc.setFavor(p, DMisc.getFavor(p) - STABCOST);
                                 for (int i = 1; i <= 31; i += 4)
                                     e.getEntity().getWorld().playEffect(e.getEntity().getLocation(), Effect.SMOKE, i);
                                 DMisc.damageDemigods(p, (LivingEntity) e.getEntity(), (int) Math.ceil(Math.pow(DMisc.getDevotion(p, getName()), 0.35)), EntityDamageEvent.DamageCause.ENTITY_ATTACK);
-                                STABTIME = System.currentTimeMillis();
+                                save.setAbilityData("stab", AD.TIME, System.currentTimeMillis());
                                 if (e.getEntity() instanceof Player) {
                                     Player otherP = (Player) e.getEntity();
                                     otherP.setFoodLevel(otherP.getFoodLevel() - (int) (e.getDamage() / 2));
@@ -150,7 +131,7 @@ public class Odin implements Deity {
                                 }
                             } else {
                                 p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
-                                STAB = false;
+                                save.setAbilityData("stab", AD.ACTIVE, false);
                             }
                         }
                     }
@@ -160,11 +141,12 @@ public class Odin implements Deity {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
             if (!DMisc.hasDeity(p, "Odin")) return;
-            if (SLOW || ((SLOWITEM != null) && (p.getItemInHand().getType() == SLOWITEM))) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("stab", AD.ACTIVE, false) || save.getBind("stab").isPresent() && (p.getItemInHand().getType() == save.getBind("stab").get())) {
                 if (DMisc.getFavor(p) >= SLOWCOST) {
                     if (slow(p)) DMisc.setFavor(p, DMisc.getFavor(p) - SLOWCOST);
                 } else {
-                    SLOW = false;
+                    save.setAbilityData("stab", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
                 }
             }
@@ -174,42 +156,42 @@ public class Odin implements Deity {
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
         if (!DMisc.hasDeity(p, "Odin")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("stab")) {
-            if (STAB) {
-                STAB = false;
+            if (save.getAbilityData("stab", AD.ACTIVE, false)) {
+                save.setAbilityData("stab", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Stab is no longer active.");
             } else {
-                STAB = true;
+                save.setAbilityData("stab", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Stab is now active.");
             }
         } else if (str.equalsIgnoreCase("slow")) {
             if (bind) {
-                if (SLOWITEM == null) {
+                if (!save.getBind("slow").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        SLOWITEM = p.getItemInHand().getType();
+                        save.setBind("slow", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Slow is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, SLOWITEM);
-                    p.sendMessage(ChatColor.YELLOW + "Slow is no longer bound to " + SLOWITEM.name() + ".");
-                    SLOWITEM = null;
+                    p.sendMessage(ChatColor.YELLOW + "Slow is no longer bound to " + save.getBind("slow").get().name() + ".");
+                    save.removeBind("slow");
                 }
                 return;
             }
-            if (SLOW) {
-                SLOW = false;
+            if (save.getAbilityData("slow", AD.ACTIVE, false)) {
+                save.setAbilityData("slow", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Slow is no longer active.");
             } else {
-                SLOW = true;
+                save.setAbilityData("slow", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Slow is now active.");
             }
         } else if (str.equalsIgnoreCase("timestop")) {
             if (!DMisc.hasDeity(p, "Odin")) return;
+            double CRONUSULTIMATETIME = save.getAbilityData("timestop", AD.TIME, (double) System.currentTimeMillis());
             if (System.currentTimeMillis() < CRONUSULTIMATETIME) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot stop time again for " + ((((CRONUSULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((CRONUSULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -221,7 +203,7 @@ public class Odin implements Deity {
                     return;
                 }
                 int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
-                CRONUSULTIMATETIME = System.currentTimeMillis() + (t * 1000);
+                save.setAbilityData("timestop", AD.TIME, System.currentTimeMillis() + (t * 1000));
                 timeStop(p);
                 DMisc.setFavor(p, DMisc.getFavor(p) - CRONUSULTIMATECOST);
             } else p.sendMessage(ChatColor.YELLOW + "Stopping time requires " + CRONUSULTIMATECOST + " Favor.");

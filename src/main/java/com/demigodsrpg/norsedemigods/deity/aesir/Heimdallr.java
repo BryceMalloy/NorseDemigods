@@ -2,7 +2,9 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DSave;
+import com.demigodsrpg.norsedemigods.Setting;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,35 +15,17 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 public class Heimdallr implements Deity {
-    private static final long serialVersionUID = -9039521341663053625L;
-    private final UUID PLAYER;
-
     private static final int SKILLCOST = 100;
     private static final int SKILLDELAY = 3600; // milliseconds
     private static final int ULTIMATECOST = 4000;
     private static final int ULTIMATECOOLDOWNMAX = 500; // seconds
     private static final int ULTIMATECOOLDOWNMIN = 300;
 
-    private boolean SKILL = false;
-    private Material SKILLBIND = null;
-    private long SKILLTIME;
-    private long ULTIMATETIME;
-
-    public Heimdallr(UUID player) {
-        PLAYER = player;
-    }
-
     @Override
     public String getName() {
         return "Heimdallr";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -52,6 +36,7 @@ public class Heimdallr implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.isFullParticipant(p) && DMisc.hasDeity(p, getName())) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, getName());
             // flash range
             int range = (int) Math.ceil(3 * Math.pow(devotion, 0.2));
@@ -59,14 +44,14 @@ public class Heimdallr implements Deity {
             int crange = (int) Math.floor(15 * Math.pow(devotion, 0.275));
             // ceasefire duration
             int duration = (int) Math.ceil(10 * Math.pow(devotion, 0.194));
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
             // print
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Use " + ChatColor.YELLOW + "qd <name>" + ChatColor.WHITE + " for detailed information about any player");
             p.sendMessage("you are looking at.");
             p.sendMessage(":Left-click to teleport with range " + range + "." + ChatColor.GREEN + " /flash " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            if (((Heimdallr) DMisc.getDeity(p, getName())).SKILLBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Heimdallr) DMisc.getDeity(p, getName())).SKILLBIND.name());
+            if (save.getBind("flash").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("flash").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Heimdallr silences the battlefield, preventing all damage in range " + crange);
             p.sendMessage("dealt by AEsir and Jotunn alike for " + duration + " seconds." + ChatColor.GREEN + " /ceasefire");
@@ -89,15 +74,18 @@ public class Heimdallr implements Deity {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
             if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
-            if (SKILL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == SKILLBIND))) {
-                if (SKILLTIME > System.currentTimeMillis()) return;
-                SKILLTIME = System.currentTimeMillis() + SKILLDELAY;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("flash", AD.ACTIVE, false) || ((p.getItemInHand() != null) &&
+                    save.getBind("flash").isPresent() && (p.getItemInHand().getType() == save.getBind("flash").get()))) {
+                if (save.getAbilityData("flash", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
+                save.setAbilityData("flash", AD.TIME, System.currentTimeMillis() + SKILLDELAY);
                 if (DMisc.getFavor(p) >= SKILLCOST) {
                     float pitch = p.getLocation().getPitch();
                     float yaw = p.getLocation().getYaw();
                     int range = (int) Math.ceil(3 * Math.pow(DMisc.getDevotion(p, getName()), 0.2));
                     List<Block> los = p.getLineOfSight((Set) null, 100);
-                    Location go = null;
+                    Location go;
                     if (los.size() - 1 < range) go = los.get(los.size() - 1).getLocation();
                     else go = los.get(range).getLocation();
                     if (go == null) return;
@@ -105,13 +93,13 @@ public class Heimdallr implements Deity {
                     go.setPitch(pitch);
                     go.setYaw(yaw);
                     if ((go.getBlock().isLiquid() || go.getBlock().isEmpty()) && DMisc.canLocationPVP(go)) {
-                        DSave.saveData(p, "temp_flash", true);
+                        save.setTempStatus("temp_flash", true);
                         DMisc.horseTeleport(p, go);
                         DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                     }
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                    SKILL = false;
+                    save.setAbilityData("flash", AD.ACTIVE, false);
                 }
             }
         }
@@ -120,34 +108,33 @@ public class Heimdallr implements Deity {
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
         if (DMisc.hasDeity(p, getName())) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if (str.equalsIgnoreCase("flash")) {
                 if (bind) {
-                    if (SKILLBIND == null) {
+                    if (!save.getBind("flash").isPresent()) {
                         if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
                             p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            DMisc.registerBind(p, p.getItemInHand().getType());
-                            SKILLBIND = p.getItemInHand().getType();
+                            save.setBind("flash", p.getItemInHand().getType());
                             p.sendMessage(ChatColor.YELLOW + "Flash is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMisc.removeBind(p, SKILLBIND);
-                        p.sendMessage(ChatColor.YELLOW + "Flash is no longer bound to " + SKILLBIND.name() + ".");
-                        SKILLBIND = null;
+                        p.sendMessage(ChatColor.YELLOW + "Flash is no longer bound to " + save.getBind("flash").get().name() + ".");
+                        save.removeBind("flash");
                     }
                     return;
                 }
-                if (SKILL) {
-                    SKILL = false;
-                    p.sendMessage(ChatColor.YELLOW + "Skill is no longer active.");
+                if (save.getAbilityData("flash", AD.ACTIVE, false)) {
+                    save.setAbilityData("flash", AD.ACTIVE, false);
+                    p.sendMessage(ChatColor.YELLOW + "Flash is no longer active.");
                 } else {
-                    SKILL = true;
-                    p.sendMessage(ChatColor.YELLOW + "Skill is now active.");
+                    save.setAbilityData("flash", AD.ACTIVE, true);
+                    p.sendMessage(ChatColor.YELLOW + "Flash is now active.");
                 }
             } else if (str.equalsIgnoreCase("ceasefire")) {
-                long TIME = ULTIMATETIME;
+                double TIME = save.getAbilityData("ceasefire", AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
                     p.sendMessage(ChatColor.YELLOW + "You cannot use ceasefire again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -157,8 +144,8 @@ public class Heimdallr implements Deity {
                     int devotion = DMisc.getDevotion(p, getName());
                     int crange = (int) Math.floor(15 * Math.pow(devotion, 0.275));
                     int duration = (int) Math.ceil(10 * Math.pow(devotion, 0.194));
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
-                    ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
+                    save.setAbilityData("ceasefire", AD.TIME, System.currentTimeMillis() + (t * 1000));
                     p.sendMessage("In exchange for " + ChatColor.AQUA + ULTIMATECOST + ChatColor.WHITE + " Favor, ");
                     for (Player pl : p.getWorld().getPlayers()) {
                         if (pl.getLocation().distance(p.getLocation()) <= crange) {
@@ -176,7 +163,6 @@ public class Heimdallr implements Deity {
 
     @Override
     public void onSyncTick(long timeSent) {
-
     }
 
     @Override

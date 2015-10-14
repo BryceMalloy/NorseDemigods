@@ -2,6 +2,10 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.Setting;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -13,9 +17,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 
 public class Dwarf implements Deity, Listener {
-    private static final long serialVersionUID = -2472769863144336856L;
-    private final UUID PLAYER;
-
     private static final int SKILLCOST = 200;
     private static final int ULTIMATECOST = 9000;
     private static final int ULTIMATECOOLDOWNMAX = 1800; // seconds
@@ -24,21 +25,9 @@ public class Dwarf implements Deity, Listener {
     private static final String skillname = "Reforge";
     private static final String ult = "Shatter";
 
-    private long ULTIMATETIME;
-
-    public Dwarf(UUID player) {
-        PLAYER = player;
-        ULTIMATETIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getName() {
         return "Dwarf";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -55,7 +44,7 @@ public class Dwarf implements Deity, Listener {
             int repairamt = (int) Math.ceil(10 * Math.pow(devotion, 0.09)); // percent
             int ultrange = (int) Math.ceil(15 * Math.pow(devotion, 0.09));
             int ultdamage = (int) Math.ceil(200 * Math.pow(devotion, 0.17));
-            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
+            int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
             //
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Furnaces up to " + passiverange + " blocks away produce double yields.");
@@ -102,7 +91,8 @@ public class Dwarf implements Deity, Listener {
                 p.getItemInHand().setDurability(num);
                 DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
             } else if (str.equalsIgnoreCase(ult)) {
-                long TIME = ULTIMATETIME;
+                PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+                double TIME = save.getAbilityData(ult, AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
                     p.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -113,8 +103,8 @@ public class Dwarf implements Deity, Listener {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / DMisc.ASCENSIONCAP)));
-                    ULTIMATETIME = System.currentTimeMillis() + (t * 1000);
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
+                    save.setAbilityData(ult, AD.TIME, System.currentTimeMillis() + (t * 1000));
                     int num = shatter(p);
                     if (num > 0) {
                         p.sendMessage(ChatColor.RED + "Your dwarven powers" + ChatColor.WHITE + " have un-forged the equipment of " + num + " enemy players.");
@@ -130,20 +120,19 @@ public class Dwarf implements Deity, Listener {
     }
 
     @EventHandler
-    public static void onSmelt(FurnaceSmeltEvent e) {
+    public void onSmelt(FurnaceSmeltEvent e) {
         if (e.getBlock() == null) return;
-        for (UUID s : DMisc.getFullParticipants()) {
+        for (UUID s : getPlayerIds()) {
             Player p = Bukkit.getPlayer(s);
             if ((p == null) || p.isDead()) continue;
-            if (DMisc.hasDeity(p, "Dwarf")) {
-                if (p.getLocation().getWorld().equals(e.getBlock().getLocation().getWorld()))
-                    if (p.getLocation().distance(e.getBlock().getLocation()) < (int) Math.round(20 * Math.pow(DMisc.getDevotion(p, "Dwarf"), 0.15))) {
-                        int amount = e.getResult().getAmount() * 2;
-                        ItemStack out = e.getResult();
-                        out.setAmount(amount);
-                        e.setResult(out);
-                        return;
-                    }
+            if (p.getLocation().getWorld().equals(e.getBlock().getLocation().getWorld())) {
+                if (p.getLocation().distance(e.getBlock().getLocation()) < (int) Math.round(20 * Math.pow(DMisc.getDevotion(p, "Dwarf"), 0.15))) {
+                    int amount = e.getResult().getAmount() * 2;
+                    ItemStack out = e.getResult();
+                    out.setAmount(amount);
+                    e.setResult(out);
+                    return;
+                }
             }
         }
     }

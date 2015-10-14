@@ -100,12 +100,8 @@ public class WorldGuardUtil implements Listener {
      * @return The region does exist at the provided location.
      */
     public static boolean checkForRegion(final String name, Location location) {
-        return Iterators.any(WorldGuardPlugin.inst().getRegionManager(location.getWorld()).getApplicableRegions(location).iterator(), new Predicate<ProtectedRegion>() {
-            @Override
-            public boolean apply(ProtectedRegion region) {
-                return region.getId().toLowerCase().contains(name);
-            }
-        });
+        return Iterators.any(WorldGuardPlugin.inst().getRegionManager(location.getWorld()).
+                getApplicableRegions(location).iterator(), region -> region.getId().toLowerCase().contains(name));
     }
 
     /**

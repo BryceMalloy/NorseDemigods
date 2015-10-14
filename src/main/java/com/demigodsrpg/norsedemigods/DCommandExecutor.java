@@ -1,10 +1,11 @@
 package com.demigodsrpg.norsedemigods;
 
 import com.demigodsrpg.norsedemigods.deity.Deities;
-import com.demigodsrpg.norsedemigods.deity.aesir.*;
-import com.demigodsrpg.norsedemigods.deity.jotunn.*;
+import com.demigodsrpg.norsedemigods.deity.aesir.Dwarf;
+import com.demigodsrpg.norsedemigods.deity.jotunn.Dis;
+import com.demigodsrpg.norsedemigods.deity.jotunn.FireGiant;
+import com.demigodsrpg.norsedemigods.deity.jotunn.FrostGiant;
 import com.demigodsrpg.norsedemigods.listener.DLevels;
-import com.demigodsrpg.norsedemigods.listener.DShrines;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
@@ -798,7 +799,8 @@ public class DCommandExecutor implements CommandExecutor {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     return true;
                 }
-                for (Block b : p.getLineOfSight((Set) null, 5)) {
+                List<Block> bL = p.getLineOfSight((Set) null, 5);
+                for (Block b : bL) {
                     for (Player pl : p.getWorld().getPlayers()) {
                         if (pl.getLocation().distance(b.getLocation()) < 0.8) {
                             if (!DMisc.isFullParticipant(pl)) continue;
@@ -1235,52 +1237,52 @@ public class DCommandExecutor implements CommandExecutor {
             String success = ChatColor.YELLOW + "Success! " + targetName + " now has the deity " + args[1] + ".";
             switch (s) {
                 case "thor":
-                    DMisc.giveDeity(target, new Thor(target));
+                    DMisc.giveDeity(target, Deities.THOR);
                     break;
                 case "vidar":
-                    DMisc.giveDeity(target, new Vidar(target));
+                    DMisc.giveDeity(target, Deities.VIDAR);
                     break;
                 case "odin":
-                    DMisc.giveDeity(target, new Odin(target));
+                    DMisc.giveDeity(target, Deities.ODIN);
                     break;
                 case "fire":
                 case "firegiant":
-                    DMisc.giveDeity(target, new FireGiant(target));
+                    DMisc.giveDeity(target, Deities.FIRE_GIANT);
                     success = ChatColor.YELLOW + "Success! " + targetName + " now has divine fire.";
                     break;
                 case "jord":
-                    DMisc.giveDeity(target, new Jord(target));
+                    DMisc.giveDeity(target, Deities.JORD);
                     break;
                 case "hel":
-                    DMisc.giveDeity(target, new Hel(target));
+                    DMisc.giveDeity(target, Deities.HEL);
                     break;
                 case "jormungand":
-                    DMisc.giveDeity(target, new Jormungand(target));
+                    DMisc.giveDeity(target, Deities.JORMUNGAND);
                     break;
                 case "thrymr":
-                    DMisc.giveDeity(target, new Thrymr(target));
+                    DMisc.giveDeity(target, Deities.THRYMR);
                     break;
                 case "heimdallr":
-                    DMisc.giveDeity(target, new Heimdallr(target));
+                    DMisc.giveDeity(target, Deities.HEIMDALLR);
                     break;
                 case "frost":
                 case "frostgiant":
-                    DMisc.giveDeity(target, new FrostGiant(target));
+                    DMisc.giveDeity(target, Deities.FROST_GIANT);
                     success = ChatColor.YELLOW + "Success! " + targetName + " now has divine frost.";
                     break;
                 case "baldr":
-                    DMisc.giveDeity(target, new Baldr(target));
+                    DMisc.giveDeity(target, Deities.BALDR);
                     break;
                 case "dwarf":
-                    DMisc.giveDeity(target, new Dwarf(target));
+                    DMisc.giveDeity(target, Deities.DWARF);
                     success = ChatColor.YELLOW + "Success! " + targetName + " now has dwarven powers.";
                     break;
                 case "bragi":
-                    DMisc.giveDeity(target, new Bragi(target));
+                    DMisc.giveDeity(target, Deities.BRAGI);
                     break;
                 case "dís":
                 case "dis":
-                    DMisc.giveDeity(target, new Dis(target));
+                    DMisc.giveDeity(target, Deities.DIS);
                     success = ChatColor.YELLOW + "Success! " + targetName + " has joined the dísir.";
                     break;
                 default:
@@ -1588,24 +1590,24 @@ public class DCommandExecutor implements CommandExecutor {
             Deity choice = null;
             switch (p.getItemInHand().getType()) {
                 case SOUL_SAND:
-                    choice = new Odin(p.getUniqueId());
+                    choice = Deities.ODIN;
                     break;
                 case IRON_INGOT:
-                    choice = new Thor(p.getUniqueId());
+                    choice = Deities.THOR;
                     break;
                 case RED_ROSE:
                 case YELLOW_FLOWER:
-                    choice = new Baldr(p.getUniqueId());
+                    choice = Deities.BALDR;
                     break;
                 //
                 case FLINT_AND_STEEL:
-                    choice = new FireGiant(p.getUniqueId());
+                    choice = Deities.FIRE_GIANT;
                     break;
                 case WATER_BUCKET:
-                    choice = new Jormungand(p.getUniqueId());
+                    choice = Deities.JORMUNGAND;
                     break;
                 case BONE:
-                    choice = new Hel(p.getUniqueId());
+                    choice = Deities.HEL;
                     break;
             }
             if (choice != null) {
@@ -1648,48 +1650,48 @@ public class DCommandExecutor implements CommandExecutor {
         Deity choice = null;
         switch (p.getItemInHand().getType()) {
             case IRON_INGOT:
-                choice = new Thor(p.getUniqueId());
+                choice = Deities.THOR;
                 break;
             case GOLD_SWORD:
-                choice = new Vidar(p.getUniqueId());
+                choice = Deities.VIDAR;
                 break;
             case SOUL_SAND:
-                choice = new Odin(p.getUniqueId());
+                choice = Deities.ODIN;
                 break;
             case BOOK:
-                choice = new Heimdallr(p.getUniqueId());
+                choice = Deities.HEIMDALLR;
                 break;
             case FURNACE:
-                choice = new Dwarf(p.getUniqueId());
+                choice = Deities.DWARF;
                 break;
             case JUKEBOX:
-                choice = new Bragi(p.getUniqueId());
+                choice = Deities.BRAGI;
                 break;
             case RED_ROSE:
             case YELLOW_FLOWER:
-                choice = new Baldr(p.getUniqueId());
+                choice = Deities.BALDR;
                 break;
             //
             case WATER_BUCKET:
-                choice = new Jormungand(p.getUniqueId());
+                choice = Deities.JORMUNGAND;
                 break;
             case BONE:
-                choice = new Hel(p.getUniqueId());
+                choice = Deities.HEL;
                 break;
             case FLINT_AND_STEEL:
-                choice = new FireGiant(p.getUniqueId());
+                choice = Deities.FIRE_GIANT;
                 break;
             case VINE:
-                choice = new Jord(p.getUniqueId());
+                choice = Deities.JORD;
                 break;
             case OBSIDIAN:
-                choice = new Thrymr(p.getUniqueId());
+                choice = Deities.THRYMR;
                 break;
             case GLASS_BOTTLE:
-                choice = new FrostGiant(p.getUniqueId());
+                choice = Deities.FROST_GIANT;
                 break;
             case COMPASS:
-                choice = new Dis(p.getUniqueId());
+                choice = Deities.DIS;
                 break;
         }
         if (choice == null) {
@@ -1731,7 +1733,7 @@ public class DCommandExecutor implements CommandExecutor {
 
     private boolean value(Player p) {
         if (DMisc.isFullParticipant(p)) if (p.getItemInHand() != null)
-            p.sendMessage(ChatColor.YELLOW + p.getItemInHand().getType().name() + " x" + p.getItemInHand().getAmount() + " is worth " + (int) (DMisc.getValue(p.getItemInHand()) * DShrines.FAVORMULTIPLIER) + " at a shrine.");
+            p.sendMessage(ChatColor.YELLOW + p.getItemInHand().getType().name() + " x" + p.getItemInHand().getAmount() + " is worth " + (DMisc.getValue(p.getItemInHand()) * Setting.FAVOR_MULTIPLIER) + " at a shrine.");
         return true;
     }
 

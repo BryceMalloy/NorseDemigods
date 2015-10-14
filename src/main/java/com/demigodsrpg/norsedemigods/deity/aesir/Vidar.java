@@ -2,6 +2,8 @@ package com.demigodsrpg.norsedemigods.deity.aesir;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -15,7 +17,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 /*
  * Affected by level:
@@ -26,8 +27,6 @@ import java.util.UUID;
  */
 
 public class Vidar implements Deity {
-    private static final long serialVersionUID = -5825867521620334951L;
-    private final UUID PLAYER;
     /*
      * Needs to be loaded out of config
      */
@@ -37,17 +36,6 @@ public class Vidar implements Deity {
     private static final int ARESULTIMATECOOLDOWNMAX = 180; // seconds
     private static final int ARESULTIMATECOOLDOWNMIN = 60;
 
-    private boolean STRIKE = false;
-    private Material STRIKEBIND = null;
-    private long STRIKETIME;
-    private long ARESULTIMATETIME;
-
-    public Vidar(UUID player) {
-        PLAYER = player;
-        ARESULTIMATETIME = System.currentTimeMillis();
-        STRIKETIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getDefaultAlliance() {
         return "AEsir";
@@ -56,6 +44,7 @@ public class Vidar implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Vidar") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
@@ -76,8 +65,8 @@ public class Vidar implements Deity {
             p.sendMessage(":Up to " + DMisc.getAscensions(p) + " additional Favor per hit on overkill.");
             p.sendMessage(":Strike an enemy from afar with your sword, slowing them down.");
             p.sendMessage("Slow: " + slowpower + " for " + duration + " seconds. Damage: " + dmg + ChatColor.GREEN + " /strike " + ChatColor.YELLOW + "Costs " + STRIKECOST + " Favor.");
-            if (((Vidar) DMisc.getDeity(p, getName())).STRIKEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((Vidar) DMisc.getDeity(p, getName())).STRIKEBIND.name());
+            if (save.getBind("strike").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("strike").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Vidar flings up to " + targets + " targets within range " + range + " to you, dealing");
             p.sendMessage(damage + " damage to each and confusing them for " + confuseduration + " seconds." + ChatColor.GREEN + " /crash");
@@ -101,26 +90,23 @@ public class Vidar implements Deity {
     }
 
     @Override
-    public UUID getPlayerId() {
-        return PLAYER;
-    }
-
-    @Override
     public void onEvent(Event ee) {
         if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
             if (!DMisc.hasDeity(p, "Vidar") || !DMisc.isFullParticipant(p)) return;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if ((p.getItemInHand() != null) && p.getItemInHand().getType().name().contains("SWORD")) {
-                if (STRIKE || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == STRIKEBIND))) {
-                    if (STRIKETIME > System.currentTimeMillis()) return;
-                    STRIKETIME = System.currentTimeMillis() + STRIKEDELAY;
+                if (save.getAbilityData("strike", AD.ACTIVE, false) || ((p.getItemInHand() != null) && save.getBind("strike").isPresent() && (p.getItemInHand().getType() == save.getBind("strike").get()))) {
+                    if (save.getAbilityData("strike", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                        return;
+                    save.setAbilityData("strike", AD.TIME, System.currentTimeMillis() + STRIKEDELAY);
                     if (DMisc.getFavor(p) >= STRIKECOST) {
                         strike(p);
                         DMisc.setFavor(p, DMisc.getFavor(p) - STRIKECOST);
                     } else {
                         p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                        STRIKE = false;
+                        save.setAbilityData("strike", AD.ACTIVE, false);
                     }
                 }
             }
@@ -156,9 +142,10 @@ public class Vidar implements Deity {
     @Override
     public void onCommand(final Player p, String str, String[] args, boolean bind) {
         if (DMisc.hasDeity(p, "Vidar")) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if (str.equalsIgnoreCase("strike")) {
                 if (bind) {
-                    if (STRIKEBIND == null) {
+                    if (!save.getBind("strike").isPresent()) {
                         if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
@@ -166,26 +153,24 @@ public class Vidar implements Deity {
                         if (!p.getItemInHand().getType().name().contains("SWORD"))
                             p.sendMessage(ChatColor.YELLOW + "You must bind this skill to a sword.");
                         else {
-                            DMisc.registerBind(p, p.getItemInHand().getType());
-                            STRIKEBIND = p.getItemInHand().getType();
+                            save.setBind("strike", p.getItemInHand().getType());
                             p.sendMessage(ChatColor.YELLOW + "Strike is now bound to " + p.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        DMisc.removeBind(p, STRIKEBIND);
-                        p.sendMessage(ChatColor.YELLOW + "Strike is no longer bound to " + STRIKEBIND.name() + ".");
-                        STRIKEBIND = null;
+                        p.sendMessage(ChatColor.YELLOW + "Strike is no longer bound to " + save.getBind("strike").get().name() + ".");
+                        save.removeBind("strike");
                     }
                     return;
                 }
-                if (STRIKE) {
-                    STRIKE = false;
+                if (save.getAbilityData("strike", AD.ACTIVE, false)) {
+                    save.setAbilityData("strike", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "Strike is no longer active.");
                 } else {
-                    STRIKE = true;
+                    save.setAbilityData("strike", AD.ACTIVE, true);
                     p.sendMessage(ChatColor.YELLOW + "Strike is now active.");
                 }
             } else if (str.equalsIgnoreCase("crash")) {
-                long TIME = ARESULTIMATETIME;
+                double TIME = save.getAbilityData("crash", AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
                     p.sendMessage(ChatColor.YELLOW + "You cannot use the power crash again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                     p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -202,7 +187,7 @@ public class Vidar implements Deity {
                         return;
                     }
                     int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
-                    ARESULTIMATETIME = System.currentTimeMillis() + (t * 1000);
+                    save.setAbilityData("crash", AD.TIME, System.currentTimeMillis() + (t * 1000));
                     p.sendMessage("In exchange for " + ChatColor.AQUA + ARESULTIMATECOST + ChatColor.WHITE + " Favor, ");
                     p.sendMessage(ChatColor.GOLD + "Vidar" + ChatColor.WHITE + " has unleashed his powers on " + hits + " non-allied entities.");
                     DMisc.setFavor(p, DMisc.getFavor(p) - ARESULTIMATECOST);
