@@ -51,13 +51,13 @@ public class Template implements Deity {
             Player p = ((PlayerInteractEvent) ee).getPlayer();
             PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if (!DMisc.isFullParticipant(p) || !DMisc.hasDeity(p, getName())) return;
-            Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
+            boolean active = saveable.getAbilityData(skillname, AD.ACTIVE, false);
             Optional<Material> opBind = saveable.getBind(skillname);
-            if (opEnabled.isPresent() && (boolean) opEnabled.get() || ((p.getItemInHand() != null) &&
+            if (active || ((p.getItemInHand() != null) &&
                     (opBind.isPresent() && p.getItemInHand().getType() == opBind.get()))) {
-                Optional opTime = saveable.getAbilityData(skillname, "time");
-                if (opTime.isPresent() && (double) opTime.get() > System.currentTimeMillis()) return;
-                saveable.setAbilityData(skillname, "time", System.currentTimeMillis() + SKILLDELAY);
+                double time = saveable.getAbilityData(skillname, AD.TIME, (double) System.currentTimeMillis());
+                if (System.currentTimeMillis() < time) return;
+                saveable.setAbilityData(skillname, AD.TIME, System.currentTimeMillis() + SKILLDELAY);
                 if (DMisc.getFavor(p) >= SKILLCOST) {
                 /*
                  * Skill
@@ -79,7 +79,7 @@ public class Template implements Deity {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     Optional opBind = saveable.getAbilityData(skillname, "bind");
-                    if (opBind.isPresent()) {
+                    if (!opBind.isPresent()) {
                         if (DMisc.isBound(p, p.getItemInHand().getType()))
                             p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                         if (p.getItemInHand().getType() == Material.AIR)
@@ -97,14 +97,14 @@ public class Template implements Deity {
                 }
                 Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
                 if (opEnabled.isPresent() && (boolean) opEnabled.get()) {
-                    saveable.setAbilityData(skillname, "enabled", false);
+                    saveable.setAbilityData(skillname, AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
                 } else {
-                    saveable.setAbilityData(skillname, "enabled", true);
+                    saveable.setAbilityData(skillname, AD.ACTIVE, true);
                     p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
                 }
             } else if (str.equalsIgnoreCase(ult)) {
-                Optional opTime = saveable.getAbilityData(ult, "time");
+                Optional opTime = saveable.getAbilityData(ult, AD.TIME);
                 if (opTime.isPresent() && System.currentTimeMillis() < (double) opTime.get()) {
                     double TIME = (double) opTime.get();
                     p.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) -
@@ -116,7 +116,7 @@ public class Template implements Deity {
                 if (DMisc.getFavor(p) >= ULTIMATECOST) {
                     int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) *
                             ((double) DMisc.getAscensions(p) / 100)));
-                    saveable.setAbilityData(ult, "time", System.currentTimeMillis() + (t * 1000));
+                    saveable.setAbilityData(ult, AD.TIME, System.currentTimeMillis() + (t * 1000));
                     /*
 					 * Ultimate code
 					 */

@@ -2,6 +2,7 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
+import com.demigodsrpg.norsedemigods.deity.AD;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -10,7 +11,6 @@ import org.bukkit.event.Event;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public class Thrymr implements Deity {
@@ -55,8 +55,8 @@ public class Thrymr implements Deity {
             p.sendMessage(":Reduce incoming combat damage by " + reduction + ".");
             p.sendMessage(":Temporarily increase jump height.");
             p.sendMessage("Duration: " + length + " Jump multiplier: " + jump + ChatColor.GREEN + " /unburden " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
-            Optional op = save.getAbilityData("unburden", "active");
-            if (op.isPresent() && (boolean) op.get())
+            boolean unburden = save.getAbilityData("unburden", AD.ACTIVE, false);
+            if (unburden)
                 p.sendMessage(ChatColor.AQUA + "    Skill is active.");
             p.sendMessage(":Thrymr shields you and nearby allies from harm.");
             p.sendMessage("50% damage reduction with range " + radius + " for " + duration + " seconds.");
@@ -85,7 +85,7 @@ public class Thrymr implements Deity {
         PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("unburden")) {
             if (DMisc.getActiveEffects(p.getUniqueId()).containsKey("Unburden")) {
-                save.setAbilityData("unburden", "active", false);
+                save.setAbilityData("unburden", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Unburden is already active.");
             } else {
                 if (DMisc.getFavor(p) < SKILLCOST) {
@@ -97,21 +97,20 @@ public class Thrymr implements Deity {
                 int length = (int) Math.ceil(4 * Math.pow(devotion, 0.2475));
                 p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, length * 20, jump));
                 DMisc.addActiveEffect(p.getUniqueId(), "Unburden", length);
-                save.setAbilityData("unburden", "active", true);
+                save.setAbilityData("unburden", AD.ACTIVE, true);
                 DMisc.getPlugin().getServer().getScheduler().scheduleAsyncDelayedTask(DMisc.getPlugin(), () -> {
                     PlayerDataSaveable save1 = getBackend().getPlayerDataRegistry().fromPlayer(p);
-                    save1.setAbilityData("unburden", "active", false);
+                    save1.setAbilityData("unburden", AD.ACTIVE, false);
                 }, length * 20);
                 DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                 p.sendMessage(ChatColor.YELLOW + "Unburden is now active.");
                 p.sendMessage(ChatColor.YELLOW + "You will jump higher for " + length + " seconds.");
             }
         } else if (str.equalsIgnoreCase("invincible")) {
-            Optional opTime = save.getAbilityData("invincible", "time");
-            if (opTime.isPresent() && System.currentTimeMillis() < (double) opTime.get()) {
-                double TIME = (double) opTime.get();
-                p.sendMessage(ChatColor.YELLOW + "You cannot use Invincible again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+            double time = save.getAbilityData("invincible", AD.TIME, (double) System.currentTimeMillis());
+            if (System.currentTimeMillis() < time) {
+                p.sendMessage(ChatColor.YELLOW + "You cannot use Invincible again for " + ((((time) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                p.sendMessage(ChatColor.YELLOW + "and " + ((((time) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
             if (DMisc.getFavor(p) >= ULTIMATECOST) {
@@ -133,7 +132,7 @@ public class Thrymr implements Deity {
                 }
                 //
                 DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                save.setAbilityData("invincible", "time", System.currentTimeMillis() + t * 1000);
+                save.setAbilityData("invincible", AD.TIME, System.currentTimeMillis() + t * 1000);
             } else p.sendMessage(ChatColor.YELLOW + "Invincible requires " + ULTIMATECOST + " Favor.");
         }
     }

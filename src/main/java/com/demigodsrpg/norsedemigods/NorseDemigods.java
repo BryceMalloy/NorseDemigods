@@ -2,14 +2,15 @@ package com.demigodsrpg.norsedemigods;
 
 import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
-import com.demigodsrpg.norsedemigods.registry.LocationRegistry;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
 import com.demigodsrpg.norsedemigods.registry.ShrineRegistry;
+import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
@@ -29,7 +30,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     PlayerDataRegistry PLAYER_DATA;
     ShrineRegistry SHRINE_DATA;
-    LocationRegistry LOCATION_DATA;
 
     @Override
     public void onEnable() {
@@ -43,7 +43,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
         PLAYER_DATA = new PlayerDataRegistry(this);
         SHRINE_DATA = new ShrineRegistry(this);
-        LOCATION_DATA = new LocationRegistry(this);
 
         loadFixes(); // #3.5
         loadListeners(); // #4
@@ -83,8 +82,13 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         return SHRINE_DATA;
     }
 
-    public LocationRegistry getLocationRegistry() {
-        return LOCATION_DATA;
+    public Location getLocationFromKey(String key) {
+        return new LocationSaveable(key).toLocation(this);
+    }
+
+    public String getLocationKey(Location location) {
+        return location.getBlockX() + "-" + location.getBlockY() + "-" + location.getBlockZ() + "-" +
+                location.getWorld().getName();
     }
 
     void loadDependencies() {

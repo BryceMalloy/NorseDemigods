@@ -2,8 +2,8 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
-import com.demigodsrpg.norsedemigods.util.DSave;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,44 +22,20 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 public class Jord implements Deity {
     /* Generalized things */
-    private static final long serialVersionUID = 4917938727569988533L;
     private final int POISONCOST = 50;
     private final int PLANTCOST = 100;
     private final int RHEAULTIMATECOST = 5500;
     private final int RHEAULTIMATECOOLDOWNMAX = 500;
     private final int RHEAULTIMATECOOLDOWNMIN = 120;
 
-    /* Specific to owner */
-    private final UUID PLAYER;
-    private final List<LocationSaveable> TREES;
-    private boolean PLANT = false;
-    private boolean POISON = false;
-    private long PLANTTIME, POISONTIME, RHEAULTIMATETIME;
-    private Material PLANTBIND = null;
-    private Material DETONATEBIND = null;
-    private Material POISONBIND = null;
-
-    public Jord(UUID name) {
-        PLAYER = name;
-        TREES = new ArrayList<>();
-        PLANTTIME = System.currentTimeMillis();
-        POISONTIME = System.currentTimeMillis();
-        RHEAULTIMATETIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getName() {
         return "Jord";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -92,17 +68,21 @@ public class Jord implements Deity {
             p.sendMessage(":Poison a target player. " + ChatColor.GREEN + "/poison");
             p.sendMessage(ChatColor.YELLOW + "Costs " + POISONCOST + " Favor.");
             p.sendMessage("Poison power: " + strength + " for " + duration + " seconds.");
-            if (((Jord) (DMisc.getDeity(p, "Jord"))).POISONBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).POISONBIND).name());
+            PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            Optional<Material> poisonBind = saveable.getBind("poison");
+            if (poisonBind.isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + poisonBind.get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Plant and detonate exploding trees. " + ChatColor.GREEN + "/plant, /detonate");
             p.sendMessage(ChatColor.YELLOW + "Costs " + PLANTCOST + " Favor.");
             p.sendMessage("Explosion radius: " + explosionsize + ". Maximum trees: " + (DMisc.getAscensions(p) + 1));
-            if (((Jord) (DMisc.getDeity(p, "Jord"))).PLANTBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Plant bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).PLANTBIND).name());
+            Optional<Material> plantBind = saveable.getBind("plant");
+            if (plantBind.isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + plantBind.get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind plant to an item.");
-            if (((Jord) (DMisc.getDeity(p, "Jord"))).DETONATEBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Detonate bound to " + (((Jord) (DMisc.getDeity(p, "Jord"))).DETONATEBIND).name());
+            Optional<Material> detonateBind = saveable.getBind("detonate");
+            if (detonateBind.isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + detonateBind.get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind detonate to an item.");
             p.sendMessage(":Jord entangles nearby enemies, damaging them if they move.");
             p.sendMessage("Range: " + range + " for " + ultimateduration + " seconds. " + ChatColor.GREEN + "/entangle");
@@ -129,84 +109,88 @@ public class Jord implements Deity {
             if (!DMisc.isFullParticipant(p)) return;
             if (!DMisc.hasDeity(p, "Jord")) return;
             if (!DMisc.canTarget(p, p.getLocation())) return;
-            if (POISON || ((POISONBIND != null) && (p.getItemInHand().getType() == POISONBIND))) {
-                if (POISONTIME > System.currentTimeMillis()) return;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("poison", AD.ACTIVE, false) || save.getBind("poison").isPresent() &&
+                    p.getItemInHand().getType() == save.getBind("poison").get()) {
+                if (save.getAbilityData("poison", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
                 if (DMisc.getFavor(p) >= POISONCOST) {
                     if (poison(p)) {
                         DMisc.setFavor(p, DMisc.getFavor(p) - POISONCOST);
                         int POISONDELAY = 1500;
-                        POISONTIME = System.currentTimeMillis() + POISONDELAY;
+                        save.setAbilityData("poison", AD.TIME, System.currentTimeMillis() + POISONDELAY);
                     }
                 } else {
-                    POISON = false;
+                    save.setAbilityData("poison", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
                 }
             }
-            if (PLANT || ((PLANTBIND != null) && (p.getItemInHand().getType() == PLANTBIND))) {
-                if (PLANTTIME > System.currentTimeMillis()) return;
+            if (save.getAbilityData("plant", AD.ACTIVE, false) || save.getBind("plant").isPresent() &&
+                    p.getItemInHand().getType() == save.getBind("plant").get()) {
+                if (save.getAbilityData("plant", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
                 if (DMisc.getFavor(p) >= PLANTCOST) {
-                    if (plant(p)) {
+                    if (plant(p, save)) {
                         DMisc.setFavor(p, DMisc.getFavor(p) - PLANTCOST);
                         int PLANTDELAY = 2000;
-                        PLANTTIME = System.currentTimeMillis() + PLANTDELAY;
+                        save.setAbilityData("plant", AD.TIME, System.currentTimeMillis() + PLANTDELAY);
                     }
                 } else {
-                    PLANT = false;
+                    save.setAbilityData("plant", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
                 }
             }
-            if ((DETONATEBIND != null) && (p.getItemInHand().getType() == DETONATEBIND)) {
-                detonate(p);
-            }
-            if (e.getClickedBlock() == null) return;
-            Block b = e.getClickedBlock();
-            if (b.getType() == Material.SAPLING) {
-                if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                    switch (b.getData()) {
-                        case 0:
-                            b.setData((byte) 1);
-                            break;
-                        case 1:
-                            b.setData((byte) 2);
-                            break;
-                        case 2:
-                            b.setData((byte) 3);
-                            break;
-                        case 3:
-                            b.setData((byte) 0);
-                            break;
-                        default:
-                            b.setData((byte) 0);
+            if (save.getBind("detonate").isPresent() && p.getItemInHand().getType() == save.getBind("detonate").get()) {
+                if (e.getClickedBlock() == null) return;
+                Block b = e.getClickedBlock();
+                if (b.getType() == Material.SAPLING) {
+                    if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+                        switch (b.getData()) {
+                            case 0:
+                                b.setData((byte) 1);
+                                break;
+                            case 1:
+                                b.setData((byte) 2);
+                                break;
+                            case 2:
+                                b.setData((byte) 3);
+                                break;
+                            case 3:
+                                b.setData((byte) 0);
+                                break;
+                            default:
+                                b.setData((byte) 0);
+                        }
+                    } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
+                        byte Y = b.getData();
+                        b.setType(Material.AIR);
+                        switch (Y) {
+                            case 0:
+                                p.getWorld().generateTree(b.getLocation(), TreeType.TREE);
+                                break;
+                            case 1:
+                                p.getWorld().generateTree(b.getLocation(), TreeType.REDWOOD);
+                                break;
+                            case 2:
+                                p.getWorld().generateTree(b.getLocation(), TreeType.BIRCH);
+                                break;
+                            case 3:
+                                p.getWorld().generateTree(b.getLocation(), TreeType.JUNGLE);
+                                break;
+                            default:
+                                p.getWorld().generateTree(b.getLocation(), TreeType.TREE);
+                        }
+                        e.setCancelled(true);
                     }
-                } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
-                    byte Y = b.getData();
-                    b.setType(Material.AIR);
-                    switch (Y) {
-                        case 0:
-                            p.getWorld().generateTree(b.getLocation(), TreeType.TREE);
-                            break;
-                        case 1:
-                            p.getWorld().generateTree(b.getLocation(), TreeType.REDWOOD);
-                            break;
-                        case 2:
-                            p.getWorld().generateTree(b.getLocation(), TreeType.BIRCH);
-                            break;
-                        case 3:
-                            p.getWorld().generateTree(b.getLocation(), TreeType.JUNGLE);
-                            break;
-                        default:
-                            p.getWorld().generateTree(b.getLocation(), TreeType.TREE);
-                    }
-                    e.setCancelled(true);
+                } else if ((b.getType() == Material.CROPS) || (b.getType() == Material.PUMPKIN_STEM) || (b.getType() == Material.MELON_STEM)) {
+                    if (e.getAction() == Action.RIGHT_CLICK_BLOCK) b.setData((byte) 0x7);
+                } else if (b.getType() == Material.GRASS) {
+                    if ((e.getAction() == Action.RIGHT_CLICK_BLOCK) && (e.getPlayer().getItemInHand().getType() == Material.AIR))
+                        grow(b.getRelative(BlockFace.UP), 3);
+                } else if (b.getType() == Material.DIRT) {
+                    if ((e.getAction() == Action.RIGHT_CLICK_BLOCK) && (e.getPlayer().getItemInHand().getType() == Material.AIR))
+                        b.setType(Material.GRASS);
                 }
-            } else if ((b.getType() == Material.CROPS) || (b.getType() == Material.PUMPKIN_STEM) || (b.getType() == Material.MELON_STEM)) {
-                if (e.getAction() == Action.RIGHT_CLICK_BLOCK) b.setData((byte) 0x7);
-            } else if (b.getType() == Material.GRASS) {
-                if ((e.getAction() == Action.RIGHT_CLICK_BLOCK) && (e.getPlayer().getItemInHand().getType() == Material.AIR))
-                    grow(b.getRelative(BlockFace.UP), 3);
-            } else if (b.getType() == Material.DIRT) {
-                if ((e.getAction() == Action.RIGHT_CLICK_BLOCK) && (e.getPlayer().getItemInHand().getType() == Material.AIR))
-                    b.setType(Material.GRASS);
             }
         }
     }
@@ -216,83 +200,79 @@ public class Jord implements Deity {
         final Player p = P;
         if (!DMisc.isFullParticipant(p)) return;
         if (!DMisc.hasDeity(p, "Jord")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
         if (str.equalsIgnoreCase("poison")) {
             if (bind) {
-                if (POISONBIND == null) {
+                if (!save.getBind("poison").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        POISONBIND = p.getItemInHand().getType();
+                        save.setBind("ability", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Poison is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, POISONBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Poison is no longer bound to " + POISONBIND.name() + ".");
-                    POISONBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Poison is no longer bound to " + save.getBind("poison").get().name() + ".");
+                    save.removeBind("poison");
                 }
                 return;
             }
-            if (POISON) {
-                POISON = false;
+            if (save.getAbilityData("poison", AD.ACTIVE, false)) {
+                save.setAbilityData("poison", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Poison is no longer active.");
             } else {
-                POISON = true;
+                save.setAbilityData("poison", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Poison is now active.");
             }
         } else if (str.equalsIgnoreCase("plant")) {
             if (bind) {
-                if (PLANTBIND == null) {
+                if (!save.getBind("plant").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        PLANTBIND = p.getItemInHand().getType();
+                        save.setBind("plant", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Plant is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, PLANTBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Plant is no longer bound to " + PLANTBIND.name() + ".");
-                    PLANTBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Plant is no longer bound to " + save.getBind("plant").get().name() + ".");
+                    save.removeBind("plant");
                 }
                 return;
             }
-            if (PLANT) {
-                PLANT = false;
+            if (save.getAbilityData("plant", AD.ACTIVE, false)) {
+                save.setAbilityData("plant", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Plant is no longer active.");
             } else {
-                PLANT = true;
+                save.setAbilityData("plant", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Plant is now active.");
             }
 
         } else if (str.equalsIgnoreCase("detonate")) {
             if (bind) {
-                if (DETONATEBIND == null) {
+                if (!save.getBind("detonate").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        DETONATEBIND = p.getItemInHand().getType();
+                        save.setBind("detonate", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Detonate is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, DETONATEBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Detonate is no longer bound to " + DETONATEBIND.name() + ".");
-                    DETONATEBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Detonate is no longer bound to " + save.getBind("detonate").get().name() + ".");
+                    save.removeBind("detonate");
                 }
                 return;
             }
-            detonate(p);
+            detonate(p, save);
         } else if (str.equalsIgnoreCase("entangle")) {
-            if (System.currentTimeMillis() < RHEAULTIMATETIME) {
-                p.sendMessage(ChatColor.YELLOW + "You cannot use entangle again for " + ((((RHEAULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                p.sendMessage(ChatColor.YELLOW + "and " + ((((RHEAULTIMATETIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+            double time = save.getAbilityData("entangle", AD.TIME, (double) System.currentTimeMillis());
+            if (System.currentTimeMillis() < time) {
+                p.sendMessage(ChatColor.YELLOW + "You cannot use entangle again for " + ((((time) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                p.sendMessage(ChatColor.YELLOW + "and " + ((((time) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
             if (DMisc.getFavor(p) >= RHEAULTIMATECOST) {
@@ -305,7 +285,7 @@ public class Jord implements Deity {
                 if (hit > 0) {
                     p.sendMessage(ChatColor.YELLOW + "Jord has entangled " + hit + " enemies.");
                     DMisc.setFavor(p, DMisc.getFavor(p) - RHEAULTIMATECOST);
-                    RHEAULTIMATETIME = System.currentTimeMillis() + (t * 1000);
+                    save.setAbilityData("entangle", AD.TIME, System.currentTimeMillis() + (t * 1000));
                 } else p.sendMessage(ChatColor.YELLOW + "No targets found.");
             } else p.sendMessage(ChatColor.YELLOW + "Entangle requires " + RHEAULTIMATECOST + " Favor.");
         }
@@ -347,12 +327,13 @@ public class Jord implements Deity {
         }
     }
 
-    private boolean plant(Player player) {
+    private boolean plant(Player player, PlayerDataSaveable save) {
         if (!DMisc.canTarget(player, player.getLocation())) {
             player.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
         Block b = player.getTargetBlock((Set) null, 200);
+        List<String> TREES = save.getAbilityData("plant", "trees", new ArrayList<>());
         if (b != null) {
             if (!DMisc.canLocationPVP(b.getLocation())) {
                 player.sendMessage(ChatColor.YELLOW + "That is a protected area.");
@@ -364,18 +345,20 @@ public class Jord implements Deity {
             }
             if (player.getWorld().generateTree(b.getRelative(BlockFace.UP).getLocation(), TreeType.TREE)) {
                 player.sendMessage(ChatColor.YELLOW + "Use /detonate to create an explosion at this tree.");
-                TREES.add(DMisc.toWriteLocation(b.getRelative(BlockFace.UP).getLocation()));
+                TREES.add(getBackend().getLocationKey((b.getRelative(BlockFace.UP).getLocation())));
+                save.setAbilityData("plant", "trees", TREES);
                 return true;
             } else player.sendMessage(ChatColor.YELLOW + "A tree cannot be placed there.");
         } else player.sendMessage(ChatColor.YELLOW + "That is a protected zone or an invalid location.");
         return false;
     }
 
-    private void detonate(Player player) {
+    private void detonate(Player player, PlayerDataSaveable save) {
         float explosionsize = (float) (Math.ceil(3 * Math.pow(DMisc.getDevotion(player.getUniqueId(), getName()), 0.09)));
+        List<String> TREES = save.getAbilityData("plant", "trees", new ArrayList<>());
         if (TREES.size() > 0) {
-            for (LocationSaveable w : TREES) {
-                Location l = DMisc.toLocation(w);
+            for (String w : TREES) {
+                Location l = getBackend().getLocationFromKey(w);
                 if (l.getBlock().getType() == Material.LOG) {
                     removelogs(l);
                     l.getWorld().createExplosion(l, explosionsize);
@@ -469,7 +452,7 @@ public class Jord implements Deity {
 
     private void trap(final LivingEntity le, int durationseconds, final Player p) {
         if (le instanceof Player) {
-            ((Player) le).sendMessage(ChatColor.YELLOW + "You have been entangled by Jord.");
+            le.sendMessage(ChatColor.YELLOW + "You have been entangled by Jord.");
         }
         le.setVelocity(new Vector(0, 0, 0));
         final Location originalloc = le.getLocation();
@@ -529,33 +512,30 @@ public class Jord implements Deity {
             }
         }
         for (int i = 0; i < durationseconds * 20; i += 10) {
-            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                @Override
-                public void run() {
-                    if (le.isDead() && le instanceof Player) {
-                        DSave.saveData((Player) le, "temp_trap_died", true);
-                        return;
-                    } else if (le.getLocation().distance(originalloc) > 0.5) {
-                        if (le instanceof Player) {
-                            if (DSave.hasData((Player) le, "temp_trap_died")) return;
-                            ((Player) le).sendMessage(ChatColor.YELLOW + "You take damage from moving while entangled!");
-                        }
-                        DMisc.damageDemigods(p, le, 5, DamageCause.ENTITY_ATTACK);
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+                if (le.isDead() && le instanceof Player) {
+                    PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
+                    save.setTempStatus("temp_trap_died", true);
+                    return;
+                } else if (le.getLocation().distance(originalloc) > 0.5) {
+                    if (le instanceof Player) {
+                        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
+                        if (save.getTempStatus("temp_trap_died")) return;
+                        le.sendMessage(ChatColor.YELLOW + "You take damage from moving while entangled!");
                     }
-                    if (le instanceof Player) DMisc.horseTeleport((Player) le, originalloc);
-                    else le.teleport(originalloc);
+                    DMisc.damageDemigods(p, le, 5, DamageCause.ENTITY_ATTACK);
                 }
+                if (le instanceof Player) DMisc.horseTeleport((Player) le, originalloc);
+                else le.teleport(originalloc);
             }, i);
         }
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                for (Location l : toreset)
-                    l.getBlock().setType(Material.AIR);
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+            for (Location l : toreset)
+                l.getBlock().setType(Material.AIR);
 
-                if (le instanceof Player) {
-                    if (DSave.hasData((Player) le, "temp_trap_died")) DSave.removeData((Player) le, "temp_trap_died");
-                }
+            if (le instanceof Player) {
+                PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
+                save.removeTempStatus("temp_trap_died");
             }
         }, durationseconds * 20);
     }

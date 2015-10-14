@@ -2,7 +2,9 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.Setting;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -21,12 +23,10 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class Hel implements Deity {
 
     /* General */
-    private static final long serialVersionUID = 3647481847975286534L;
     private static final int CHAINCOST = 250;
     private static final int CHAINDELAY = 1500;
     private static final int ENTOMBCOST = 470;
@@ -35,29 +35,9 @@ public class Hel implements Deity {
     private static final int ULTIMATECOOLDOWNMAX = 600;
     private static final int ULTIMATECOOLDOWNMIN = 320;
 
-    /* Specific to player */
-    private final UUID PLAYER;
-    private boolean CHAIN = false;
-    private boolean ENTOMB = false;
-    private long CHAINTIME, ENTOMBTIME, ULTIMATETIME;
-    private Material CHAINBIND = null;
-    private Material ENTOMBBIND = null;
-
-    public Hel(UUID name) {
-        PLAYER = name;
-        CHAINTIME = System.currentTimeMillis();
-        ENTOMBTIME = System.currentTimeMillis();
-        ULTIMATETIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getName() {
         return "Hel";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -68,6 +48,7 @@ public class Hel implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Hel") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, "Hel");
             /*
              * Calculate special values first
@@ -90,14 +71,14 @@ public class Hel implements Deity {
             p.sendMessage(":Entomb an entity in obsidian. " + ChatColor.GREEN + "/entomb");
             p.sendMessage(ChatColor.YELLOW + "Costs " + ENTOMBCOST + " Favor.");
             p.sendMessage("Duration: " + duration + " seconds.");
-            if (((Hel) (DMisc.getDeity(p, "Hel"))).ENTOMBBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + (((Hel) (DMisc.getDeity(p, "Hel"))).ENTOMBBIND).name());
+            if (save.getBind("entomb").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("entomb").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Fire a chain of smoke, causing damage and darkness. " + ChatColor.GREEN + "/chain");
             p.sendMessage(ChatColor.YELLOW + "Costs " + CHAINCOST + " Favor.");
             p.sendMessage(damage + " damage, causes level " + blindpower + " darkness for " + blindduration + " seconds.");
-            if (((Hel) (DMisc.getDeity(p, "Hel"))).CHAINBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    Chain bound to " + (((Hel) (DMisc.getDeity(p, "Hel"))).CHAINBIND).name());
+            if (save.getBind("chain").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Chain bound to " + save.getBind("chain").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Turn day to night and curse your enemies.");
             p.sendMessage("Range: " + ultrange + ". Duration: " + ultduration + "" + ChatColor.GREEN + " /curse");
@@ -122,31 +103,36 @@ public class Hel implements Deity {
             Player p = e.getPlayer();
             if (!DMisc.isFullParticipant(p)) return;
             if (!DMisc.hasDeity(p, "Hel")) return;
-            if (CHAIN || ((CHAINBIND != null) && (p.getItemInHand().getType() == CHAINBIND))) {
-                if (System.currentTimeMillis() < CHAINTIME) return;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("chain", AD.ACTIVE, false) || save.getBind("chain").isPresent() &&
+                    p.getItemInHand().getType() == save.getBind("chain").get()) {
+                if (save.getAbilityData("chain", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
                 if (DMisc.getFavor(p) >= CHAINCOST) {
                     int devotion = DMisc.getDevotion(p, "Hel");
                     int damage = (int) (Math.round(5 * Math.pow(devotion, 0.20688)));
                     int blindpower = (int) Math.round(1.26985 * Math.pow(devotion, 0.13047));
                     int blindduration = (int) Math.round(0.75 * Math.pow(devotion, 0.323999));
                     if (chain(p, damage, blindpower, blindduration)) {
-                        CHAINTIME = System.currentTimeMillis() + CHAINDELAY;
+                        save.setAbilityData("chain", AD.TIME, System.currentTimeMillis() + CHAINDELAY);
                         DMisc.setFavor(p, DMisc.getFavor(p) - CHAINCOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No target found.");
                 } else {
-                    CHAIN = false;
+                    save.setAbilityData("chain", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
                 }
             }
-            if (ENTOMB || ((ENTOMBBIND != null) && (p.getItemInHand().getType() == ENTOMBBIND))) {
-                if (System.currentTimeMillis() < ENTOMBTIME) return;
+            if (save.getAbilityData("entomb", AD.ACTIVE, false) || save.getBind("entomb").isPresent() &&
+                    p.getItemInHand().getType() == save.getBind("chain").get()) {
+                if (save.getAbilityData("chain", AD.TIME, (double) System.currentTimeMillis()) > System.currentTimeMillis())
+                    return;
                 if ((DMisc.getFavor(p) >= ENTOMBCOST)) {
                     if (entomb(p)) {
-                        ENTOMBTIME = System.currentTimeMillis() + ENTOMBDELAY;
+                        save.setAbilityData("entomb", AD.TIME, System.currentTimeMillis() + ENTOMBDELAY);
                         DMisc.setFavor(p, DMisc.getFavor(p) - ENTOMBCOST);
                     } else p.sendMessage(ChatColor.YELLOW + "No target found or area is protected.");
                 } else {
-                    ENTOMB = false;
+                    save.setAbilityData("entomb", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You don't have enough Favor to do that.");
                 }
             }
@@ -166,60 +152,57 @@ public class Hel implements Deity {
         final Player p = P;
         if (!DMisc.isFullParticipant(p)) return;
         if (!DMisc.hasDeity(p, "Hel")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("chain")) {
             if (bind) {
-                if (CHAINBIND == null) {
+                if (!save.getBind("chain").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        CHAINBIND = p.getItemInHand().getType();
+                        save.setBind("chain", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Dark chain is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, CHAINBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer bound to " + CHAINBIND.name() + ".");
-                    CHAINBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer bound to " + save.getBind("chain").get().name() + ".");
+                    save.removeBind("chain");
                 }
                 return;
             }
-            if (CHAIN) {
-                CHAIN = false;
+            if (save.getAbilityData("chain", AD.ACTIVE, false)) {
+                save.setAbilityData("chain", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer active.");
             } else {
-                CHAIN = true;
+                save.setAbilityData("chain", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Dark chain is now active.");
             }
         } else if (str.equalsIgnoreCase("entomb")) {
             if (bind) {
-                if (ENTOMBBIND == null) {
+                if (!save.getBind("entomb").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand().getType() == Material.AIR)
                         p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        ENTOMBBIND = p.getItemInHand().getType();
+                        save.setBind("entomb", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Entomb is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, ENTOMBBIND);
-                    p.sendMessage(ChatColor.YELLOW + "Entomb is no longer bound to " + ENTOMBBIND.name() + ".");
-                    ENTOMBBIND = null;
+                    p.sendMessage(ChatColor.YELLOW + "Entomb is no longer bound to " + save.getBind("entomb").get().name() + ".");
+                    save.removeBind("entomb");
                 }
                 return;
             }
-            if (ENTOMB) {
-                ENTOMB = false;
+            if (save.getAbilityData("entomb", AD.ACTIVE, false)) {
+                save.setAbilityData("entomb", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Entomb is no longer active.");
             } else {
-                ENTOMB = true;
+                save.setAbilityData("entomb", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Entomb is now active.");
             }
         } else if (str.equalsIgnoreCase("curse")) {
-            long TIME = ULTIMATETIME;
+            double TIME = save.getAbilityData("curse", AD.TIME, (double) System.currentTimeMillis());
             if (System.currentTimeMillis() < TIME) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot use curse again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -236,7 +219,7 @@ public class Hel implements Deity {
                     p.sendMessage(ChatColor.DARK_RED + "Hel" + ChatColor.GRAY + " curses " + amt + " enemies.");
                     DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
                     p.getWorld().setTime(18000);
-                    ULTIMATETIME = System.currentTimeMillis() + t * 1000;
+                    save.setAbilityData("curse", AD.TIME, System.currentTimeMillis() + t * 1000);
                 } else
                     p.sendMessage(ChatColor.YELLOW + "There were no valid targets or the ultimate could not be used.");
             } else p.sendMessage(ChatColor.YELLOW + "Curse requires " + ULTIMATECOST + " Favor.");
@@ -250,8 +233,8 @@ public class Hel implements Deity {
         if (!DMisc.canTarget(target, target.getLocation())) {
             return false;
         }
-        if (DSettings.getSettingBoolean("friendly_fire") && target instanceof Player && DMisc.areAllied(p, (Player) target)) {
-            if (DSettings.getSettingBoolean("friendly_fire_message"))
+        if (Setting.FRIENDLY_FIRE && target instanceof Player && DMisc.areAllied(p, (Player) target)) {
+            if (Setting.FRIENDLY_FIRE_WARNING)
                 p.sendMessage(ChatColor.YELLOW + "No friendly fire.");
             return false;
         }
@@ -268,7 +251,7 @@ public class Hel implements Deity {
         if (le == null) return false;
         if (!DMisc.canTarget(p, p.getLocation()) || !DMisc.canTarget(le, le.getLocation())) return false;
         int duration = (int) Math.round(2.18678 * Math.pow(DMisc.getDevotion(p, "Hel"), 0.24723)); // seconds
-        final ArrayList<Block> tochange = new ArrayList<Block>();
+        final ArrayList<Block> tochange = new ArrayList<>();
         for (int x = -3; x <= 3; x++) {
             for (int y = -3; y <= 3; y++) {
                 for (int z = -3; z <= 3; z++) {
@@ -281,19 +264,16 @@ public class Hel implements Deity {
                 }
             }
         }
-        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                for (Block b : tochange)
-                    if (b.getType() == Material.OBSIDIAN) b.setType(Material.AIR);
-            }
+        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+            for (Block b : tochange)
+                if (b.getType() == Material.OBSIDIAN) b.setType(Material.AIR);
         }, duration * 20);
         return true;
     }
 
     private int tartarus(Player p) {
         int range = (int) Math.round(18.83043 * Math.pow(DMisc.getDevotion(p, "Hel"), 0.088637));
-        ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
+        ArrayList<LivingEntity> entitylist = new ArrayList<>();
         Vector ploc = p.getLocation().toVector();
         for (LivingEntity anEntity : p.getWorld().getLivingEntities()) {
             if (anEntity instanceof Player) if (DMisc.isFullParticipant((Player) anEntity))
@@ -315,7 +295,6 @@ public class Hel implements Deity {
 
     @Override
     public void onSyncTick(long timeSent) {
-
     }
 
     @Override

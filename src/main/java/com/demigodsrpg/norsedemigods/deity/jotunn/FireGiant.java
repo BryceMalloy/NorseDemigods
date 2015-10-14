@@ -3,6 +3,8 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.NorseDemigods;
+import com.demigodsrpg.norsedemigods.deity.AD;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -14,12 +16,9 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 //TODO better replacement for BLAZE
 public class FireGiant implements Deity {
-    private static final long serialVersionUID = -6437607905225500420L;
-    private final UUID PLAYER;
     private final int FIREBALLCOST = 100;
     private final int PROMETHEUSULTIMATECOST = 5500;
     private final int PROMETHEUSULTIMATECOOLDOWNMAX = 600; // seconds
@@ -27,33 +26,9 @@ public class FireGiant implements Deity {
     private final int BLAZECOST = 400;
     private final double BLAZEDELAY = 15;
 
-    private Material FIREBALLITEM = null;
-    private Material BLAZEITEM = null;
-    private boolean FIREBALL = false;
-    private boolean BLAZE = false;
-    private long FIRESTORMTIME;
-    private long BLAZETIME;
-    private long FIREBALLTIME;
-
-    public FireGiant(UUID name) {
-        PLAYER = name;
-        FIRESTORMTIME = System.currentTimeMillis();
-        BLAZETIME = System.currentTimeMillis();
-        FIREBALLTIME = System.currentTimeMillis();
-    }
-
     @Override
     public String getName() {
         return "Fire Giant";
-    }
-
-    public boolean getBlaze() {
-        return BLAZE;
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -64,6 +39,7 @@ public class FireGiant implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Fire Giant") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = 10000;
             /*
              * Calculate special values first
@@ -79,13 +55,13 @@ public class FireGiant implements Deity {
             p.sendMessage(":Immune to fire damage.");
             p.sendMessage(":Shoot a fireball at the cursor's location. " + ChatColor.GREEN + "/fireball");
             p.sendMessage(ChatColor.YELLOW + "Costs " + FIREBALLCOST + " Favor.");
-            if (((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).FIREBALLITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).FIREBALLITEM.name());
+            if (save.getBind("fireball").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("fireball").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Ignite the ground at the target location with diameter " + diameter + ". " + ChatColor.GREEN + "/blaze");
             p.sendMessage(ChatColor.YELLOW + "Costs " + BLAZECOST + " Favor. Cooldown time: " + BLAZEDELAY + " seconds.");
-            if (((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).BLAZEITEM != null)
-                p.sendMessage(ChatColor.AQUA + "    Bound to " + ((FireGiant) (DMisc.getDeity(p, "Fire Giant"))).BLAZEITEM.name());
+            if (save.getBind("blaze").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    Bound to " + save.getBind("blaze").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             p.sendMessage(":Your fire power rains down on your enemies.");
             p.sendMessage("Shoots " + firestormshots + " fireballs. " + ChatColor.GREEN + "/firestorm");
@@ -110,8 +86,10 @@ public class FireGiant implements Deity {
             Player p = e.getPlayer();
             if (!DMisc.isFullParticipant(p)) return;
             if (!DMisc.hasDeity(p, "Fire Giant")) return;
-            if (FIREBALL || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == FIREBALLITEM))) {
-                if (System.currentTimeMillis() < FIREBALLTIME) return;
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+            if (save.getAbilityData("fireball", AD.ACTIVE, false) || ((p.getItemInHand() != null) && save.getBind("fireball").isPresent() && (p.getItemInHand().getType() == save.getBind("fireball").get()))) {
+                if (System.currentTimeMillis() < save.getAbilityData("fireball", AD.TIME, (double) System.currentTimeMillis()))
+                    return;
                 if (DMisc.getFavor(p) >= FIREBALLCOST) {
                     if (!DMisc.canTarget(p, p.getLocation())) {
                         p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
@@ -120,14 +98,14 @@ public class FireGiant implements Deity {
                     DMisc.setFavor(p, DMisc.getFavor(p) - FIREBALLCOST);
                     shootFireball(p.getEyeLocation(), DMisc.getTargetLocation(p), p);
                     double FIREBALLDELAY = 0.5;
-                    FIREBALLTIME = System.currentTimeMillis() + (long) (FIREBALLDELAY * 1000);
+                    save.setAbilityData("fireball", AD.TIME, System.currentTimeMillis() + (long) (FIREBALLDELAY * 1000));
                 } else {
-                    FIREBALL = false;
+                    save.setAbilityData("fireball", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor to do that.");
                 }
             }
-            if (BLAZE || ((p.getItemInHand() != null) && (p.getItemInHand().getType() == BLAZEITEM))) {
-                if (System.currentTimeMillis() < BLAZETIME) {
+            if (save.getAbilityData("blaze", AD.ACTIVE, false) || ((p.getItemInHand() != null) && save.getBind("blaze").isPresent() && (p.getItemInHand().getType() == save.getBind("blaze").get()))) {
+                if (System.currentTimeMillis() < save.getAbilityData("blaze", AD.TIME, (double) System.currentTimeMillis())) {
                     p.sendMessage(ChatColor.YELLOW + "Blaze is on cooldown.");
                     return;
                 }
@@ -141,10 +119,10 @@ public class FireGiant implements Deity {
                     if (DMisc.canLocationPVP(DMisc.getTargetLocation(p))) {
                         blaze(DMisc.getTargetLocation(p), diameter);
                         DMisc.setFavor(p, DMisc.getFavor(p) - BLAZECOST);
-                        BLAZETIME = System.currentTimeMillis() + (long) (BLAZEDELAY * 1000);
+                        save.setAbilityData("blaze", AD.TIME, System.currentTimeMillis() + (long) (BLAZEDELAY * 1000));
                     } else p.sendMessage(ChatColor.YELLOW + "That is a protected area.");
                 } else {
-                    BLAZE = false;
+                    save.setAbilityData("blaze", AD.ACTIVE, false);
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor to do that.");
                 }
             }
@@ -156,57 +134,55 @@ public class FireGiant implements Deity {
         final Player p = P;
         if (!DMisc.isFullParticipant(p)) return;
         if (!DMisc.hasDeity(p, "Fire Giant")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
         if (str.equalsIgnoreCase("fireball")) {
             if (bind) {
-                if (FIREBALLITEM == null) {
+                if (!save.getBind("fireball").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        FIREBALLITEM = p.getItemInHand().getType();
+                        save.setBind("fireball", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Fireball is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, FIREBALLITEM);
-                    p.sendMessage(ChatColor.YELLOW + "Fireball is no longer bound to " + FIREBALLITEM.name() + ".");
-                    FIREBALLITEM = null;
+                    p.sendMessage(ChatColor.YELLOW + "Fireball is no longer bound to " + save.getBind("fireball").get().name() + ".");
+                    save.removeBind("fireball");
                 }
                 return;
             }
-            if (FIREBALL) {
-                FIREBALL = false;
+            if (save.getAbilityData("fireball", AD.ACTIVE, false)) {
+                save.setAbilityData("fireball", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Fireball is no longer active.");
             } else {
-                FIREBALL = true;
+                save.setAbilityData("fireball", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Fireball is now active.");
             }
         } else if (str.equalsIgnoreCase("blaze")) {
             if (bind) {
-                if (BLAZEITEM == null) {
+                if (!save.getBind("blaze").isPresent()) {
                     if (DMisc.isBound(p, p.getItemInHand().getType()))
                         p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(p, p.getItemInHand().getType());
-                        BLAZEITEM = p.getItemInHand().getType();
+                        save.setBind("blaze", p.getItemInHand().getType());
                         p.sendMessage(ChatColor.YELLOW + "Blaze is now bound to " + p.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(p, BLAZEITEM);
-                    p.sendMessage(ChatColor.YELLOW + "Blaze is no longer bound to " + BLAZEITEM.name() + ".");
-                    BLAZEITEM = null;
+                    p.sendMessage(ChatColor.YELLOW + "Blaze is no longer bound to " + save.getBind("blaze").get().name() + ".");
+                    save.removeBind("blaze");
                 }
                 return;
             }
-            if (BLAZE) {
-                BLAZE = false;
+            if (save.getAbilityData("blaze", AD.ACTIVE, false)) {
+                save.setAbilityData("blaze", AD.ACTIVE, false);
                 p.sendMessage(ChatColor.YELLOW + "Blaze is no longer active.");
             } else {
-                BLAZE = true;
+                save.setAbilityData("blaze", AD.ACTIVE, true);
                 p.sendMessage(ChatColor.YELLOW + "Blaze is now active.");
             }
         } else if (str.equalsIgnoreCase("firestorm")) {
+            double FIRESTORMTIME = save.getAbilityData("firestorm", AD.TIME, (double) System.currentTimeMillis());
             if (System.currentTimeMillis() < FIRESTORMTIME) {
                 p.sendMessage(ChatColor.YELLOW + "You cannot use the firestorm again for " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
@@ -218,7 +194,7 @@ public class FireGiant implements Deity {
                     return;
                 }
                 int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
-                FIRESTORMTIME = System.currentTimeMillis() + (t * 1000);
+                save.setAbilityData("firestorm", AD.TIME, System.currentTimeMillis() + (t * 1000));
                 p.sendMessage(ChatColor.GOLD + "Your divine fire " + ChatColor.WHITE + " has unleashed his wrath on " + firestorm(p) + " non-allied entities,");
                 p.sendMessage("in exchange for " + ChatColor.AQUA + PROMETHEUSULTIMATECOST + ChatColor.WHITE + " Favor.");
                 DMisc.setFavor(p, DMisc.getFavor(p) - PROMETHEUSULTIMATECOST);
@@ -228,7 +204,6 @@ public class FireGiant implements Deity {
 
     @Override
     public void onSyncTick(long timeSent) {
-
     }
 
     @Override
@@ -279,14 +254,11 @@ public class FireGiant implements Deity {
         final Player pl = p;
         final ArrayList<LivingEntity> enList = entitylist;
         for (int i = 0; i <= total; i += 20) {
-            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                @Override
-                public void run() {
-                    for (LivingEntity e1 : enList) {
-                        Location up = new Location(e1.getWorld(), e1.getLocation().getX() + Math.random() * 5, 256, e1.getLocation().getZ() + Math.random() * 5);
-                        up.setPitch(90);
-                        shootFireball(up, new Location(e1.getWorld(), e1.getLocation().getX() + Math.random() * 5, e1.getLocation().getY(), e1.getLocation().getZ() + Math.random() * 5), pl);
-                    }
+            DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+                for (LivingEntity e1 : enList) {
+                    Location up = new Location(e1.getWorld(), e1.getLocation().getX() + Math.random() * 5, 256, e1.getLocation().getZ() + Math.random() * 5);
+                    up.setPitch(90);
+                    shootFireball(up, new Location(e1.getWorld(), e1.getLocation().getX() + Math.random() * 5, e1.getLocation().getY(), e1.getLocation().getZ() + Math.random() * 5), pl);
                 }
             }, i);
         }

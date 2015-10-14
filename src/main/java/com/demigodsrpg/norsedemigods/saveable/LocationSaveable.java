@@ -22,6 +22,11 @@ public class LocationSaveable implements Saveable {
         WORLD = world;
     }
 
+    public LocationSaveable(String key) {
+        this(key.split("-")[3], Integer.valueOf(key.split("-")[0]), Integer.valueOf(key.split("-")[1]),
+                Integer.valueOf(key.split("-")[2]));
+    }
+
     public LocationSaveable(FJsonSection section) {
         X = section.getInt("X");
         Y = section.getInt("Y");
