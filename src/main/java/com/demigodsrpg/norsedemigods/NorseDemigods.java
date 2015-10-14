@@ -41,6 +41,8 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
         getLogger().info("Initializing.");
 
+        saveDefaultConfig();
+
         new DMisc(); // #1 (needed for everything else to work)
 
         PLAYER_DATA = new PlayerDataRegistry(this);
