@@ -756,7 +756,7 @@ public class DMisc {
         if (getAllegiance(p) == null) return false;
         if (getDeaths(p) == -1) return false;
         if (getKills(p) == -1) return false;
-        if ((getDeities(p) == null) || (getDeities(p).size() == 0)) return false;
+        if ((getDeities(p) == null) || (getDeities(p).isEmpty())) return false;
         return getAscensions(p) != -1 && getFavor(p) != -1 && getFavorCap(p) != -1;
     }
 

@@ -18,6 +18,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
@@ -96,6 +97,15 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getLogger().info("Attempting to hook into WorldGuard.");
 
         if (WorldGuardUtil.worldGuardEnabled()) {
+            WorldGuardUtil.setWhenToOverridePVP(this, event -> {
+                if (event instanceof EntityDamageByEntityEvent) {
+                    if (((EntityDamageByEntityEvent) event).getEntity() instanceof Player) {
+                        return getPlayerDataRegistry().fromPlayer((Player) ((EntityDamageByEntityEvent) event).
+                                getEntity()).getTempStatus("temp_was_PVP");
+                    }
+                }
+                return false;
+            });
             getLogger().info("WorldGuard detected. Skills are disabled in no-PvP zones.");
         }
     }
@@ -257,9 +267,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             for (World world : Bukkit.getWorlds()) {
                 for (Player p : world.getPlayers())
                     if (DMisc.isFullParticipant(p)) {
-                        int regenrate = DMisc.getAscensions(p); // TODO: PERK UPGRADES THIS
-                        if (regenrate < 1) regenrate = 1;
-                        DMisc.setFavorQuiet(p.getUniqueId(), DMisc.getFavor(p) + regenrate);
+                        int regenerate = DMisc.getAscensions(p); // TODO: PERK UPGRADES THIS
+                        if (regenerate < 1) regenerate = 1;
+                        DMisc.setFavorQuiet(p.getUniqueId(), DMisc.getFavor(p) + regenerate);
                     }
             }
         }, startdelay, favorfrequency);
