@@ -20,7 +20,7 @@ public class PlayerDataSaveable implements Saveable {
     String LAST_KNOWN_NAME;
     String ALLIANCE;
     Map<String, Double> ACTIVE_EFFECTS;
-    Map<String, Integer> DEITIES;
+    Map<String, Double> DEITIES;
     Map<String, Map<String, Object>> ABILITY_DATA;
     Map<String, String> BIND_DATA;
 
@@ -126,12 +126,12 @@ public class PlayerDataSaveable implements Saveable {
     }
 
     public int getDevotion(String deity) {
-        return DEITIES.getOrDefault(deity, -1);
+        return DEITIES.getOrDefault(deity, -1D).intValue();
     }
 
-    public int getTotalDevotion() {
+    public double getTotalDevotion() {
         int total = 0;
-        for (int i : DEITIES.values()) {
+        for (double i : DEITIES.values()) {
             total += i;
         }
         return total;
@@ -149,7 +149,11 @@ public class PlayerDataSaveable implements Saveable {
     }
 
     public Optional<Material> getBind(String ability) {
-        return Optional.ofNullable(Material.valueOf(BIND_DATA.getOrDefault(ability, "")));
+        try {
+            return Optional.of(Material.valueOf(BIND_DATA.getOrDefault(ability, "")));
+        } catch (Exception ignored) {
+        }
+        return Optional.empty();
     }
 
     public List<Material> getBound() {
@@ -276,7 +280,7 @@ public class PlayerDataSaveable implements Saveable {
 
     public void addDeity(String deity) {
         if (!DEITIES.keySet().contains(deity)) {
-            DEITIES.put(deity, 0);
+            DEITIES.put(deity, 0D);
         }
 
         // Put this version of the data object into the registry
@@ -290,7 +294,7 @@ public class PlayerDataSaveable implements Saveable {
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
     }
 
-    public void setDevotion(String deity, int amount) {
+    public void setDevotion(String deity, double amount) {
         if (DEITIES.containsKey(deity)) {
             DEITIES.put(deity, amount);
         }
@@ -299,8 +303,8 @@ public class PlayerDataSaveable implements Saveable {
     public void setAbilityData(String ability, String key, Object value) {
         // Get the map for the ability, and set the data
         Map<String, Object> abilityMap = ABILITY_DATA.getOrDefault(ability, new HashMap<>());
-        if (value instanceof Long) {
-            abilityMap.put(key, ((Long) value).doubleValue());
+        if (value instanceof Long || value instanceof Integer) {
+            abilityMap.put(key, ((Number) value).doubleValue());
         } else {
             abilityMap.put(key, value);
         }

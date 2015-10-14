@@ -51,11 +51,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         loadDependencies(); // #7 compatibility with protection plugins
         cleanUp(); // #8
         invalidShrines(); // #9
-
-        getLogger().info("Attempting to hook into WorldGuard.");
-
-        getLogger().info("Attempting to load Metrics.");
-
         unstickFireball(); // #12
 
         getLogger().info("Preparation completed in " + ((double) (System.currentTimeMillis() - firstTime) / 1000) + " seconds.");

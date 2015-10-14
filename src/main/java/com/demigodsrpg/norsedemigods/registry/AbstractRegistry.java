@@ -44,8 +44,8 @@ public abstract class AbstractRegistry<T extends Saveable> {
     protected final Cache<String, T> REGISTERED_DATA;
 
     // -- FILE -- //
-    private File FOLDER;
-    private boolean PRETTY;
+    private final File FOLDER;
+    private final boolean PRETTY;
 
     public AbstractRegistry(NorseDemigods backend, String folder, boolean pretty) {
         REGISTERED_DATA = CacheBuilder.newBuilder().concurrencyLevel(4).expireAfterAccess(3, TimeUnit.MINUTES).build();
@@ -130,11 +130,14 @@ public abstract class AbstractRegistry<T extends Saveable> {
 
     @SuppressWarnings("ConstantConditions")
     public ConcurrentMap<String, T> getFromDb() {
-        for (File file : FOLDER.listFiles()) {
-            if (file.isFile() && file.getName().endsWith(".json")) {
-                String key = file.getName().replace(".json", "");
-                loadFromDb(key);
+        try {
+            for (File file : FOLDER.listFiles()) {
+                if (file.isFile() && file.getName().endsWith(".json")) {
+                    String key = file.getName().replace(".json", "");
+                    loadFromDb(key);
+                }
             }
+        } catch (Exception ignored) {
         }
         return REGISTERED_DATA.asMap();
     }
