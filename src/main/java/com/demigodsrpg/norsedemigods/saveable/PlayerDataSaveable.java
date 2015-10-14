@@ -293,7 +293,11 @@ public class PlayerDataSaveable implements Saveable {
     public void setAbilityData(String ability, String key, Object value) {
         // Get the map for the ability, and set the data
         Map<String, Object> abilityMap = ABILITY_DATA.getOrDefault(ability, new HashMap<>());
-        abilityMap.put(key, value);
+        if (value instanceof Long) {
+            abilityMap.put(key, ((Long) value).doubleValue());
+        } else {
+            abilityMap.put(key, value);
+        }
         ABILITY_DATA.put(ability, abilityMap);
 
         // Put this version of the data object into the registry

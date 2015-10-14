@@ -7,7 +7,9 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 import com.demigodsrpg.norsedemigods.DFixes;
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
-import com.demigodsrpg.norsedemigods.util.DSettings;
+import com.demigodsrpg.norsedemigods.Setting;
+import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,6 +24,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
 
 public class Jormungand implements Deity {
@@ -34,29 +37,10 @@ public class Jormungand implements Deity {
     // private final int ULTIMATECOOLDOWNMAX = 800;
     // private final int ULTIMATECOOLDOWNMIN = 220;
 
-    /* Specific to player */
-    private final UUID PLAYER;
-    private boolean REEL = false;
-    private boolean drown = false;
-    private long REELTIME, drownTIME, LASTCHECK;
-    private Material drownBIND = null;
-
-    public Jormungand(UUID name) {
-        PLAYER = name;
-        REELTIME = System.currentTimeMillis();
-        drownTIME = System.currentTimeMillis();
-        // ULTIMATETIME = System.currentTimeMillis();
-        LASTCHECK = System.currentTimeMillis();
-    }
 
     @Override
     public String getName() {
         return "Jormungand";
-    }
-
-    @Override
-    public UUID getPlayerId() {
-        return PLAYER;
     }
 
     @Override
@@ -67,6 +51,7 @@ public class Jormungand implements Deity {
     @Override
     public void printInfo(Player p) {
         if (DMisc.hasDeity(p, "Jormungand") && DMisc.isFullParticipant(p)) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
@@ -94,13 +79,13 @@ public class Jormungand implements Deity {
             p.sendMessage("Immune to drowning, sneak while in water to swim very fast!");
             p.sendMessage(":Deal " + damage + " damage and soak an enemy from a distance. " + ChatColor.GREEN + "/reel");
             p.sendMessage(ChatColor.YELLOW + "Costs " + REELCOST + " Favor. Must have fishing rod in hand.");
-            if (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).REEL)
+            if (save.getAbilityData("reel", "active").isPresent() && (boolean) save.getAbilityData("reel", "active").get())
                 p.sendMessage(ChatColor.AQUA + "    Reel is active.");
             p.sendMessage(":Create a temporary flood of water. " + ChatColor.GREEN + "/drown");
             p.sendMessage(ChatColor.YELLOW + "Costs " + drownCOST + " Favor.");
             p.sendMessage("Water has radius of " + radius + " for " + duration + " seconds.");
-            if (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).drownBIND != null)
-                p.sendMessage(ChatColor.AQUA + "    drown bound to " + (((Jormungand) (DMisc.getDeity(p, "Jormungand"))).drownBIND).name());
+            if (save.getBind("drown").isPresent())
+                p.sendMessage(ChatColor.AQUA + "    drown bound to " + save.getBind("drown").get().name());
             else p.sendMessage(ChatColor.AQUA + "    Use /bind to bind this skill to an item.");
             return;
         }
@@ -138,25 +123,30 @@ public class Jormungand implements Deity {
         } else if (ee instanceof PlayerInteractEvent) {
             PlayerInteractEvent e = (PlayerInteractEvent) ee;
             Player p = e.getPlayer();
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if (!DMisc.isFullParticipant(p)) return;
             if (!DMisc.hasDeity(p, "Jormungand")) return;
-            if (REEL) {
+            if (save.getAbilityData("reel", "active").isPresent() && (boolean) save.getAbilityData("reel", "active").
+                    get()) {
                 if (p.getItemInHand().getType() == Material.FISHING_ROD) {
-                    if (REELTIME > System.currentTimeMillis()) return;
+                    Optional opTime = save.getAbilityData("reel", "time");
+                    if (opTime.isPresent() && System.currentTimeMillis() < (double) opTime.get()) return;
                     if (DMisc.getFavor(p) > REELCOST) {
-                        if (reel(p)) {
+                        if (reel(p, save)) {
                             DMisc.setFavor(p, DMisc.getFavor(p) - REELCOST);
                             int REELDELAY = 1100;
-                            REELTIME = System.currentTimeMillis() + REELDELAY;
+                            save.setAbilityData("reel", "time", System.currentTimeMillis() + REELDELAY);
                         }
                     } else {
                         p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                        REEL = false;
+                        save.setAbilityData("reel", "active", false);
                     }
                 }
             }
-            if ((p.getItemInHand().getType() == drownBIND) || drown) {
-                if (drownTIME > System.currentTimeMillis()) {
+            Optional<Material> drownBind = save.getBind("drown");
+            if ((drownBind.isPresent() && p.getItemInHand().getType() == drownBind.get()) ||
+                    save.getAbilityData("drown", "active").isPresent() && (boolean) save.getAbilityData("drown", "active").get()) {
+                if (save.getAbilityData("drown", "time").isPresent() && System.currentTimeMillis() < (double) save.getAbilityData("drown", "time").get()) {
                     p.sendMessage(ChatColor.YELLOW + "You may not use this skill yet.");
                     return;
                 }
@@ -164,11 +154,11 @@ public class Jormungand implements Deity {
                     if (drown(p)) {
                         DMisc.setFavor(p, DMisc.getFavor(p) - drownCOST);
                         int DROWNDELAY = 15000;
-                        drownTIME = System.currentTimeMillis() + DROWNDELAY;
+                        save.setAbilityData("drown", "time", System.currentTimeMillis() + DROWNDELAY);
                     }
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
-                    drown = false;
+                    save.setAbilityData("drown", "active", false);
                 }
             }
         }
@@ -178,39 +168,40 @@ public class Jormungand implements Deity {
     public void onCommand(Player P, String str, String[] args, boolean bind) {
         if (!DMisc.isFullParticipant(P)) return;
         if (!DMisc.hasDeity(P, "Jormungand")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
         if (str.equalsIgnoreCase("reel")) {
-            if (REEL) {
-                REEL = false;
+            if (save.getAbilityData("reel", "active").isPresent() && (boolean) save.getAbilityData("reel", "active").
+                    get()) {
+                save.setAbilityData("reel", "active", false);
                 P.sendMessage(ChatColor.YELLOW + "Reel is no longer active.");
             } else {
-                REEL = true;
+                save.setAbilityData("reel", "active", true);
                 P.sendMessage(ChatColor.YELLOW + "Reel is now active.");
                 P.sendMessage(ChatColor.YELLOW + "It can only be used with a fishing rods.");
             }
         } else if (str.equalsIgnoreCase("drown")) {
             if (bind) {
-                if (drownBIND == null) {
+                Optional<Material> drownBind = save.getBind("drown");
+                if (!drownBind.isPresent()) {
                     if (DMisc.isBound(P, P.getItemInHand().getType()))
                         P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
                     if (P.getItemInHand().getType() == Material.AIR)
                         P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        DMisc.registerBind(P, P.getItemInHand().getType());
-                        drownBIND = P.getItemInHand().getType();
+                        save.setBind("drown", P.getItemInHand().getType());
                         P.sendMessage(ChatColor.YELLOW + "Drown is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    DMisc.removeBind(P, drownBIND);
-                    P.sendMessage(ChatColor.YELLOW + "Drown is no longer bound to " + drownBIND.name() + ".");
-                    drownBIND = null;
+                    save.removeBind("drown");
+                    P.sendMessage(ChatColor.YELLOW + "Drown is no longer bound to " + drownBind.get().name() + ".");
                 }
                 return;
             }
-            if (drown) {
-                drown = false;
+            if (save.getAbilityData("drown", "active").isPresent() && (boolean) save.getAbilityData("drown", "active").get()) {
+                save.setAbilityData("drown", "active", false);
                 P.sendMessage(ChatColor.YELLOW + "Drown is no longer active.");
             } else {
-                drown = true;
+                save.setAbilityData("drown", "active", true);
                 P.sendMessage(ChatColor.YELLOW + "Drown is now active.");
             }
         }
@@ -219,23 +210,29 @@ public class Jormungand implements Deity {
 
     @Override
     public void onSyncTick(long timeSent) {
-        int healinterval = 10 - (int) (Math.round(Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.125))); // seconds
-        if (healinterval < 1) healinterval = 1;
-        if (timeSent > LASTCHECK + (healinterval * 1000)) {
-            LASTCHECK = timeSent;
-            Player p = Bukkit.getPlayer(getPlayerId());
-            if ((p != null) && p.isOnline()) {
-                if ((p.getLocation().getBlock().getType() == Material.WATER) || (p.getEyeLocation().getBlock().getType() == Material.WATER)) {
-                    double healamt = Math.ceil(0.1 * Math.pow(DMisc.getDevotion(getPlayerId(), getName()), 0.297));
-                    if (DMisc.getHP(getPlayerId()) + healamt > DMisc.getMaxHP(getPlayerId()))
-                        healamt = DMisc.getMaxHP(getPlayerId()) - DMisc.getHP(getPlayerId());
-                    DMisc.setHP(getPlayerId(), DMisc.getHP(getPlayerId()) + healamt);
+        for (UUID id : getPlayerIds()) {
+            Optional<PlayerDataSaveable> opSave = getBackend().getPlayerDataRegistry().fromKey(id.toString());
+            if (opSave.isPresent()) {
+                Player p = Bukkit.getPlayer(id);
+                if (p != null) {
+                    PlayerDataSaveable save = opSave.get();
+                    int healinterval = 10 - (int) (Math.round(Math.pow(DMisc.getDevotion(id, getName()), 0.125))); // seconds
+                    if (healinterval < 1) healinterval = 1;
+                    if (save.getAbilityData("jormungand_heal", "time").isPresent() && timeSent > (double) save.getAbilityData("jormungand_heal", "time").get() + (healinterval * 1000)) {
+                        save.setAbilityData("jormungand_heal", "time", timeSent);
+                        if ((p.getLocation().getBlock().getType() == Material.WATER) || (p.getEyeLocation().getBlock().getType() == Material.WATER)) {
+                            double healamt = Math.ceil(0.1 * Math.pow(DMisc.getDevotion(id, getName()), 0.297));
+                            if (p.getHealth() + healamt > p.getMaxHealth())
+                                healamt = p.getMaxHealth() - p.getHealth();
+                            DMisc.setHP(p, p.getHealth() + healamt);
+                        }
+                    }
                 }
             }
         }
     }
 
-    private boolean reel(Player p) {
+    private boolean reel(Player p, PlayerDataSaveable save) {
         if (!DMisc.canTarget(p, p.getLocation())) {
             return false;
         }
@@ -252,7 +249,7 @@ public class Jormungand implements Deity {
                 if (DMisc.getAllegiance((Player) le).equalsIgnoreCase(DMisc.getAllegiance(p))) return false;
         }
         DMisc.damageDemigods(p, le, damage, DamageCause.ENTITY_ATTACK);
-        REELTIME = System.currentTimeMillis();
+        save.setAbilityData("reel", "time", System.currentTimeMillis());
         return true;
     }
 
@@ -272,7 +269,7 @@ public class Jormungand implements Deity {
             return false;
         }
 
-        if (target.getBlockY() >= DSettings.getSettingInt("poseidon.drown_world_height_limit")) {
+        if (target.getBlockY() >= Setting.DROWN_HEIGHT_LIMIT) {
             p.sendMessage(ChatColor.YELLOW + "You cannot use drown from this high up.");
             return false;
         }

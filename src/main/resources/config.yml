@@ -27,3 +27,4 @@ use_new_pvp_zones: true
 friendly_fire: false
 friendly_fire_message: false
 noob_level: 5
+drown_world_height_limit: 90

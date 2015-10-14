@@ -3,6 +3,7 @@ package com.demigodsrpg.norsedemigods.deity.jotunn;
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.Deity;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -106,8 +107,9 @@ public class Thrymr implements Deity {
                 p.sendMessage(ChatColor.YELLOW + "You will jump higher for " + length + " seconds.");
             }
         } else if (str.equalsIgnoreCase("invincible")) {
-            long TIME = ULTIMATETIME;
-            if (System.currentTimeMillis() < TIME) {
+            Optional opTime = save.getAbilityData("invincible", "time");
+            if (opTime.isPresent() && System.currentTimeMillis() < (double) opTime.get()) {
+                double TIME = (double) opTime.get();
                 p.sendMessage(ChatColor.YELLOW + "You cannot use Invincible again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
                 p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
@@ -117,28 +119,21 @@ public class Thrymr implements Deity {
                 //
                 final int seconds = (int) (Math.ceil(35.819821 * Math.pow(DMisc.getAscensions(p), 0.26798863)));
                 int INVINCIBLERANGE = (int) (Math.ceil(4.957781 * Math.pow(DMisc.getAscensions(p), 0.45901927)));
-                for (UUID s : DMisc.getFullParticipants()) {
-                    final Player pl = Bukkit.getPlayer(s);
+                for (String id : DMisc.getFullParticipants()) {
+                    final Player pl = Bukkit.getPlayer(UUID.fromString(id));
                     if ((pl != null) && !pl.isDead() && (pl.getLocation().toVector().isInSphere(p.getLocation().toVector(), INVINCIBLERANGE))) {
                         pl.sendMessage(ChatColor.DARK_AQUA + "Thrymr" + ChatColor.GRAY + " shields you and your allies from harm.");
                         DMisc.addActiveEffect(pl.getUniqueId(), "Invincible", seconds);
-                        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                            @Override
-                            public void run() {
-                                pl.sendMessage(ChatColor.YELLOW + "Invincible will be in effect for " + seconds / 2 + " more seconds.");
-                            }
-                        }, seconds * 10);
-                        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-                            @Override
-                            public void run() {
-                                pl.sendMessage(ChatColor.YELLOW + "Invincible is no longer in effect.");
-                            }
-                        }, seconds * 20);
+                        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () ->
+                                pl.sendMessage(ChatColor.YELLOW + "Invincible will be in effect for " + seconds / 2 +
+                                        " more seconds."), seconds * 10);
+                        DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () ->
+                                pl.sendMessage(ChatColor.YELLOW + "Invincible is no longer in effect."), seconds * 20);
                     }
                 }
                 //
                 DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                ULTIMATETIME = System.currentTimeMillis() + t * 1000;
+                save.setAbilityData("invincible", "time", System.currentTimeMillis() + t * 1000);
             } else p.sendMessage(ChatColor.YELLOW + "Invincible requires " + ULTIMATECOST + " Favor.");
         }
     }

@@ -24,6 +24,7 @@ public class Setting {
     public static final double FAVOR_MULTIPLIER = getConfig().getDouble("globalfavormultiplier");
     public static final double PVP_MULTIPLIER = getConfig().getDouble("pvp_exp_bonus"); // bonus for dealing damage
     public static final int LOSS_LIMIT = getConfig().getInt("max_devotion_lost_on_death"); // max devotion lost on death per deity
+    public static final int DROWN_HEIGHT_LIMIT = getConfig().getInt("drown_world_height_limit");
 
     public static Configuration getConfig() {
         return NorseDemigods.INST.getConfig();
