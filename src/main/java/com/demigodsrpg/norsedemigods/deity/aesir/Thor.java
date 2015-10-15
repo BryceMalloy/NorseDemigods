@@ -98,8 +98,9 @@ public class Thor implements Deity {
                     return;
                 save.setAbilityData("slam", AD.TIME, System.currentTimeMillis() + SHOVEDELAY);
                 if (DMisc.getFavor(p) >= SHOVECOST) {
-                    shove(p);
-                    DMisc.setFavor(p, DMisc.getFavor(p) - SHOVECOST);
+                    if (shove(p)) {
+                        DMisc.setFavor(p, DMisc.getFavor(p) - SHOVECOST);
+                    }
                     return;
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
@@ -111,8 +112,9 @@ public class Thor implements Deity {
                     return;
                 save.setAbilityData("lightning", AD.TIME, System.currentTimeMillis() + LIGHTNINGDELAY);
                 if (DMisc.getFavor(p) >= LIGHTNINGCOST) {
-                    lightning(p, e.getClickedBlock());
-                    DMisc.setFavor(p, DMisc.getFavor(p) - LIGHTNINGCOST);
+                    if (lightning(p, e.getClickedBlock())) {
+                        DMisc.setFavor(p, DMisc.getFavor(p) - LIGHTNINGCOST);
+                    }
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     save.setAbilityData("lightning", AD.ACTIVE, false);
@@ -187,10 +189,10 @@ public class Thor implements Deity {
      * Helper methods
      * ---------------
      */
-    private void shove(Player p) {
+    private boolean shove(Player p) {
         if (!DMisc.canTarget(p, p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
-            return;
+            return false;
         }
         ArrayList<LivingEntity> hit = new ArrayList<LivingEntity>();
         int devotion = DMisc.getDevotion(p, getName());
@@ -214,20 +216,23 @@ public class Thor implements Deity {
                 victor.multiply(multiply);
                 le.setVelocity(victor);
             }
+        } else {
+            return false;
         }
+        return true;
     }
 
-    private void lightning(Player p, Block b) {
-        if (!DMisc.canTarget(p, p.getLocation())) {
+    private boolean lightning(Player p, Block b) {
+        if (!DMisc.canTarget(p, b != null ? b.getLocation() : p.getLocation())) {
             p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
-            return;
+            return false;
         }
         try {
             Location target = b.getLocation();
             p.getWorld().strikeLightningEffect(target);
             if (p.getLocation().distance(target) > 2) {
-                if (!p.getWorld().equals(target.getWorld())) return;
-                if (!DMisc.canLocationPVP(target)) return;
+                if (!p.getWorld().equals(target.getWorld())) return false;
+                if (!DMisc.canLocationPVP(target)) return false;
                 for (Entity e : b.getLocation().getChunk().getEntities()) {
                     if (e.getLocation().distance(target) > 1) continue;
                     if (e instanceof LivingEntity) {
@@ -237,9 +242,13 @@ public class Thor implements Deity {
                             DMisc.damageDemigods(p, le, DMisc.getAscensions(p) * 2, DamageCause.LIGHTNING);
                     }
                 }
-            } else p.sendMessage(ChatColor.YELLOW + "Your target is too far away, or too close to you.");
+            } else {
+                p.sendMessage(ChatColor.YELLOW + "Your target is too far away, or too close to you.");
+                return false;
+            }
         } catch (Exception ignored) {
         } // ignore it if something went wrong
+        return true;
     }
 
     private void strikeLightning(Player p, Entity target) {

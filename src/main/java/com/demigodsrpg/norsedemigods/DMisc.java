@@ -1290,11 +1290,6 @@ public class DMisc {
         return Setting.ALLOW_PVP_EVERYWHERE || WorldGuardUtil.worldGuardEnabled() && WorldGuardUtil.canPVP(l);
     }
 
-    @Deprecated
-    private static boolean canWorldGuardLegacyPVP(Location l) {
-        return canWorldGuardPVP(l);
-    }
-
     @SuppressWarnings("static-access")
     public static boolean canWorldGuardBuild(Player player, Location location) {
         return !WorldGuardUtil.worldGuardEnabled() || WorldGuardUtil.canBuild(player, location);
@@ -1309,10 +1304,7 @@ public class DMisc {
     }
 
     public static boolean canTarget(Entity player, Location location) {
-        if (!(player instanceof Player)) return true;
-        else if (!Setting.USE_NEW_PVP) return canWorldGuardPVP(location);
-        else if (!isFullParticipant((Player) player)) return canWorldGuardPVP(location);
-        else return getPlugin().getPlayerDataRegistry().fromPlayer((Player) player).getTempStatus("temp_was_PVP");
+        return !(player instanceof Player) || canWorldGuardPVP(location);
     }
 
     /**
