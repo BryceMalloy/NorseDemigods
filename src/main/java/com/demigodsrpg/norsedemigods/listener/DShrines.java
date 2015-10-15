@@ -67,10 +67,6 @@ public class DShrines implements Listener {
         }
         String shrinename = "";
         if (s.getLines()[3].trim().length() > 0) {
-            if (s.getLines()[3].trim().charAt(0) == '#') {
-                p.sendMessage(ChatColor.YELLOW + "The shrine's name cannot begin with an invalid character.");
-                return;
-            }
             if (s.getLines()[3].trim().contains(" ")) {
                 p.sendMessage(ChatColor.YELLOW + "The shrine's name cannot contain a space.");
                 return;
@@ -87,7 +83,7 @@ public class DShrines implements Listener {
                     return;
                 }
             }
-            shrinename = "#" + s.getLines()[3].trim();
+            shrinename = s.getLines()[3].trim();
         }
         for (LocationSaveable center : DMisc.getAllShrines()) {
             if (DMisc.toLocation(center).getWorld().equals(e.getClickedBlock().getWorld()))
@@ -97,13 +93,13 @@ public class DShrines implements Listener {
                 }
         }
         // conditions cleared
-        DMisc.addShrine(p.getUniqueId(), shrinename, deityname, e.getClickedBlock().getLocation());
+        DMisc.addShrine(p.getUniqueId(), deityname, shrinename, e.getClickedBlock().getLocation());
         e.getClickedBlock().setType(Material.GOLD_BLOCK);
         e.getClickedBlock().getWorld().strikeLightningEffect(e.getClickedBlock().getLocation());
         p.sendMessage(ChatColor.AQUA + "You have dedicated this shrine to " + deityname + ".");
         p.sendMessage(ChatColor.YELLOW + "Warp here at any time with /shrinewarp " + deityname.toLowerCase() + ".");
-        if ((shrinename.length() > 0) && (shrinename.charAt(0) == '#')) {
-            p.sendMessage(ChatColor.YELLOW + "You may also warp here using /shrinewarp " + shrinename.substring(1).toLowerCase() + ".");
+        if ((shrinename.length() > 0)) {
+            p.sendMessage(ChatColor.YELLOW + "You may also warp here using /shrinewarp " + shrinename.toLowerCase() + ".");
         }
     }
 
@@ -245,7 +241,7 @@ public class DShrines implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void tributeSuccess(InventoryCloseEvent e) {
         if (!(e.getPlayer() instanceof Player)) return;
         Player p = (Player) e.getPlayer();
@@ -255,9 +251,9 @@ public class DShrines implements Listener {
         // get which deity tribute goes to
         String togive = null;
         PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer((Player) e.getPlayer());
-        for (Deity d : DMisc.getDeities((Player) e.getPlayer())) {
-            if (save.getTempStatus(d.getName().toUpperCase() + "_TRIBUTE_")) {
-                togive = d.getName();
+        for (String d : save.getDeityList()) {
+            if (save.getTempStatus(d.toUpperCase() + "_TRIBUTE_")) {
+                togive = d;
                 break;
             }
         }

@@ -949,7 +949,7 @@ public class DCommandExecutor implements CommandExecutor {
                 target = DMisc.getShrine(DMisc.getDemigodsPlayerId(args[0]), args[1]);
             }
         }
-        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName("#" + args[0]);
+        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName(args[0]);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "Target shrine not found. Shrine names are case sensitive.");
             return true;
@@ -1018,7 +1018,7 @@ public class DCommandExecutor implements CommandExecutor {
                 target = DMisc.getShrine(DMisc.getDemigodsPlayerId(args[0]), args[1]);
             }
         }
-        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName("#" + args[0]);
+        if ((target == null) && (args.length == 1)) target = DMisc.getShrineByName(args[0]);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "Target shrine not found. Shrine names are case sensitive.");
             return true;
@@ -1128,7 +1128,7 @@ public class DCommandExecutor implements CommandExecutor {
                 String deity = shrine.getDeity();
                 String shrinename = shrine.getName();
                 DMisc.removeShrine(shrine);
-                DMisc.addShrine(newowner, shrinename, deity, shrine.toLocation(plugin));
+                DMisc.addShrine(newowner, deity, shrinename, shrine.toLocation(plugin));
             }
         } else return false;
         return true;
