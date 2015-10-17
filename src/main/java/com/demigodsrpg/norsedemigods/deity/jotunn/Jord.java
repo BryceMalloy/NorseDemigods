@@ -515,7 +515,7 @@ public class Jord implements Deity {
             DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
                 if (le.isDead() && le instanceof Player) {
                     PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
-                    save.setTempStatus("temp_trap_died", true);
+                    save.setTempData("temp_trap_died", true);
                     return;
                 } else if (le.getLocation().distance(originalloc) > 0.5) {
                     if (le instanceof Player) {
@@ -535,7 +535,7 @@ public class Jord implements Deity {
 
             if (le instanceof Player) {
                 PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
-                save.removeTempStatus("temp_trap_died");
+                save.removeTempData("temp_trap_died");
             }
         }, durationseconds * 20);
     }

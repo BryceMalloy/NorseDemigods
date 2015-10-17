@@ -1364,11 +1364,11 @@ public class DMisc {
     public static void horseTeleport(Player player, Location location) {
         if (player.isInsideVehicle() && player.getVehicle() instanceof Horse) {
             Horse horse = (Horse) player.getVehicle();
-            getPlugin().getPlayerDataRegistry().fromPlayer(player).setTempStatus("temp_horse", true);
+            getPlugin().getPlayerDataRegistry().fromPlayer(player).setTempData("temp_horse", true);
             horse.eject();
             horse.teleport(location);
             horse.setPassenger(player);
-            getPlugin().getPlayerDataRegistry().fromPlayer(player).removeTempStatus("temp_horse");
+            getPlugin().getPlayerDataRegistry().fromPlayer(player).removeTempData("temp_horse");
         } else player.teleport(location);
     }
 }

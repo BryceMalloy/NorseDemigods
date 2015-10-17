@@ -187,7 +187,7 @@ public class DShrines implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void playerTribute(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (e.getClickedBlock().getType() != Material.GOLD_BLOCK) return;
+        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.GOLD_BLOCK) return;
         if (!DMisc.isFullParticipant(e.getPlayer())) return;
         // check if block is shrine
         String deityname = DMisc.getDeityAtShrine(e.getClickedBlock().getLocation());
@@ -200,8 +200,7 @@ public class DShrines implements Listener {
                 Inventory ii = DMisc.getPlugin().getServer().createInventory(p, 27, "Tributes");
                 p.openInventory(ii);
                 PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer(p);
-                save.setTempStatus(deityname.toUpperCase() + "_TRIBUTE_", true); // DSave.saveData(p, deityname.toUpperCase() + "_TRIBUTE_", DMisc.getOwnerOfShrine(DMisc.toWriteLocation(e.getClickedBlock().getLocation())));
-                save.setTempStatus("_BORROWED_SHRINE_" + DMisc.getOwnerOfShrine(e.getClickedBlock().getLocation()).toString(), true);
+                save.setTempData(deityname.toUpperCase() + "_TRIBUTE_", DMisc.getOwnerOfShrine(e.getClickedBlock().getLocation()).toString()); // DSave.saveData(p, deityname.toUpperCase() + "_TRIBUTE_", DMisc.getOwnerOfShrine(DMisc.toWriteLocation(e.getClickedBlock().getLocation())));
                 e.setCancelled(true);
                 return;
             }
@@ -250,16 +249,16 @@ public class DShrines implements Listener {
         if (!e.getInventory().getName().equals("Tributes")) return;
         // get which deity tribute goes to
         String togive = null;
+        String creatorId = null;
         PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer((Player) e.getPlayer());
         for (String d : save.getDeityList()) {
-            if (save.getTempStatus(d.toUpperCase() + "_TRIBUTE_")) {
+            creatorId = save.getTempData(d.toUpperCase() + "_TRIBUTE_", null, true);
+            if (creatorId != null) {
                 togive = d;
                 break;
             }
         }
         if (togive == null) return;
-        save.removeTempStatus(togive.toUpperCase() + "_TRIBUTE_");
-        String creatorId = save.getTempData("_BORROWED_SHRINE_", true);
         // calculate value of chest
         int value = 0;
         int items = 0;
@@ -273,7 +272,7 @@ public class DShrines implements Listener {
         // give devotion
         int dbefore = DMisc.getDevotion(p, togive);
         DMisc.setDevotion(p, togive, DMisc.getDevotion(p, togive) + value);
-        if (creatorId != null) {
+        if (!creatorId.equals(save.getPlayerId().toString())) {
             UUID creator = UUID.fromString(creatorId);
             DMisc.setDevotion(creator, togive, DMisc.getDevotion(creator, togive) + value / 7);
         }

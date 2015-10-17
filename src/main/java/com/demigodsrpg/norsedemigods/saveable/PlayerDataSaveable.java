@@ -8,8 +8,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class PlayerDataSaveable implements Saveable {
@@ -23,8 +21,7 @@ public class PlayerDataSaveable implements Saveable {
     Map<String, Double> DEITIES;
     Map<String, Map<String, Object>> ABILITY_DATA;
     Map<String, String> BIND_DATA;
-
-    transient ConcurrentMap<String, Boolean> TEMP_DATA;
+    Map<String, Object> TEMP_DATA;
 
     double lastLoginTime;
     double lastLogoutTime;
@@ -47,8 +44,7 @@ public class PlayerDataSaveable implements Saveable {
         DEITIES = new HashMap<>();
         ABILITY_DATA = new HashMap<>();
         BIND_DATA = new HashMap<>();
-
-        TEMP_DATA = new ConcurrentHashMap<>();
+        TEMP_DATA = new HashMap<>();
 
         lastLoginTime = System.currentTimeMillis();
         lastLogoutTime = -1;
@@ -87,7 +83,11 @@ public class PlayerDataSaveable implements Saveable {
         } else {
             BIND_DATA = new HashMap<>();
         }
-        TEMP_DATA = new ConcurrentHashMap<>();
+        if (section.isSection("tempData")) {
+            TEMP_DATA = (Map) section.getSectionNullable("tempData").getValues();
+        } else {
+            TEMP_DATA = new HashMap<>();
+        }
         lastLoginTime = section.getDouble("lastLoginTime");
         lastLogoutTime = section.getDouble("lastLogoutTime");
         favor = section.getInt("favor");
@@ -161,21 +161,19 @@ public class PlayerDataSaveable implements Saveable {
     }
 
     public boolean getTempStatus(String status) {
-        return TEMP_DATA.getOrDefault(status, false);
+        return TEMP_DATA.containsKey(status);
     }
 
-    public String getTempData(String status, boolean remove) {
-        String dataKey = null;
-        for (String key : TEMP_DATA.keySet()) {
-            if (key.startsWith(status)) {
-                dataKey = key;
-                break;
-            }
-        }
+    @SuppressWarnings("unchecked")
+    public <V> V getTempData(String status, V def, boolean remove) {
+        V data = (V) TEMP_DATA.getOrDefault(status, def);
         if (remove) {
-            removeTempStatus(dataKey);
+            TEMP_DATA.remove(status);
+
+            // Put this version of the data object into the registry
+            getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
         }
-        return dataKey != null ? dataKey.replace(status, "") : null;
+        return data;
     }
 
     public double getLastLoginTime() {
@@ -219,6 +217,7 @@ public class PlayerDataSaveable implements Saveable {
         map.put("deityData", DEITIES);
         map.put("abilityData", ABILITY_DATA);
         map.put("bindData", BIND_DATA);
+        map.put("tempData", TEMP_DATA);
         map.put("lastLoginTime", lastLoginTime);
         map.put("lastLogoutTime", lastLogoutTime);
         map.put("favor", favor);
@@ -330,7 +329,7 @@ public class PlayerDataSaveable implements Saveable {
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
     }
 
-    public void setTempStatus(String status, boolean value) {
+    public <V> void setTempData(String status, V value) {
         // Set the temp status
         TEMP_DATA.put(status, value);
 
@@ -338,9 +337,16 @@ public class PlayerDataSaveable implements Saveable {
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
     }
 
-    public void removeTempStatus(String status) {
+    public void removeTempData(String status) {
         // Set the temp status
         TEMP_DATA.remove(status);
+
+        // Put this version of the data object into the registry
+        getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);
+    }
+
+    public void purgeTempData() {
+        TEMP_DATA.clear();
 
         // Put this version of the data object into the registry
         getBackend().getPlayerDataRegistry().put(MOJANG_ID, this);

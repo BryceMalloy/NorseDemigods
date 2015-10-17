@@ -854,11 +854,11 @@ public class DCommandExecutor implements CommandExecutor {
         PlayerDataSaveable save = plugin.getPlayerDataRegistry().fromPlayer(p);
         if (save.getTempStatus("ALLIANCECHAT")) {
             p.sendMessage(ChatColor.YELLOW + "Alliance chat has been turned off.");
-            save.removeTempStatus("ALLIANCECHAT");
+            save.removeTempData("ALLIANCECHAT");
             return true;
         }
         p.sendMessage(ChatColor.YELLOW + "Alliance chat has been turned on.");
-        save.setTempStatus("ALLIANCECHAT", true);
+        save.setTempData("ALLIANCECHAT", true);
         return true;
     }
 

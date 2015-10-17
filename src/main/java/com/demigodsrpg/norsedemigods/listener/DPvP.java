@@ -152,7 +152,7 @@ public class DPvP implements Listener {
         if (save.getTempStatus("temp_flash") || event.getCause() == TeleportCause.ENDER_PEARL) {
             onPlayerLineJump(player, save, to, from, delayTime);
         } else if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from)) {
-            save.removeTempStatus("temp_was_PVP");
+            save.removeTempData("temp_was_PVP");
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
         } else if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
             player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
@@ -166,12 +166,12 @@ public class DPvP implements Listener {
 
         // No Spawn Line-Jumping
         if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from) && delayTime > 0 && !player.hasPermission("demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
-            save.setTempStatus("temp_was_PVP", true);
-            save.removeTempStatus("temp_flash");
+            save.setTempData("temp_was_PVP", true);
+            save.removeTempData("temp_flash");
 
             DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
                 PlayerDataSaveable newSave = ndg.getPlayerDataRegistry().fromPlayer(player);
-                newSave.removeTempStatus("temp_was_PVP");
+                newSave.removeTempData("temp_was_PVP");
                 if (!DMisc.canLocationPVP(player.getLocation()))
                     player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
             }, (delayTime * 20));

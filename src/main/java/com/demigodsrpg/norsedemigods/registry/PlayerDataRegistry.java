@@ -25,4 +25,8 @@ public class PlayerDataRegistry extends AbstractRegistry<PlayerDataSaveable> {
         }
         return put(player.getUniqueId().toString(), new PlayerDataSaveable(player));
     }
+
+    public void purgeTempData() {
+        getFromDb().values().forEach(PlayerDataSaveable::purgeTempData);
+    }
 }

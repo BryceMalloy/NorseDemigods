@@ -73,6 +73,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             if (bt.getOwner().equals(this)) c++;
         this.getServer().getScheduler().cancelAllTasks();
 
+        // Clear temp data
+        PLAYER_DATA.purgeTempData();
+
         getLogger().info(c + " tasks cancelled.");
     }
 
