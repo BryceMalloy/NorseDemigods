@@ -331,7 +331,7 @@ public class DCommandExecutor implements CommandExecutor {
 
     private boolean infoDG(Player p, String[] args) {
         if ((args.length == 2) || (args.length == 3)) {
-            if (args[0].equalsIgnoreCase("debug") && DMisc.hasPermissionOrOP(p)) {
+            if (args[0].equalsIgnoreCase("debug") && DMisc.isAdminOrOp(p)) {
                 UUID target = DMisc.getDemigodsPlayerId(args[1]);
                 if (target == null) {
                     p.sendMessage(ChatColor.YELLOW + "Player not found.");
@@ -730,7 +730,7 @@ public class DCommandExecutor implements CommandExecutor {
                 }
             }
         } else if (args.length == 3) {
-            if (DMisc.hasPermissionOrOP(p)) try {
+            if (DMisc.isAdminOrOp(p)) try {
                 int one = Integer.parseInt(args[0]);
                 int two = Integer.parseInt(args[1]);
                 int three = Integer.parseInt(args[2]);
@@ -1611,7 +1611,7 @@ public class DCommandExecutor implements CommandExecutor {
                     break;
             }
             if (choice != null) {
-                if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
+                if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase().replace(" ", "_")) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
                     p.sendMessage(ChatColor.RED + "You do not have permission to claim this deity.");
                     return true;
                 }
@@ -1698,7 +1698,7 @@ public class DCommandExecutor implements CommandExecutor {
             p.sendMessage(ChatColor.YELLOW + "That is not a valid selection item.");
             return true;
         }
-        if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase()) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
+        if (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + "." + choice.getName().toLowerCase().replace(" ", "_")) && (!p.hasPermission(choice.getDefaultAlliance().toLowerCase() + ".all"))) {
             p.sendMessage(ChatColor.RED + "You do not have permission to claim this deity.");
             return true;
         }

@@ -98,38 +98,35 @@ public class DPvP implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void playerDeath(final EntityDeathEvent e1) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), new Runnable() {
-            @Override
-            public void run() {
-                if (!(e1.getEntity() instanceof Player)) return;
-                Player attacked = (Player) e1.getEntity();
-                if ((attacked.getLastDamageCause() != null) && (attacked.getLastDamageCause() instanceof EntityDamageByEntityEvent)) {
-                    EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) attacked.getLastDamageCause();
-                    if (!(e.getDamager() instanceof Player)) return;
-                    Player attacker = (Player) e.getDamager();
-                    if (!(DMisc.isFullParticipant(attacker))) return;
-                    if (DMisc.isFullParticipant(attacked)) {
-                        if (DMisc.getAllegiance(attacker).equalsIgnoreCase(DMisc.getAllegiance(attacked))) { // betrayal
-                            DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was betrayed by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
-                            if (DMisc.getKills(attacker) > 0) {
-                                DMisc.setKills(attacker, DMisc.getKills(attacker) - 1);
-                                attacker.sendMessage(ChatColor.RED + "Your number of kills has decreased to " + DMisc.getKills(attacker) + ".");
-                            }
-                        } else { // PVP kill
-                            DMisc.setKills(attacker, DMisc.getKills(attacker) + 1);
-                            DMisc.setDeaths(attacked, DMisc.getDeaths(attacked) + 1);
-                            DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacked) + " alliance was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
-
-                            double adjusted = DMisc.getKills(attacked) * 1.0 / DMisc.getDeaths(attacked);
-                            if (adjusted > 5) adjusted = 5;
-                            if (adjusted < 0.2) adjusted = 0.2;
-                            for (Deity d : DMisc.getDeities(attacker)) {
-                                DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (pvpkillreward * Setting.PVP_MULTIPLIER * adjusted));
-                            }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
+            if (!(e1.getEntity() instanceof Player)) return;
+            Player attacked = (Player) e1.getEntity();
+            if ((attacked.getLastDamageCause() != null) && (attacked.getLastDamageCause() instanceof EntityDamageByEntityEvent)) {
+                EntityDamageByEntityEvent e = (EntityDamageByEntityEvent) attacked.getLastDamageCause();
+                if (!(e.getDamager() instanceof Player)) return;
+                Player attacker = (Player) e.getDamager();
+                if (!(DMisc.isFullParticipant(attacker))) return;
+                if (DMisc.isFullParticipant(attacked)) {
+                    if (DMisc.getAllegiance(attacker).equalsIgnoreCase(DMisc.getAllegiance(attacked))) { // betrayal
+                        DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was betrayed by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
+                        if (DMisc.getKills(attacker) > 0) {
+                            DMisc.setKills(attacker, DMisc.getKills(attacker) - 1);
+                            attacker.sendMessage(ChatColor.RED + "Your number of kills has decreased to " + DMisc.getKills(attacker) + ".");
                         }
-                    } else { // regular player
-                        DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
+                    } else { // PVP kill
+                        DMisc.setKills(attacker, DMisc.getKills(attacker) + 1);
+                        DMisc.setDeaths(attacked, DMisc.getDeaths(attacked) + 1);
+                        DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacked) + " alliance was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
+
+                        double adjusted = DMisc.getKills(attacked) * 1.0 / DMisc.getDeaths(attacked);
+                        if (adjusted > 5) adjusted = 5;
+                        if (adjusted < 0.2) adjusted = 0.2;
+                        for (Deity d : DMisc.getDeities(attacker)) {
+                            DMisc.setDevotion(attacker, d, DMisc.getDevotion(attacker, d) + (int) (pvpkillreward * Setting.PVP_MULTIPLIER * adjusted));
+                        }
                     }
+                } else { // regular player
+                    DMisc.getPlugin().getServer().broadcastMessage(ChatColor.YELLOW + attacked.getName() + ChatColor.GRAY + " was slain by " + ChatColor.YELLOW + attacker.getName() + ChatColor.GRAY + " of the " + DMisc.getAllegiance(attacker) + " alliance.");
                 }
             }
         }, 30);

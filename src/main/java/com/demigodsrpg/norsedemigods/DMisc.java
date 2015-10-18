@@ -113,7 +113,7 @@ public class DMisc {
     /**
      * Checks if a player has the given permission or is OP.
      */
-    public static boolean hasPermissionOrOP(Player p) {// convenience method for permissions
+    public static boolean isAdminOrOp(Player p) {// convenience method for permissions
         return p.isOp() || p.hasPermission("demigods.admin");
     }
 
