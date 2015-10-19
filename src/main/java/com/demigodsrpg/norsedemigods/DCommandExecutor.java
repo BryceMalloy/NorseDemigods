@@ -962,7 +962,9 @@ public class DCommandExecutor implements CommandExecutor {
         }
         // check if warp is clear
         Block b = DMisc.toLocation(target).getBlock();
-        if ((b.getRelative(BlockFace.UP).getType() != Material.AIR) || (b.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR)) {
+        Block b1 = b.getRelative(BlockFace.UP);
+        Block b2 = b1.getRelative(BlockFace.UP);
+        if (b1.getType().isSolid() || b1.isLiquid() || b2.getType().isSolid() || b2.isLiquid()) {
             p.sendMessage(ChatColor.YELLOW + "The target location is blocked.");
             return true;
         }
@@ -1029,12 +1031,11 @@ public class DCommandExecutor implements CommandExecutor {
             p.sendMessage(ChatColor.YELLOW + "You do not have permission for that warp.");
             return true;
         }
-        // check if warp is clear
         Block b = DMisc.toLocation(target).getBlock();
-        if ((b.getRelative(BlockFace.UP).getType() != Material.AIR) || (b.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR)) {
+        /*if ((b.getRelative(BlockFace.UP).getType() != Material.AIR) || (b.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR)) {
             p.sendMessage(ChatColor.YELLOW + "The target location is blocked.");
             return true;
-        }
+        }*/
         // warp code
         final LocationSaveable current = DMisc.toWriteLocation(p.getLocation());
         final double hp = p.getHealth();
