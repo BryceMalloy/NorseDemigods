@@ -3,6 +3,7 @@ package com.demigodsrpg.norsedemigods.chitchat;
 import com.demigodsrpg.chitchat.tag.PlayerTag;
 import com.demigodsrpg.norsedemigods.DMisc;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
+import com.google.common.base.Joiner;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -18,7 +19,7 @@ public class AllianceTag extends PlayerTag {
 
     @Override
     public int getPriority() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -35,7 +36,7 @@ public class AllianceTag extends PlayerTag {
         allegience.addExtra(middle);
         allegience.addExtra("]");
         allegience.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder(alliance).color(color).create()));
+                new ComponentBuilder(Joiner.on(", ").join(save.getDeityList())).color(color).create())); // TODO Temp
         allegience.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dg " + alliance));
         return allegience;
     }

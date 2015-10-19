@@ -2,19 +2,15 @@
 #Demigods Configuration File
 #Global Settings
 motd: true
-active_worlds:
-- DEFAULT
-inactive_worlds:
 globalfavormultiplier: 1.0
 globalexpmultiplier: 1.0
 globalfavorcap: 20000
-max_devotion_lost_on_death: 15000
+max_devotion_lost_on_death: 12000
 max_target_range: 100
-max_hp: 3000
+max_hp: 350
 pvp_exp_bonus: 1.5
 broadcast_new_deities: true
 stat_display_frequency_in_seconds: 0
-confirm_time: 10
 pvp_area_delay_time: 10
 start_delay_seconds: 0.1
 favor_regen_seconds: 0.5
@@ -23,8 +19,8 @@ save_interval_seconds: 300
 balance_teams: true
 ascension_cap: 120
 allow_skills_everywhere: false
-use_new_pvp_zones: true
 friendly_fire: false
 friendly_fire_message: false
 noob_level: 5
 drown_world_height_limit: 90
+server_id_tag: true

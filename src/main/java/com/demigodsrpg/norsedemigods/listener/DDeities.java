@@ -39,9 +39,8 @@ public class DDeities implements Listener {
     public void onBlockBreak(BlockBreakEvent e) {
         // Player
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
@@ -49,19 +48,16 @@ public class DDeities implements Listener {
     public void onBlockPlace(BlockPlaceEvent e) {
         // Player
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
     public static void onEntityDamage(EntityDamageEvent e) {
-        for (Player pl : e.getEntity().getWorld().getPlayers()) {
-            if (DMisc.isFullParticipant(pl)) {
-                if ((DMisc.getDeities(pl) != null) && (DMisc.getDeities(pl).size() > 0)) {
-                    for (Deity d : DMisc.getDeities(pl))
-                        d.onEvent(e);
-                }
+        if (e.getEntity() instanceof Player) {
+            Player p = (Player) e.getEntity();
+            if (!DMisc.getDeities(p).isEmpty()) {
+                DMisc.getDeities(p).forEach(d -> d.onEvent(e));
             }
         }
     }
@@ -70,9 +66,8 @@ public class DDeities implements Listener {
     public void onEntityDeath(EntityDeathEvent e) {
         if (e.getEntity() instanceof Player) {
             Player p = (Player) e.getEntity();
-            if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-                for (Deity d : DMisc.getDeities(p))
-                    d.onEvent(e);
+            if (!DMisc.getDeities(p).isEmpty()) {
+                DMisc.getDeities(p).forEach(d -> d.onEvent(e));
             }
         }
     }
@@ -82,9 +77,8 @@ public class DDeities implements Listener {
         if (e.isCancelled()) return;
         if (e.getTarget() instanceof Player) {
             Player p = (Player) e.getTarget();
-            if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-                for (Deity d : DMisc.getDeities(p))
-                    d.onEvent(e);
+            if (!DMisc.getDeities(p).isEmpty()) {
+                DMisc.getDeities(p).forEach(d -> d.onEvent(e));
             }
         }
     }
@@ -92,9 +86,8 @@ public class DDeities implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e) {
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
@@ -117,9 +110,8 @@ public class DDeities implements Listener {
     @EventHandler
     public void onPlayerPickupItem(PlayerPickupItemEvent e) {
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
@@ -145,27 +137,24 @@ public class DDeities implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
-        if ((DMisc.getDeities(p) != null) && (DMisc.getDeities(p).size() > 0)) {
-            for (Deity d : DMisc.getDeities(p))
-                d.onEvent(e);
+        if (!DMisc.getDeities(p).isEmpty()) {
+            DMisc.getDeities(p).forEach(d -> d.onEvent(e));
         }
     }
 }

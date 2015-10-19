@@ -2,6 +2,7 @@ package com.demigodsrpg.norsedemigods;
 
 import com.demigodsrpg.chitchat.Chitchat;
 import com.demigodsrpg.norsedemigods.chitchat.AllianceTag;
+import com.demigodsrpg.norsedemigods.chitchat.ServerIdTag;
 import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
@@ -59,6 +60,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         unstickFireball(); // #12
 
         Chitchat.getChatFormat().add(new AllianceTag()); // Chitchat integration
+        if (Setting.SERVER_ID_TAG) {
+            Chitchat.getChatFormat().add(new ServerIdTag());
+        }
 
         getLogger().info("Preparation completed in " + ((double) (System.currentTimeMillis() - firstTime) / 1000) + " seconds.");
     }

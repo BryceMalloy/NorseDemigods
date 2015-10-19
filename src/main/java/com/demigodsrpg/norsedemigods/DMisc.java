@@ -356,9 +356,13 @@ public class DMisc {
     public static void setHP(Player p, double amt) {
         if (amt > p.getMaxHealth()) amt = p.getMaxHealth();
         if (amt < 0) amt = 0;
-        double c = amt - p.getHealth();
-        p.setHealth(amt);
-        if ((c != 0)) {
+        // double c = amt - p.getHealth();
+        if (amt != 0) {
+            p.setHealth(amt);
+        } else {
+            p.spigot().respawn();
+        }
+        /*if ((c != 0)) {
             ChatColor color = ChatColor.GREEN;
             if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
             else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
@@ -366,12 +370,17 @@ public class DMisc {
             if (c > 0) disp = "+" + c;
             else disp += c;
             String str = color + "HP: " + p.getHealth() + "/" + p.getMaxHealth() + " (" + disp + ")";
-        }
+        }*/
     }
 
     public static void setHPQuiet(Player p, double amt) {
         if (amt > p.getHealth()) amt = p.getMaxHealth();
-        p.setHealth(amt);
+        if (amt < 0) amt = 0;
+        if (amt != 0) {
+            p.setHealth(amt);
+        } else {
+            p.spigot().respawn();
+        }
     }
 
     /**

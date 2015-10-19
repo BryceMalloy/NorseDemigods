@@ -8,14 +8,10 @@ import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityRegainHealthEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 
 public class DDamage implements Listener {
     /*
@@ -67,20 +63,6 @@ public class DDamage implements Listener {
 
         if ((e.getCause() != DamageCause.ENTITY_ATTACK) && (e.getCause() != DamageCause.PROJECTILE))
             DMisc.damageDemigodsNonCombat(p, e.getDamage(), e.getCause());
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onRespawn(PlayerRespawnEvent e) {
-        if (DMisc.isFullParticipant(e.getPlayer()))
-            DMisc.setHP(e.getPlayer(), e.getPlayer().getMaxHealth());
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onHeal(EntityRegainHealthEvent e) {
-        if (!(e.getEntity() instanceof Player)) return;
-        Player p = (Player) e.getEntity();
-        if (!DMisc.isFullParticipant(p)) return;
-        DMisc.setHP(p, p.getHealth() + e.getAmount());
     }
 
     @SuppressWarnings("incomplete-switch")
