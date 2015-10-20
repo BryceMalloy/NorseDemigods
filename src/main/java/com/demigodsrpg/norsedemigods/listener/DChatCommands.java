@@ -26,8 +26,8 @@ public class DChatCommands implements Listener {
 
     private void qd(Player p, AsyncPlayerChatEvent e) {
         if ((e.getMessage().charAt(0) == 'q') && (e.getMessage().charAt(1) == 'd')) {
-            String str;
-            if (p.getHealth() > 0) {
+            String str = "";
+            if (e.getMessage().split(" ").length < 2) {
                 ChatColor color = ChatColor.GREEN;
                 if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
                 else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
@@ -38,36 +38,36 @@ public class DChatCommands implements Listener {
                     for (Map.Entry<String, Double> stt : effects.entrySet())
                         str += " " + stt.getKey() + "[" + ((stt.getValue() - System.currentTimeMillis()) / 1000) + "s]";
                 }
-                try {
-                    String other = e.getMessage().split(" ")[1];
-                    if (other != null) other = DMisc.getDemigodsPlayer(other).getLastKnownName();
-                    if ((other != null) && DMisc.isFullParticipant(other)) {
-                        Player otherPlayer = Bukkit.getPlayer(other);
-                        if (otherPlayer != null) {
-                            p.sendMessage(other + " -- " + DMisc.getAllegiance(otherPlayer));
-                            if (DMisc.hasDeity(p, "Athena") || DMisc.hasDeity(p, "Themis")) {
-                                String st = ChatColor.GRAY + "Deities:";
-                                for (Deity d : DMisc.getDeities(otherPlayer))
-                                    st += " " + d.getName();
-                                p.sendMessage(st);
-                                p.sendMessage(ChatColor.GRAY + "HP " + otherPlayer.getHealth() + "/" +
-                                        otherPlayer.getMaxHealth() + " Favor " + DMisc.getFavor(otherPlayer) + "/" +
-                                        DMisc.getFavorCap(otherPlayer));
-                                if (DMisc.getActiveEffects(otherPlayer.getUniqueId()).size() > 0) {
-                                    Map<String, Double> fx = DMisc.getActiveEffects(otherPlayer.getUniqueId());
-                                    str += ChatColor.GRAY + " Active effects:";
-                                    for (Map.Entry<String, Double> stt : fx.entrySet())
-                                        str += " " + stt.getKey() + "[" + ((stt.getValue() - System.currentTimeMillis()) / 1000) + "s]";
-                                }
+            }
+            try {
+                String other = e.getMessage().split(" ")[1];
+                if (other != null) other = DMisc.getDemigodsPlayer(other).getLastKnownName();
+                if ((other != null) && DMisc.isFullParticipant(other)) {
+                    Player otherPlayer = Bukkit.getPlayer(other);
+                    if (otherPlayer != null) {
+                        p.sendMessage(other + " -- " + DMisc.getAllegiance(otherPlayer));
+                        if (DMisc.hasDeity(p, "Heimdallr") || DMisc.hasDeity(p, "Dis")) {
+                            String st = ChatColor.GRAY + "Deities:";
+                            for (Deity d : DMisc.getDeities(otherPlayer))
+                                st += " " + d.getName();
+                            p.sendMessage(st);
+                            p.sendMessage(ChatColor.GRAY + "HP " + otherPlayer.getHealth() + "/" +
+                                    otherPlayer.getMaxHealth() + " Favor " + DMisc.getFavor(otherPlayer) + "/" +
+                                    DMisc.getFavorCap(otherPlayer));
+                            if (DMisc.getActiveEffects(otherPlayer.getUniqueId()).size() > 0) {
+                                Map<String, Double> fx = DMisc.getActiveEffects(otherPlayer.getUniqueId());
+                                str += ChatColor.GRAY + " Active effects:";
+                                for (Map.Entry<String, Double> stt : fx.entrySet())
+                                    str += " " + stt.getKey() + "[" + ((stt.getValue() - System.currentTimeMillis()) / 1000) + "s]";
                             }
                         }
                     }
-                } catch (Exception ignored) {
                 }
-                p.sendMessage(str);
-                e.getRecipients().clear();
-                e.setCancelled(true);
+            } catch (Exception ignored) {
             }
+            p.sendMessage(str);
+            e.getRecipients().clear();
+            e.setCancelled(true);
         }
     }
 
