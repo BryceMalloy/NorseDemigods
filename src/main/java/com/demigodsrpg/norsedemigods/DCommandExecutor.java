@@ -1368,7 +1368,7 @@ public class DCommandExecutor implements CommandExecutor {
                     p.sendMessage(ChatColor.YELLOW + "You have forsaken " + toremove.getName() + "." + str);
                     DMisc.getPlugin().getServer().broadcastMessage(ChatColor.RED + p.getName() + " has forsaken " + toremove.getName() + ".");
                     PlayerDataSaveable save = plugin.getPlayerDataRegistry().fromPlayer(p);
-                    save.removeDeity(args[1]);
+                    save.removeDeity(toremove.getName());
                 } else {
                     Deity toremove = Deities.valueOf(deityName);
                     p.sendMessage(ChatColor.YELLOW + "You have forsaken " + toremove.getName() + ".");
