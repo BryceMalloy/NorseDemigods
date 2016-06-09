@@ -6,17 +6,17 @@
 
     <groupId>com.demigodsrpg</groupId>
     <artifactId>norse-demigods</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Norse Demigods</name>
     <description>The Norse Edition of Demigods RPG for Bukkit/Spigot Minecraft Servers.</description>
 
     <properties> <!-- It is important to keep up to date manually. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spigot.version>1.8.8-R0.1-SNAPSHOT</spigot.version>
-        <worldedit.version>5.5.8-SNAPSHOT</worldedit.version>
-        <worldguard.version>6.0.0-SNAPSHOT</worldguard.version>
-        <chitchat.version>2.0-SNAPSHOT</chitchat.version>
+        <spigot.version>1.9.4-R0.1-SNAPSHOT</spigot.version>
+        <worldedit.version>6.1.2</worldedit.version>
+        <worldguard.version>6.1</worldguard.version>
+        <chitchat.version>2.1-SNAPSHOT</chitchat.version>
     </properties>
 
     <repositories>
@@ -25,16 +25,13 @@
             <url>http://hub.spigotmc.org/nexus/content/repositories/public/</url>
         </repository>
         <repository>
-            <id>DG_MG</id>
-            <url>http://repo.ii.dg-mg.club/</url>
-        </repository>
-        <repository>
             <id>sk89q-repo</id>
             <url>http://maven.sk89q.com/repo/</url>
         </repository>
     </repositories>
 
     <dependencies>
+        <!-- Spigot API -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
@@ -42,6 +39,8 @@
             <scope>compile</scope>
             <type>jar</type>
         </dependency>
+
+        <!-- WorldGuard -->
         <dependency>
             <groupId>com.sk89q</groupId>
             <artifactId>worldguard</artifactId>
@@ -50,6 +49,7 @@
             <type>jar</type>
             <optional>false</optional>
         </dependency>
+
         <!-- Chitchat -->
         <dependency>
             <groupId>com.demigodsrpg</groupId>

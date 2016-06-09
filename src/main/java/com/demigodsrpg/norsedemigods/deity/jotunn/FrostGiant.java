@@ -136,7 +136,7 @@ public class FrostGiant implements Deity {
 
                     for (int x = p.getLocation().getBlockX() - 14; x <= p.getLocation().getBlockX() + 14; x++)
                         for (int z = p.getLocation().getBlockZ() - 14; z <= p.getLocation().getBlockZ() + 14; z++)
-                            p.getWorld().setBiome(x, z, Biome.COLD_TAIGA);
+                            p.getWorld().setBiome(x, z, Biome.TAIGA_COLD);
 
                     p.getWorld().refreshChunk(p.getLocation().getBlockX(), p.getLocation().getBlockZ());
 
