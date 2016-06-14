@@ -6,7 +6,7 @@
 
     <groupId>com.demigodsrpg</groupId>
     <artifactId>norse-demigods</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2</version>
 
     <name>Norse Demigods</name>
     <description>The Norse Edition of Demigods RPG for Bukkit/Spigot Minecraft Servers.</description>

@@ -1296,12 +1296,16 @@ public class DMisc {
      * WORLDGUARD SUPPORT START
      */
     public static boolean canWorldGuardPVP(Location l) {
-        return Setting.ALLOW_PVP_EVERYWHERE || WorldGuardUtil.worldGuardEnabled() && WorldGuardUtil.canPVP(l);
+        return Setting.ALLOW_PVP_EVERYWHERE || worldGuardEnabled() && WorldGuardUtil.canPVP(l);
     }
 
     @SuppressWarnings("static-access")
     public static boolean canWorldGuardBuild(Player player, Location location) {
-        return !WorldGuardUtil.worldGuardEnabled() || WorldGuardUtil.canBuild(player, location);
+        return !worldGuardEnabled() || WorldGuardUtil.canBuild(player, location);
+    }
+
+    public static boolean worldGuardEnabled() {
+        return Bukkit.getPluginManager().isPluginEnabled("WorldGuard") && WorldGuardUtil.worldGuardEnabled();
     }
 
     /*

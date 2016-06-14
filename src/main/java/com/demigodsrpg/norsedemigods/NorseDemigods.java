@@ -1,8 +1,5 @@
 package com.demigodsrpg.norsedemigods;
 
-import com.demigodsrpg.chitchat.Chitchat;
-import com.demigodsrpg.norsedemigods.chitchat.AllianceTag;
-import com.demigodsrpg.norsedemigods.chitchat.ServerIdTag;
 import com.demigodsrpg.norsedemigods.deity.Deities;
 import com.demigodsrpg.norsedemigods.listener.*;
 import com.demigodsrpg.norsedemigods.registry.PlayerDataRegistry;
@@ -10,6 +7,7 @@ import com.demigodsrpg.norsedemigods.registry.ShrineRegistry;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
+import com.demigodsrpg.norsedemigods.util.ChitchatUtil;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -59,11 +57,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         invalidShrines(); // #9
         unstickFireball(); // #12
 
-        Chitchat.getChatFormat().add(new AllianceTag()); // Chitchat integration
-        if (Setting.SERVER_ID_TAG) {
-            Chitchat.getChatFormat().add(new ServerIdTag());
-        }
-
         getLogger().info("Preparation completed in " + ((double) (System.currentTimeMillis() - firstTime) / 1000) + " seconds.");
     }
 
@@ -101,19 +94,29 @@ public class NorseDemigods extends JavaPlugin implements Listener {
     }
 
     void loadDependencies() {
-        getLogger().info("Attempting to hook into WorldGuard.");
+        if (getServer().getPluginManager().isPluginEnabled("WorldGuard")) {
+            new WorldGuardUtil();
 
-        if (WorldGuardUtil.worldGuardEnabled()) {
-            WorldGuardUtil.setWhenToOverridePVP(this, event -> {
-                if (event instanceof EntityDamageByEntityEvent) {
-                    if (((EntityDamageByEntityEvent) event).getEntity() instanceof Player) {
-                        return getPlayerDataRegistry().fromPlayer((Player) ((EntityDamageByEntityEvent) event).
-                                getEntity()).getTempStatus("temp_was_PVP");
+            getLogger().info("Attempting to hook into WorldGuard.");
+            if (WorldGuardUtil.worldGuardEnabled()) {
+                WorldGuardUtil.setWhenToOverridePVP(this, event -> {
+                    if (event instanceof EntityDamageByEntityEvent) {
+                        if (((EntityDamageByEntityEvent) event).getEntity() instanceof Player) {
+                            return getPlayerDataRegistry().fromPlayer((Player) ((EntityDamageByEntityEvent) event).
+                                    getEntity()).getTempStatus("temp_was_PVP");
+                        }
                     }
-                }
-                return false;
-            });
-            getLogger().info("WorldGuard detected. Skills are disabled in no-PvP zones.");
+                    return false;
+                });
+                getLogger().info("WorldGuard hook successful. Skills are disabled in no-PvP zones.");
+            }
+        }
+
+        if (Bukkit.getPluginManager().isPluginEnabled("Chitchat")) {
+            new ChitchatUtil();
+            if (ChitchatUtil.hook()) {
+                getLogger().info("Chitchat detected. Custom chat tags enabled.");
+            }
         }
     }
 
@@ -247,7 +250,6 @@ public class NorseDemigods extends JavaPlugin implements Listener {
     }
 
     void loadListeners() {
-        new WorldGuardUtil();
         getServer().getPluginManager().registerEvents(new DLevels(), this);
         getServer().getPluginManager().registerEvents(new DChatCommands(), this);
         getServer().getPluginManager().registerEvents(new DDamage(), this);

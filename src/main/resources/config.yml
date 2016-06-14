@@ -23,4 +23,4 @@ friendly_fire: false
 friendly_fire_message: false
 noob_level: 5
 drown_world_height_limit: 90
-server_id_tag: true
+server_id_tag: false
