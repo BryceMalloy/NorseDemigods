@@ -799,7 +799,7 @@ public class DCommandExecutor implements CommandExecutor {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
                     return true;
                 }
-                List<Block> bL = p.getLineOfSight((Set) null, 5);
+                List<Block> bL = p.getLineOfSight(null, 5);
                 for (Block b : bL) {
                     for (Player pl : p.getWorld().getPlayers()) {
                         if (pl.getLocation().distance(b.getLocation()) < 0.8) {

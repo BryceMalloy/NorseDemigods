@@ -18,7 +18,6 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /*
  * Affected by level:
@@ -198,7 +197,7 @@ public class Thor implements Deity {
         int devotion = DMisc.getDevotion(p, getName());
         int targets = (int) Math.ceil(1.561 * Math.pow(devotion, 0.128424));
         double multiply = 0.1753 * Math.pow(devotion, 0.322917);
-        List<Block> bL = p.getLineOfSight((Set) null, 10);
+        List<Block> bL = p.getLineOfSight(null, 10);
         for (Block b : bL) {
             for (LivingEntity le : p.getWorld().getLivingEntities()) {
                 if (targets == hit.size()) break;

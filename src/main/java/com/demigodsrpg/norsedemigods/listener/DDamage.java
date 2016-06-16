@@ -35,7 +35,7 @@ public class DDamage implements Listener {
             if (ee.getDamager() instanceof Player) {
                 if (!Setting.FRIENDLY_FIRE && DMisc.areAllied(p, (Player) ee.getDamager())) {
                     if (Setting.FRIENDLY_FIRE_WARNING)
-                        ee.getDamager().sendMessage(ChatColor.YELLOW + "No friendly fire.");
+                        ((Player) ee.getDamager()).sendMessage(ChatColor.YELLOW + "No friendly fire.");
                     DFixes.checkAndCancel(e);
                     return;
                 }

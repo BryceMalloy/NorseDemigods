@@ -18,8 +18,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import java.util.Set;
-
 public class Odin implements Deity {
     // global vars
     private static final int STABCOST = 100;
@@ -220,7 +218,7 @@ public class Odin implements Deity {
         int duration = (int) Math.ceil(3.635 * Math.pow(devotion, 0.2576)); // seconds
         int strength = (int) Math.ceil(2.757 * Math.pow(devotion, 0.097));
         Player target = null;
-        Block b = p.getTargetBlock((Set) null, 200);
+        Block b = p.getTargetBlock(null, 200);
         for (Player pl : b.getWorld().getPlayers()) {
             if (pl.getLocation().distance(b.getLocation()) < 4) {
                 if (!DMisc.areAllied(pl, p) && DMisc.canTarget(pl, pl.getLocation())) {

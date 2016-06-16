@@ -77,7 +77,7 @@ public class DMisc {
      * Gets the Location a Player is looking at.
      */
     public static Location getTargetLocation(Player p) {
-        return p.getTargetBlock((Set) null, Setting.MAX_TARGET_RANGE).getLocation();
+        return p.getTargetBlock(null, Setting.MAX_TARGET_RANGE).getLocation();
     }
 
     /**
@@ -85,7 +85,7 @@ public class DMisc {
      */
     public static LivingEntity getTargetLivingEntity(Player p, int offset) {
         LivingEntity e = null;
-        List<Block> bL = p.getLineOfSight((Set) null, Setting.MAX_TARGET_RANGE);
+        List<Block> bL = p.getLineOfSight(null, Setting.MAX_TARGET_RANGE);
         for (Block b : bL) {
             for (Entity t : b.getChunk().getEntities()) {
                 if (t.getWorld() != b.getWorld()) continue;
@@ -360,7 +360,7 @@ public class DMisc {
         if (amt != 0) {
             p.setHealth(amt);
         } else {
-            p.spigot().respawn();
+            p.damage(p.getHealth());
         }
         /*if ((c != 0)) {
             ChatColor color = ChatColor.GREEN;
@@ -379,7 +379,7 @@ public class DMisc {
         if (amt != 0) {
             p.setHealth(amt);
         } else {
-            p.spigot().respawn();
+            p.damage(p.getHealth());
         }
     }
 

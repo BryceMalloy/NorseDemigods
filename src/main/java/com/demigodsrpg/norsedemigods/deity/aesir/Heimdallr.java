@@ -14,7 +14,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.List;
-import java.util.Set;
 
 public class Heimdallr implements Deity {
     private static final int SKILLCOST = 100;
@@ -84,7 +83,7 @@ public class Heimdallr implements Deity {
                     float pitch = p.getLocation().getPitch();
                     float yaw = p.getLocation().getYaw();
                     int range = (int) Math.ceil(3 * Math.pow(DMisc.getDevotion(p, getName()), 0.2));
-                    List<Block> los = p.getLineOfSight((Set) null, 100);
+                    List<Block> los = p.getLineOfSight(null, 100);
                     Location go;
                     if (los.size() - 1 < range) go = los.get(los.size() - 1).getLocation();
                     else go = los.get(range).getLocation();

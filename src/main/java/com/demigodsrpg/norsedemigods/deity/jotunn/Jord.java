@@ -23,7 +23,6 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class Jord implements Deity {
     /* Generalized things */
@@ -306,7 +305,7 @@ public class Jord implements Deity {
         if (duration < 1) duration = 1;
         int strength = (int) Math.ceil(1 * Math.pow(devotion, 0.09));
         Player target = null;
-        Block b = p.getTargetBlock((Set) null, 200);
+        Block b = p.getTargetBlock(null, 200);
         for (Player pl : b.getWorld().getPlayers()) {
             if (pl.getLocation().distance(b.getLocation()) < 4) {
                 if (!DMisc.areAllied(p, pl) && DMisc.canTarget(pl, pl.getLocation())) {
@@ -332,7 +331,7 @@ public class Jord implements Deity {
             player.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
             return false;
         }
-        Block b = player.getTargetBlock((Set) null, 200);
+        Block b = player.getTargetBlock(null, 200);
         List<String> TREES = save.getAbilityData("plant", "trees", new ArrayList<>());
         if (b != null) {
             if (!DMisc.canLocationPVP(b.getLocation())) {
@@ -452,7 +451,7 @@ public class Jord implements Deity {
 
     private void trap(final LivingEntity le, int durationseconds, final Player p) {
         if (le instanceof Player) {
-            le.sendMessage(ChatColor.YELLOW + "You have been entangled by Jord.");
+            ((Player) le).sendMessage(ChatColor.YELLOW + "You have been entangled by Jord.");
         }
         le.setVelocity(new Vector(0, 0, 0));
         final Location originalloc = le.getLocation();
@@ -521,7 +520,7 @@ public class Jord implements Deity {
                     if (le instanceof Player) {
                         PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer((Player) le);
                         if (save.getTempStatus("temp_trap_died")) return;
-                        le.sendMessage(ChatColor.YELLOW + "You take damage from moving while entangled!");
+                        ((Player) le).sendMessage(ChatColor.YELLOW + "You take damage from moving while entangled!");
                     }
                     DMisc.damageDemigods(p, le, 5, DamageCause.ENTITY_ATTACK);
                 }
