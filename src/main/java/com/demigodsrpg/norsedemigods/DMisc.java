@@ -127,16 +127,12 @@ public class DMisc {
 
     public static void setJotunn(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setAlliance("jotunn");
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setAlliance("jotunn"));
     }
 
     public static void setAEsir(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setAlliance("aesir");
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setAlliance("aesir"));
     }
 
     public static void setAllegiance(Player p, String allegiance) {
@@ -145,9 +141,7 @@ public class DMisc {
 
     public static void setAllegiance(UUID p, String allegiance) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setAlliance(allegiance);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setAlliance(allegiance));
     }
 
     public static boolean areAllied(Player p1, Player p2) {
@@ -256,10 +250,7 @@ public class DMisc {
      */
     public static List<Deity> getDeities(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getDeityList().stream().map(Deities::valueOf).collect(Collectors.toList());
-        }
-        return new ArrayList<>();
+        return opSave.map(playerDataSaveable -> playerDataSaveable.getDeityList().stream().map(Deities::valueOf).collect(Collectors.toList())).orElseGet(ArrayList::new);
     }
 
     /**
@@ -341,10 +332,7 @@ public class DMisc {
      */
     public static int getFavor(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getFavor();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getFavor).orElse(-1);
     }
 
     /**
@@ -427,10 +415,7 @@ public class DMisc {
 
     public static int getDevotion(UUID p, String deityname) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getDevotion(deityname);
-        }
-        return -1;
+        return opSave.map(playerDataSaveable -> playerDataSaveable.getDevotion(deityname)).orElse(-1);
     }
 
     public static int getDevotion(Player p, Deity d) {
@@ -440,7 +425,6 @@ public class DMisc {
     public static int getDevotion(UUID p, Deity d) {
         return getDevotion(p, d.getName());
     }
-
 
 
     /**
@@ -469,10 +453,7 @@ public class DMisc {
 
     public static int getUnclaimedDevotion(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getUnclaimedDevotion();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getUnclaimedDevotion).orElse(-1);
     }
 
     /**
@@ -488,9 +469,7 @@ public class DMisc {
 
     public static void setUnclaimedDevotion(UUID p, int amount) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setUnclamedDevotion(amount);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setUnclamedDevotion(amount));
     }
 
     /**
@@ -520,10 +499,7 @@ public class DMisc {
      */
     public static int getAscensions(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getAscensions();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getAscensions).orElse(-1);
     }
 
     public static int getAscensions(Player p) {
@@ -544,9 +520,7 @@ public class DMisc {
 
     public static void setKills(UUID p, int amt) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setKills(amt);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setKills(amt));
     }
 
     /**
@@ -562,9 +536,7 @@ public class DMisc {
 
     public static void setDeaths(UUID p, int amt) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().setDeaths(amt);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.setDeaths(amt));
     }
 
     /**
@@ -580,10 +552,7 @@ public class DMisc {
      */
     public static int getKills(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getKills();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getKills).orElse(-1);
     }
 
     /**
@@ -599,10 +568,7 @@ public class DMisc {
      */
     public static int getDeaths(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getDeaths();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getDeaths).orElse(-1);
     }
 
     /**
@@ -667,10 +633,7 @@ public class DMisc {
      */
     public static int getFavorCap(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            return opSave.get().getMaxFavor();
-        }
-        return -1;
+        return opSave.map(PlayerDataSaveable::getMaxFavor).orElse(-1);
     }
 
     public static int getFavorCap(Player p) {
@@ -725,13 +688,11 @@ public class DMisc {
      * @param material
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static boolean isBound(Player p, Material material) {
         PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
         return saveable.getBound().contains(material);
     }
 
-    @SuppressWarnings("unchecked")
     public static List<Material> getBindings(Player p) {
         PlayerDataSaveable saveable = getPlugin().getPlayerDataRegistry().fromPlayer(p);
         return saveable.getBound();
@@ -780,7 +741,7 @@ public class DMisc {
         for (PlayerDataSaveable saveable : getPlugin().getPlayerDataRegistry().getFromDb().values()) {
             if (!saveable.getAlliance().equals("Human")) {
                 if (saveable.getLastLoginTime() < System.currentTimeMillis() - 604800000)
-                        continue;
+                    continue;
                 if (alliances.containsKey(saveable.getAlliance().toUpperCase())) {
                     int put = alliances.remove(saveable.getAlliance().toUpperCase().toUpperCase()) + 1;
                     alliances.put(saveable.getAlliance().toUpperCase(), put);
@@ -825,15 +786,6 @@ public class DMisc {
             case COBBLESTONE:
                 val += ii.getAmount() * 0.3;
                 break;
-            case DIRT:
-                val += ii.getAmount() * 0.1;
-                break;
-            case LOG:
-                val += ii.getAmount();
-                break;
-            case WOOD:
-                val += ii.getAmount() * 0.23;
-                break;
             case STICK:
                 val += ii.getAmount() * 0.11;
                 break;
@@ -869,12 +821,6 @@ public class DMisc {
                 break;
             case CACTUS:
                 val += ii.getAmount() * 1.7;
-                break;
-            case YELLOW_FLOWER:
-                val += ii.getAmount() * 0.1;
-                break;
-            case SEEDS:
-                val += ii.getAmount() * 0.3;
                 break;
             case PUMPKIN:
                 val += ii.getAmount() * 0.7;
@@ -912,26 +858,8 @@ public class DMisc {
             case BREAD:
                 val += ii.getAmount() * 2;
                 break;
-            case RAW_FISH:
-                val += ii.getAmount() * 2.4;
-                break;
-            case PORK:
-                val += ii.getAmount() * 2.4;
-                break;
-            case COOKED_FISH:
-                val += ii.getAmount() * 3.4;
-                break;
-            case GRILLED_PORK:
-                val += ii.getAmount() * 3.4;
-                break;
             case GOLDEN_APPLE:
                 val += ii.getAmount() * 190;
-                break;
-            case GOLD_RECORD:
-                val += ii.getAmount() * 60;
-                break;
-            case GREEN_RECORD:
-                val += ii.getAmount() * 60;
                 break;
             case GLOWSTONE:
                 val += ii.getAmount() * 1.7;
@@ -951,23 +879,14 @@ public class DMisc {
             case ENDER_PEARL:
                 val += ii.getAmount() * 1.7;
                 break;
-            case SULPHUR:
-                val += ii.getAmount() * 1.2;
-                break;
             case COCOA:
                 val += ii.getAmount() * 0.6;
                 break;
             case ROTTEN_FLESH:
                 val += ii.getAmount() * 3;
                 break;
-            case RAW_CHICKEN:
-                val += ii.getAmount() * 2;
-                break;
             case COOKED_CHICKEN:
                 val += ii.getAmount() * 2.6;
-                break;
-            case RAW_BEEF:
-                val += ii.getAmount() * 2;
                 break;
             case COOKED_BEEF:
                 val += ii.getAmount() * 2.7;
@@ -990,6 +909,7 @@ public class DMisc {
             case DRAGON_EGG:
                 val += ii.getAmount() * 10000;
                 break;
+            case DIRT:
             default:
                 val += ii.getAmount() * 0.1;
                 break;
@@ -1018,10 +938,7 @@ public class DMisc {
      */
     public static String getDeityAtShrine(Location shrine) {
         Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (opSave.isPresent()) {
-            return opSave.get().getDeity();
-        }
-        return null;
+        return opSave.map(ShrineSaveable::getDeity).orElse(null);
     }
 
     public static ShrineSaveable getNearbyShrine(Location l) {
@@ -1045,24 +962,18 @@ public class DMisc {
      */
     public static UUID getOwnerOfShrine(Location shrine) {
         Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (opSave.isPresent()) {
-            return UUID.fromString(opSave.get().getOwnerId());
-        }
-        return null;
+        return opSave.map(shrineSaveable -> UUID.fromString(shrineSaveable.getOwnerId())).orElse(null);
     }
 
     /*
      * If given location is shrine and given player is valid (same alliance),
      * register the player as a guest
      */
-    @SuppressWarnings("unchecked")
     public static void addGuest(Location shrine, UUID guest) {
         if (!isFullParticipant(guest)) return;
         if (!getAllegiance(guest).equalsIgnoreCase(getAllegiance(getOwnerOfShrine(shrine)))) return;
         Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (saveable.isPresent()) {
-            saveable.get().addGuest(guest.toString());   
-        }
+        saveable.ifPresent(shrineSaveable -> shrineSaveable.addGuest(guest.toString()));
     }
 
     /**
@@ -1073,13 +984,10 @@ public class DMisc {
      * @param name
      * @return if the removal was successful
      */
-    @SuppressWarnings("unchecked")
     public static void removeGuest(Location shrine, UUID name) {
         if (!isFullParticipant(name)) return;
         Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (saveable.isPresent()) {
-            saveable.get().removeGuest(name.toString());
-        }
+        saveable.ifPresent(shrineSaveable -> shrineSaveable.removeGuest(name.toString()));
     }
 
     /**
@@ -1092,10 +1000,7 @@ public class DMisc {
     public static boolean isGuest(Location shrine, UUID player) {
         if (!isFullParticipant(player)) return false;
         Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (saveable.isPresent()) {
-            return saveable.get().getGuestIds().contains(player.toString());
-        }
-        return false;
+        return saveable.map(shrineSaveable -> shrineSaveable.getGuestIds().contains(player.toString())).orElse(false);
     }
 
     /**
@@ -1104,7 +1009,6 @@ public class DMisc {
      * @param player
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static List<ShrineSaveable> getAccessibleShrines(UUID player) {
         if (!isFullParticipant(player)) return null;
         List<ShrineSaveable> toReturn = new ArrayList<>(getShrines(player));
@@ -1121,10 +1025,7 @@ public class DMisc {
      */
     public static List<UUID> getShrineGuestList(Location shrine) {
         Optional<ShrineSaveable> saveable = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (saveable.isPresent()) {
-            return saveable.get().getGuestIds().stream().map(UUID::fromString).collect(Collectors.toList());
-        }
-        return new ArrayList<>();
+        return saveable.map(shrineSaveable -> shrineSaveable.getGuestIds().stream().map(UUID::fromString).collect(Collectors.toList())).orElseGet(ArrayList::new);
     }
 
     /**
@@ -1150,10 +1051,7 @@ public class DMisc {
     public static ShrineSaveable getShrineByName(String shrinename) {
         Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().getFromDb().values().stream().filter(s ->
                 s.getName().equalsIgnoreCase(shrinename)).findAny();
-        if (opSave.isPresent()) {
-            return opSave.get();
-        }
-        return null;
+        return opSave.orElse(null);
     }
 
     /**
@@ -1183,30 +1081,21 @@ public class DMisc {
      */
     public static String getShrineName(Location shrine) {
         Optional<ShrineSaveable> opSave = getPlugin().getShrineRegistry().fromLocation(shrine);
-        if (opSave.isPresent()) {
-            return opSave.get().getName();
-        }
-        return null;
+        return opSave.map(ShrineSaveable::getName).orElse(null);
     }
 
-    @SuppressWarnings("unchecked")
     public static void addShrine(UUID p, String deityname, String name, Location loc) {
         getPlugin().getShrineRegistry().newShrine(deityname, name, p.toString(), loc);
     }
 
-    @SuppressWarnings("unchecked")
     public static List<ShrineSaveable> getShrines(UUID mojangId) {
         return getPlugin().getShrineRegistry().getFromDb().values().stream().filter(shrine -> shrine.getOwnerId().
                 equals(mojangId.toString())).collect(Collectors.toList());
     }
 
-    @SuppressWarnings("unchecked")
     public static ShrineSaveable getShrine(UUID p, String deityname) {
         Optional<ShrineSaveable> opSave = getShrines(p).stream().filter(s -> s.getDeity().equals(deityname)).findAny();
-        if (opSave.isPresent()) {
-            return opSave.get();
-        }
-        return null;
+        return opSave.orElse(null);
     }
 
     /**
@@ -1227,7 +1116,6 @@ public class DMisc {
      * @param lengthInSeconds
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static void addActiveEffect(Player p, String effectname, int lengthInSeconds) {
         PlayerDataSaveable save = getPlugin().getPlayerDataRegistry().fromPlayer(p);
         save.addEffect(effectname, System.currentTimeMillis() + lengthInSeconds * 1000);
@@ -1240,22 +1128,17 @@ public class DMisc {
 
     public static void addActiveEffect(UUID p, String effectname, int lengthInSeconds) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().addEffect(effectname, System.currentTimeMillis() + lengthInSeconds * 1000);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.addEffect(effectname, System.currentTimeMillis() + lengthInSeconds * 1000));
     }
 
     public static void removeActiveEffect(UUID p, String effectname) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
-        if (opSave.isPresent()) {
-            opSave.get().removeEffect(effectname);
-        }
+        opSave.ifPresent(playerDataSaveable -> playerDataSaveable.removeEffect(effectname));
     }
 
     /**
      * Returns the effects on a player that are still active
      */
-    @SuppressWarnings("unchecked")
     public static Map<String, Double> getActiveEffects(UUID p) {
         Optional<PlayerDataSaveable> opSave = getPlugin().getPlayerDataRegistry().fromKey(p.toString());
         if (opSave.isPresent()) {
@@ -1295,11 +1178,15 @@ public class DMisc {
     /*
      * WORLDGUARD SUPPORT START
      */
+    public static boolean canWorldGuardPVP(Player p, Location l) {
+        return Setting.ALLOW_PVP_EVERYWHERE || worldGuardEnabled() && WorldGuardUtil.canPVP(p, l);
+    }
+
+    @Deprecated
     public static boolean canWorldGuardPVP(Location l) {
         return Setting.ALLOW_PVP_EVERYWHERE || worldGuardEnabled() && WorldGuardUtil.canPVP(l);
     }
 
-    @SuppressWarnings("static-access")
     public static boolean canWorldGuardBuild(Player player, Location location) {
         return !worldGuardEnabled() || WorldGuardUtil.canBuild(player, location);
     }
@@ -1312,12 +1199,17 @@ public class DMisc {
      * WORLDGUARD SUPPORT END
      */
     @Deprecated
-    public static boolean canLocationPVP(Location l) {
+    public static boolean canLocationPVP(Player p, Location l) {
+        return (canWorldGuardPVP(p, l));
+    }
+
+    @Deprecated
+    public static boolean canLocationPVPNoPlayer(Location l) {
         return (canWorldGuardPVP(l));
     }
 
     public static boolean canTarget(Entity player, Location location) {
-        return !(player instanceof Player) || canWorldGuardPVP(location);
+        return !(player instanceof Player) || canWorldGuardPVP((Player) player, location);
     }
 
     /**

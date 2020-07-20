@@ -6,27 +6,25 @@
 
     <groupId>com.demigodsrpg</groupId>
     <artifactId>norse-demigods</artifactId>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
 
     <name>Norse Demigods</name>
     <description>The Norse Edition of Demigods RPG for Bukkit/Spigot Minecraft Servers.</description>
 
     <properties> <!-- It is important to keep up to date manually. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spigot.version>1.10-R0.1-SNAPSHOT</spigot.version>
-        <worldedit.version>6.1.2</worldedit.version>
-        <worldguard.version>6.1</worldguard.version>
-        <chitchat.version>2.1-SNAPSHOT</chitchat.version>
+        <spigot.version>1.16.1-R0.1-SNAPSHOT</spigot.version>
+        <worldguard.version>7.0.1-SNAPSHOT</worldguard.version>
     </properties>
 
     <repositories>
         <repository>
-            <id>spigot</id>
-            <url>http://hub.spigotmc.org/nexus/content/repositories/public/</url>
-        </repository>
-        <repository>
             <id>sk89q-repo</id>
             <url>http://maven.sk89q.com/repo/</url>
+        </repository>
+        <repository>
+            <id>spigot-releases</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/public</url>
         </repository>
     </repositories>
 
@@ -36,25 +34,21 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>${spigot.version}</version>
-            <scope>compile</scope>
-            <type>jar</type>
         </dependency>
 
         <!-- WorldGuard -->
         <dependency>
-            <groupId>com.sk89q</groupId>
-            <artifactId>worldguard</artifactId>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
             <version>${worldguard.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bukkit</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
             <type>jar</type>
-            <optional>false</optional>
-        </dependency>
-
-        <!-- Chitchat -->
-        <dependency>
-            <groupId>com.demigodsrpg</groupId>
-            <artifactId>chitchat</artifactId>
-            <version>${chitchat.version}</version>
         </dependency>
     </dependencies>
 

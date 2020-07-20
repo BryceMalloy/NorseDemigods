@@ -99,7 +99,7 @@ public class DDeities implements Listener {
             p.sendMessage("This server is running NorseDemigods v" + ChatColor.YELLOW + DMisc.getPlugin().getDescription().getVersion() + ChatColor.WHITE + ".");
             p.sendMessage(ChatColor.GRAY + "Type " + ChatColor.GREEN + "/dg" + ChatColor.GRAY + " for more info.");
         }
-        if ((save.getActiveEffects().keySet().contains("CHARGE"))) {
+        if ((save.getActiveEffects().containsKey("CHARGE"))) {
             save.addEffect("CHARGE", System.currentTimeMillis(), true);
             p.sendMessage(ChatColor.YELLOW + "Your charging attack has been reset.");
         }

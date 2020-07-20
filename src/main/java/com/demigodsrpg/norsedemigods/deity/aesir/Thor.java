@@ -48,7 +48,7 @@ public class Thor implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             // shove
             int targets = (int) Math.ceil(1.561 * Math.pow(devotion, 0.128424));
             double multiply = 0.1753 * Math.pow(devotion, 0.322917);
@@ -56,7 +56,7 @@ public class Thor implements Deity {
             int t = (int) (ZEUSULTIMATECOOLDOWNMAX - ((ZEUSULTIMATECOOLDOWNMAX - ZEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Thor" + ChatColor.GRAY + " [" + devotion + "]");
             p.sendMessage(":Immune to fall damage.");
             p.sendMessage(":Strike lightning at a target location. " + ChatColor.GREEN + "/lightning");
@@ -130,56 +130,55 @@ public class Thor implements Deity {
      */
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (!DMisc.hasDeity(p, "Thor")) return;
-        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+        if (!DMisc.hasDeity(P, "Thor")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
         if (str.equalsIgnoreCase("lightning")) {
             if (bind) {
                 if (!save.getBind("lightning").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand().getType() == Material.AIR)
-                        p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand().getType() == Material.AIR)
+                        P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("lightning", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Lightning is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("lightning", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Lightning is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Lightning is no longer bound to " + save.getBind("lightning").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Lightning is no longer bound to " + save.getBind("lightning").get().name() + ".");
                     save.removeBind("lightning");
                 }
                 return;
             }
             if (save.getAbilityData("lightning", AD.ACTIVE, false)) {
                 save.setAbilityData("lightning", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Lightning is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Lightning is no longer active.");
             } else {
                 save.setAbilityData("lightning", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Lightning is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Lightning is now active.");
             }
         } else if (str.equalsIgnoreCase("slam")) {
             if (bind) {
                 if (!save.getBind("slam").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand().getType() == Material.AIR)
-                        p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand().getType() == Material.AIR)
+                        P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("slam", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Slam is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("slam", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Slam is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Slam is no longer bound to " + save.getBind("slam").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Slam is no longer bound to " + save.getBind("slam").get().name() + ".");
                     save.removeBind("slam");
                 }
                 return;
             }
             if (save.getAbilityData("slam", AD.ACTIVE, false)) {
                 save.setAbilityData("slam", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Slam is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Slam is no longer active.");
             } else {
                 save.setAbilityData("slam", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Slam is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Slam is now active.");
             }
         }
     }
@@ -232,7 +231,7 @@ public class Thor implements Deity {
             p.getWorld().strikeLightningEffect(target);
             if (p.getLocation().distance(target) > 2) {
                 if (!p.getWorld().equals(target.getWorld())) return false;
-                if (!DMisc.canLocationPVP(target)) return false;
+                if (!DMisc.canLocationPVP(p, target)) return false;
                 for (Entity e : b.getLocation().getChunk().getEntities()) {
                     if (e.getLocation().distance(target) > 1) continue;
                     if (e instanceof LivingEntity) {

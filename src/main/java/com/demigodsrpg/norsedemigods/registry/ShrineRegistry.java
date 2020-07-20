@@ -25,10 +25,7 @@ public class ShrineRegistry extends AbstractRegistry<ShrineSaveable> {
     public ShrineSaveable newShrine(String deity, String name, String mojangId, Location location) {
         String key = getLocationKey(location);
         Optional<ShrineSaveable> opData = fromKey(key);
-        if (opData.isPresent()) {
-            return opData.get();
-        }
-        return put(key, new ShrineSaveable(deity, name, mojangId, location));
+        return opData.orElseGet(() -> put(key, new ShrineSaveable(deity, name, mojangId, location)));
     }
 
     private String getLocationKey(Location location) {

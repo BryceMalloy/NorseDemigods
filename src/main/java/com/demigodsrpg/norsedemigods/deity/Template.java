@@ -59,9 +59,9 @@ public class Template implements Deity {
                 if (System.currentTimeMillis() < time) return;
                 saveable.setAbilityData(skillname, AD.TIME, System.currentTimeMillis() + SKILLDELAY);
                 if (DMisc.getFavor(p) >= SKILLCOST) {
-                /*
-                 * Skill
-                 */
+                    /*
+                     * Skill
+                     */
                     DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
                 } else {
                     p.sendMessage(ChatColor.YELLOW + "You do not have enough Favor.");
@@ -73,55 +73,54 @@ public class Template implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(p);
-        if (DMisc.hasDeity(p, getName())) {
+        PlayerDataSaveable saveable = getBackend().getPlayerDataRegistry().fromPlayer(P);
+        if (DMisc.hasDeity(P, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     Optional opBind = saveable.getAbilityData(skillname, "bind");
                     if (!opBind.isPresent()) {
-                        if (DMisc.isBound(p, p.getItemInHand().getType()))
-                            p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                        if (p.getItemInHand().getType() == Material.AIR)
-                            p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                        if (DMisc.isBound(P, P.getItemInHand().getType()))
+                            P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                        if (P.getItemInHand().getType() == Material.AIR)
+                            P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            saveable.setBind(skillname, p.getItemInHand().getType());
-                            p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " +
-                                    p.getItemInHand().getType().name() + ".");
+                            saveable.setBind(skillname, P.getItemInHand().getType());
+                            P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " +
+                                    P.getItemInHand().getType().name() + ".");
                         }
                     } else {
                         saveable.removeBind(skillname);
-                        p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound.");
+                        P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound.");
                     }
                     return;
                 }
                 Optional opEnabled = saveable.getAbilityData(skillname, "enabled");
                 if (opEnabled.isPresent() && (boolean) opEnabled.get()) {
                     saveable.setAbilityData(skillname, AD.ACTIVE, false);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
                 } else {
                     saveable.setAbilityData(skillname, AD.ACTIVE, true);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
                 }
             } else if (str.equalsIgnoreCase(ult)) {
                 Optional opTime = saveable.getAbilityData(ult, AD.TIME);
                 if (opTime.isPresent() && System.currentTimeMillis() < (double) opTime.get()) {
                     double TIME = (double) opTime.get();
-                    p.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) -
+                    P.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) -
                             (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                    p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) -
+                    P.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) -
                             (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMisc.getFavor(p) >= ULTIMATECOST) {
+                if (DMisc.getFavor(P) >= ULTIMATECOST) {
                     int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) *
-                            ((double) DMisc.getAscensions(p) / 100)));
+                            ((double) DMisc.getAscensions(P) / 100)));
                     saveable.setAbilityData(ult, AD.TIME, System.currentTimeMillis() + (t * 1000));
                     /*
-					 * Ultimate code
-					 */
-                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
+                     * Ultimate code
+                     */
+                    DMisc.setFavor(P, DMisc.getFavor(P) - ULTIMATECOST);
+                } else P.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
         }
     }

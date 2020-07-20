@@ -1,9 +1,10 @@
 name: NorseDemigods
 main: com.demigodsrpg.norsedemigods.NorseDemigods
 version: ${project.version}
+api-version: '1.16'
 description: Ally yourself with mythical deities and battle in the name of the AEsir or Jotunn.
 authors: [marinating, HmmmQuestionMark]
-softdepend: [Chitchat, WorldGuard, WorldEdit]
+softdepend: [WorldGuard]
 commands:
     dg:
         description: Important information.
@@ -24,9 +25,6 @@ commands:
     getfavor:
         description: Console command to get a player's Favor.
         usage: getfavor <player>
-    getdevotion:
-        description: Console command to get a player's devotion.
-        usage: getlevel <player> or getlevel <player> <deity>
     getascensions:
         description: Console command to get a player's ascensions.
         usage: getascensions <player>

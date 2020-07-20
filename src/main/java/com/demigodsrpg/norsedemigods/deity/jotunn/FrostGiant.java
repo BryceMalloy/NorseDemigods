@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
@@ -53,7 +54,7 @@ public class FrostGiant implements Deity {
             int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
             /*
              * Print text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + getName());
             p.sendMessage(":While in the snow, heal " + healamt + " HP every " + healinterval + " seconds.");
             p.sendMessage(":Left-click to throw an ice bomb that explodes with " + radius + " radius." + ChatColor.GREEN + " /ice " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
@@ -96,57 +97,57 @@ public class FrostGiant implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (DMisc.hasDeity(p, getName())) {
-            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+        if (DMisc.hasDeity(P, getName())) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     if (!save.getBind("ice").isPresent()) {
-                        if (DMisc.isBound(p, p.getItemInHand().getType()))
-                            p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                        if (p.getItemInHand().getType() == Material.AIR)
-                            p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                        if (DMisc.isBound(P, P.getItemInHand().getType()))
+                            P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                        if (P.getItemInHand().getType() == Material.AIR)
+                            P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            save.setBind("ice", p.getItemInHand().getType());
-                            p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + p.getItemInHand().getType().name() + ".");
+                            save.setBind("ice", P.getItemInHand().getType());
+                            P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + P.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + save.getBind("ice").get().name() + ".");
+                        P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + save.getBind("ice").get().name() + ".");
                         save.removeBind("ice");
                     }
                     return;
                 }
                 if (save.getAbilityData("ice", AD.ACTIVE, false)) {
                     save.setAbilityData("ice", AD.ACTIVE, false);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
                 } else {
                     save.setAbilityData("ice", AD.ACTIVE, true);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
                 }
             } else if (str.equalsIgnoreCase("chill")) {
                 double TIME = save.getAbilityData("chill", AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
-                    p.sendMessage(ChatColor.YELLOW + "You cannot use chill again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                    p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+                    P.sendMessage(ChatColor.YELLOW + "You cannot use chill again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                    P.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMisc.getFavor(p) >= ULTIMATECOST) {
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
+                if (DMisc.getFavor(P) >= ULTIMATECOST) {
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(P) / Setting.ASCENSION_CAP)));
                     save.setAbilityData("chill", AD.TIME, System.currentTimeMillis() + (t * 1000));
 
-                    for (int x = p.getLocation().getBlockX() - 14; x <= p.getLocation().getBlockX() + 14; x++)
-                        for (int z = p.getLocation().getBlockZ() - 14; z <= p.getLocation().getBlockZ() + 14; z++)
-                            p.getWorld().setBiome(x, z, Biome.TAIGA_COLD);
+                    for (int x = P.getLocation().getBlockX() - 14; x <= P.getLocation().getBlockX() + 14; x++)
+                        for (int y = P.getLocation().getBlockY() - 14; y <= P.getLocation().getBlockY() + 14; y++)
+                            for (int z = P.getLocation().getBlockZ() - 14; z <= P.getLocation().getBlockZ() + 14; z++)
+                                P.getWorld().setBiome(x, y, z, Biome.TAIGA);
 
-                    p.getWorld().refreshChunk(p.getLocation().getBlockX(), p.getLocation().getBlockZ());
+                    P.getWorld().refreshChunk(P.getLocation().getBlockX(), P.getLocation().getBlockZ());
 
-                    p.getWorld().setStorm(true);
-                    p.getWorld().setThundering(true);
-                    p.getWorld().setWeatherDuration((int) Math.round(40 * Math.pow(10000, 0.15)) * 20);
-                    p.sendMessage(ChatColor.GOLD + "Your divine frost" + ChatColor.WHITE + " has started a snowstorm on your world,");
-                    p.sendMessage("in exchange for " + ChatColor.AQUA + ULTIMATECOST + ChatColor.WHITE + " Favor.");
-                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                } else p.sendMessage(ChatColor.YELLOW + "Chill requires " + ULTIMATECOST + " Favor.");
+                    P.getWorld().setStorm(true);
+                    P.getWorld().setThundering(true);
+                    P.getWorld().setWeatherDuration((int) Math.round(40 * Math.pow(10000, 0.15)) * 20);
+                    P.sendMessage(ChatColor.GOLD + "Your divine frost" + ChatColor.WHITE + " has started a snowstorm on your world,");
+                    P.sendMessage("in exchange for " + ChatColor.AQUA + ULTIMATECOST + ChatColor.WHITE + " Favor.");
+                    DMisc.setFavor(P, DMisc.getFavor(P) - ULTIMATECOST);
+                } else P.sendMessage(ChatColor.YELLOW + "Chill requires " + ULTIMATECOST + " Favor.");
             }
         }
     }
@@ -167,7 +168,7 @@ public class FrostGiant implements Deity {
                         if (p.getWorld().getBiome(x, z).name().contains("TAIGA") || p.getWorld().getBiome(x, z).name().contains("COLD")) {
                             double healamt = Math.ceil(0.1 * Math.pow(10000, 0.297));
                             if (p.getHealth() + healamt > p.getMaxHealth())
-                                healamt = p.getMaxHealth() - p.getHealth();
+                                healamt = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() - p.getHealth();
                             DMisc.setHP(p, p.getHealth() + healamt);
                         }
                     }
@@ -187,8 +188,7 @@ public class FrostGiant implements Deity {
             return false;
         }
         Location target = DMisc.getTargetLocation(p);
-        if (target == null) return false;
-        if (!DMisc.canLocationPVP(target)) return false;
+        if (!DMisc.canLocationPVP(p, target)) return false;
         target.add(.5, .5, .5);
         Vector victor = p.getEyeLocation().toVector().add(p.getEyeLocation().getDirection().multiply(2));
         Vector path = target.toVector().subtract(p.getEyeLocation().toVector());

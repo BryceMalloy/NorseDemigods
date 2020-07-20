@@ -48,7 +48,7 @@ public class Vidar implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             int dmg = (int) Math.round(0.9 * Math.pow(devotion, 0.34));
             final int slowpower = (int) (Math.ceil(1.681539 * Math.pow(devotion, 0.11457)));
             int duration = (int) (Math.ceil(2.9573 * Math.pow(devotion, 0.138428)));
@@ -60,7 +60,7 @@ public class Vidar implements Deity {
             int t = (int) (ARESULTIMATECOOLDOWNMAX - ((ARESULTIMATECOOLDOWNMAX - ARESULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Vidar" + ChatColor.GRAY + " [" + devotion + "]");
             p.sendMessage(":Up to " + DMisc.getAscensions(p) + " additional Favor per hit on overkill.");
             p.sendMessage(":Strike an enemy from afar with your sword, slowing them down.");
@@ -203,8 +203,8 @@ public class Vidar implements Deity {
      */
     private void strike(Player p) {
         /*
-		 * /
-		 */
+         * /
+         */
         LivingEntity target = DMisc.getTargetLivingEntity(p, 2);
         if (target == null) {
             p.sendMessage(ChatColor.YELLOW + "No target found.");
@@ -214,34 +214,34 @@ public class Vidar implements Deity {
             p.sendMessage(ChatColor.YELLOW + "Can't attack in a no-PVP zone.");
             return;
         }
-		/*
-		 * Calculate special values
-		 */
+        /*
+         * Calculate special values
+         */
         int devotion = DMisc.getDevotion(p, getName());
         int damage = (int) Math.round(0.9 * Math.pow(devotion, 0.34));
         final int slowpower = (int) (Math.ceil(1.681539 * Math.pow(devotion, 0.11457)));
         int duration = (int) (Math.ceil(2.9573 * Math.pow(devotion, 0.138428)));
         duration *= 20; // ticks
-		/*
-		 * Deal damage and slow if player
-		 */
+        /*
+         * Deal damage and slow if player
+         */
         DMisc.damageDemigods(p, target, damage, DamageCause.ENTITY_ATTACK);
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, duration, slowpower));
     }
 
     private int crash(Player p) {
-		/*
-		 * Calculate specials.
-		 * Range: distance in a circle
-		 * Damage: done instantly
-		 * Confusion: how long players remain dizzied
-		 */
+        /*
+         * Calculate specials.
+         * Range: distance in a circle
+         * Damage: done instantly
+         * Confusion: how long players remain dizzied
+         */
         int range = (int) (7.17 * Math.pow(1.035, DMisc.getAscensions(p)));
         double damage = (1.929 * Math.pow(DMisc.getAscensions(p), 0.48028));
         int confuseduration = (int) (1.0354 * Math.pow(DMisc.getAscensions(p), 0.4177)) * 20;
         /*
-		 * The ultimate
-		 */
+         * The ultimate
+         */
         ArrayList<LivingEntity> targets = new ArrayList<LivingEntity>();
         ArrayList<Player> confuse = new ArrayList<Player>();
         for (LivingEntity le : p.getWorld().getLivingEntities()) {

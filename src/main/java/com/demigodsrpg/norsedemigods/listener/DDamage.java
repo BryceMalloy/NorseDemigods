@@ -80,7 +80,7 @@ public class DDamage implements Listener {
                 case IRON_BOOTS:
                     reduction += 0.6;
                     break;
-                case GOLD_BOOTS:
+                case GOLDEN_BOOTS:
                     reduction += 0.5;
                     break;
                 case DIAMOND_BOOTS:
@@ -102,7 +102,7 @@ public class DDamage implements Listener {
                 case IRON_LEGGINGS:
                     reduction += 1;
                     break;
-                case GOLD_LEGGINGS:
+                case GOLDEN_LEGGINGS:
                     reduction += 0.8;
                     break;
                 case DIAMOND_LEGGINGS:
@@ -124,7 +124,7 @@ public class DDamage implements Listener {
                 case IRON_CHESTPLATE:
                     reduction += 1.6;
                     break;
-                case GOLD_CHESTPLATE:
+                case GOLDEN_CHESTPLATE:
                     reduction += 1.4;
                     break;
                 case DIAMOND_CHESTPLATE:
@@ -146,7 +146,7 @@ public class DDamage implements Listener {
                 case IRON_HELMET:
                     reduction += 0.8;
                     break;
-                case GOLD_HELMET:
+                case GOLDEN_HELMET:
                     reduction += 0.7;
                     break;
                 case DIAMOND_HELMET:

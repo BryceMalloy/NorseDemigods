@@ -43,14 +43,14 @@ public class FireGiant implements Deity {
             int devotion = 10000;
             /*
              * Calculate special values first
-			 */
+             */
             int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             int diameter = (int) Math.ceil(1.43 * Math.pow(devotion, 0.1527));
             if (diameter > 12) diameter = 12;
             int firestormshots = (int) Math.round(2 * Math.pow(40000, 0.15));
             /*
              * The printed text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Fire Giant");
             p.sendMessage(":Immune to fire damage.");
             p.sendMessage(":Shoot a fireball at the cursor's location. " + ChatColor.GREEN + "/fireball");
@@ -116,8 +116,8 @@ public class FireGiant implements Deity {
                     }
                     int diameter = (int) Math.ceil(1.43 * Math.pow(10000, 0.1527));
                     if (diameter > 12) diameter = 12;
-                    if (DMisc.canLocationPVP(DMisc.getTargetLocation(p))) {
-                        blaze(DMisc.getTargetLocation(p), diameter);
+                    if (DMisc.canLocationPVP(p, DMisc.getTargetLocation(p))) {
+                        blaze(p, DMisc.getTargetLocation(p), diameter);
                         DMisc.setFavor(p, DMisc.getFavor(p) - BLAZECOST);
                         save.setAbilityData("blaze", AD.TIME, System.currentTimeMillis() + (long) (BLAZEDELAY * 1000));
                     } else p.sendMessage(ChatColor.YELLOW + "That is a protected area.");
@@ -131,74 +131,73 @@ public class FireGiant implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (!DMisc.isFullParticipant(p)) return;
-        if (!DMisc.hasDeity(p, "Fire Giant")) return;
-        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+        if (!DMisc.isFullParticipant(P)) return;
+        if (!DMisc.hasDeity(P, "Fire Giant")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
         if (str.equalsIgnoreCase("fireball")) {
             if (bind) {
                 if (!save.getBind("fireball").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand() == null) P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("fireball", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Fireball is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("fireball", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Fireball is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Fireball is no longer bound to " + save.getBind("fireball").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Fireball is no longer bound to " + save.getBind("fireball").get().name() + ".");
                     save.removeBind("fireball");
                 }
                 return;
             }
             if (save.getAbilityData("fireball", AD.ACTIVE, false)) {
                 save.setAbilityData("fireball", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Fireball is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Fireball is no longer active.");
             } else {
                 save.setAbilityData("fireball", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Fireball is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Fireball is now active.");
             }
         } else if (str.equalsIgnoreCase("blaze")) {
             if (bind) {
                 if (!save.getBind("blaze").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand() == null) p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand() == null) P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("blaze", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Blaze is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("blaze", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Blaze is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Blaze is no longer bound to " + save.getBind("blaze").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Blaze is no longer bound to " + save.getBind("blaze").get().name() + ".");
                     save.removeBind("blaze");
                 }
                 return;
             }
             if (save.getAbilityData("blaze", AD.ACTIVE, false)) {
                 save.setAbilityData("blaze", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Blaze is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Blaze is no longer active.");
             } else {
                 save.setAbilityData("blaze", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Blaze is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Blaze is now active.");
             }
         } else if (str.equalsIgnoreCase("firestorm")) {
             double FIRESTORMTIME = save.getAbilityData("firestorm", AD.TIME, (double) System.currentTimeMillis());
             if (System.currentTimeMillis() < FIRESTORMTIME) {
-                p.sendMessage(ChatColor.YELLOW + "You cannot use the firestorm again for " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                p.sendMessage(ChatColor.YELLOW + "and " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+                P.sendMessage(ChatColor.YELLOW + "You cannot use the firestorm again for " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                P.sendMessage(ChatColor.YELLOW + "and " + ((((FIRESTORMTIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMisc.getFavor(p) >= PROMETHEUSULTIMATECOST) {
-                if (!DMisc.canTarget(p, p.getLocation())) {
-                    p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
+            if (DMisc.getFavor(P) >= PROMETHEUSULTIMATECOST) {
+                if (!DMisc.canTarget(P, P.getLocation())) {
+                    P.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
+                int t = (int) (PROMETHEUSULTIMATECOOLDOWNMAX - ((PROMETHEUSULTIMATECOOLDOWNMAX - PROMETHEUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(P) / 100)));
                 save.setAbilityData("firestorm", AD.TIME, System.currentTimeMillis() + (t * 1000));
-                p.sendMessage(ChatColor.GOLD + "Your divine fire " + ChatColor.WHITE + " has unleashed his wrath on " + firestorm(p) + " non-allied entities,");
-                p.sendMessage("in exchange for " + ChatColor.AQUA + PROMETHEUSULTIMATECOST + ChatColor.WHITE + " Favor.");
-                DMisc.setFavor(p, DMisc.getFavor(p) - PROMETHEUSULTIMATECOST);
-            } else p.sendMessage("Firestorm requires " + PROMETHEUSULTIMATECOST + " Favor.");
+                P.sendMessage(ChatColor.GOLD + "Your divine fire " + ChatColor.WHITE + " has unleashed his wrath on " + firestorm(P) + " non-allied entities,");
+                P.sendMessage("in exchange for " + ChatColor.AQUA + PROMETHEUSULTIMATECOST + ChatColor.WHITE + " Favor.");
+                DMisc.setFavor(P, DMisc.getFavor(P) - PROMETHEUSULTIMATECOST);
+            } else P.sendMessage("Firestorm requires " + PROMETHEUSULTIMATECOST + " Favor.");
         }
     }
 
@@ -229,12 +228,12 @@ public class FireGiant implements Deity {
         }
     }
 
-    private void blaze(Location target, int diameter) {
+    private void blaze(Player caster, Location target, int diameter) {
         for (int x = -diameter / 2; x <= diameter / 2; x++) {
             for (int y = -diameter / 2; y <= diameter / 2; y++) {
                 for (int z = -diameter / 2; z <= diameter / 2; z++) {
                     Block b = target.getWorld().getBlockAt(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
-                    if ((b.getType() == Material.AIR) || (((b.getType() == Material.SNOW)) && DMisc.canLocationPVP(b.getLocation())))
+                    if ((b.getType() == Material.AIR) || (((b.getType() == Material.SNOW)) && DMisc.canLocationPVP(caster, b.getLocation())))
                         b.setType(Material.FIRE);
                 }
             }

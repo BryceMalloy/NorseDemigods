@@ -38,7 +38,7 @@ public class Thrymr implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             int reduction = (int) Math.round(Math.pow(devotion, 0.115));
             //
             int jump = (int) Math.ceil(0.85 * Math.pow(devotion, 0.08));
@@ -48,8 +48,8 @@ public class Thrymr implements Deity {
             int radius = (int) (Math.ceil(4.957781 * Math.pow(DMisc.getAscensions(p), 0.45901927)));
             int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
-			 * The printed text
-			 */
+             * The printed text
+             */
             PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             p.sendMessage("--" + ChatColor.GOLD + "Thrymr" + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Reduce incoming combat damage by " + reduction + ".");

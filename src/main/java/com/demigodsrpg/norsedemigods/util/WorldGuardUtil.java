@@ -16,15 +16,18 @@
 
 package com.demigodsrpg.norsedemigods.util;
 
-import com.demigodsrpg.norsedemigods.NorseDemigods;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.events.DisallowedPVPEvent;
-import com.sk89q.worldguard.protection.flags.DefaultFlag;
+import com.sk89q.worldguard.bukkit.protection.events.DisallowedPVPEvent;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
 import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -44,9 +47,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class WorldGuardUtil implements Listener {
     private static boolean ENABLED;
-    private static ConcurrentMap<String, ProtoPVPListener> protoPVPListeners = Maps.newConcurrentMap();
+    private static final ConcurrentMap<String, ProtoPVPListener> protoPVPListeners = Maps.newConcurrentMap();
 
-    public WorldGuardUtil() {
+    public WorldGuardUtil(final Plugin plugin) {
         final WorldGuardUtil th = this;
         try {
             ENABLED = Bukkit.getPluginManager().getPlugin("WorldGuard") instanceof WorldGuardPlugin;
@@ -54,18 +57,21 @@ public class WorldGuardUtil implements Listener {
             ENABLED = false;
         }
 
-        final Plugin plugin = NorseDemigods.getPlugin(NorseDemigods.class);
-
-        Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, () -> Bukkit.getPluginManager().registerEvents(th, plugin), 40);
-        if (plugin.isEnabled()) Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, () -> {
-            // process proto-listeners
-            Iterator<ProtoPVPListener> protoPVPListenerIterator = protoPVPListeners.values().iterator();
-            while (worldGuardEnabled() && protoPVPListenerIterator.hasNext()) {
-                ProtoPVPListener queued = protoPVPListenerIterator.next();
-                queued.register();
-                protoPVPListeners.remove(queued.plugin.getName());
-            }
-        }, 0, 5);
+        if (plugin.isEnabled()) {
+            Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin,
+                    () -> Bukkit.getPluginManager().registerEvents(th, plugin), 40);
+        }
+        if (plugin.isEnabled()) {
+            Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, () -> {
+                // process proto-listeners
+                Iterator<ProtoPVPListener> protoPVPListenerIterator = protoPVPListeners.values().iterator();
+                while (worldGuardEnabled() && protoPVPListenerIterator.hasNext()) {
+                    ProtoPVPListener queued = protoPVPListenerIterator.next();
+                    queued.register();
+                    protoPVPListeners.remove(queued.plugin.getName());
+                }
+            }, 0, 5);
+        }
     }
 
     /**
@@ -79,8 +85,9 @@ public class WorldGuardUtil implements Listener {
      * @param id The name of a WorldGuard flag.
      * @deprecated If you don't have WorldGuard installed this will error.
      */
+    @Deprecated
     public static Flag<?> getFlag(String id) {
-        return DefaultFlag.fuzzyMatchFlag(id);
+        return Flags.fuzzyMatchFlag(WorldGuard.getInstance().getFlagRegistry(), id);
     }
 
     /**
@@ -91,8 +98,11 @@ public class WorldGuardUtil implements Listener {
      * @return The region does exist at the provided location.
      */
     public static boolean checkForRegion(final String name, Location location) {
-        return Iterators.any(WorldGuardPlugin.inst().getRegionManager(location.getWorld()).
-                getApplicableRegions(location).iterator(), region -> region.getId().toLowerCase().contains(name));
+        return Iterators
+                .any(WorldGuard.getInstance().getPlatform().getRegionContainer()
+                        .get(BukkitAdapter.adapt(location.getWorld()))
+                        .getApplicableRegions(BukkitAdapter.asBlockVector(location))
+                        .iterator(), region -> region.getId().toLowerCase().contains(name));
     }
 
     /**
@@ -103,13 +113,17 @@ public class WorldGuardUtil implements Listener {
      * @return The flag does exist at the provided location.
      */
     public static boolean checkForFlag(final Flag flag, Location location) {
-        return Iterators.any(WorldGuardPlugin.inst().getRegionManager(location.getWorld()).getApplicableRegions(location).iterator(), region -> {
-            try {
-                return region.getFlags().containsKey(flag);
-            } catch (Exception ignored) {
-            }
-            return false;
-        });
+        return Iterators
+                .any(WorldGuard.getInstance().getPlatform().getRegionContainer()
+                        .get(BukkitAdapter.adapt(location.getWorld()))
+                        .getApplicableRegions(BukkitAdapter.asBlockVector(location))
+                        .iterator(), region -> {
+                    try {
+                        return region.getFlags().containsKey(flag);
+                    } catch (Exception ignored) {
+                    }
+                    return false;
+                });
     }
 
     /**
@@ -119,9 +133,35 @@ public class WorldGuardUtil implements Listener {
      * @param location The location being checked.
      * @return The flag is enabled.
      */
+    public static boolean checkStateFlagAllows(final StateFlag flag, Location location, RegionAssociable associable) {
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        return query.testState(BukkitAdapter.adapt(location), associable, flag);
+    }
+
+    /**
+     * Check if a StateFlag is enabled at a given location.
+     *
+     * @param flag     The flag being checked.
+     * @param location The location being checked.
+     * @return The flag is enabled.
+     */
+    public static boolean checkStateFlagAllows(final StateFlag flag, Location location, Player player) {
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        return query.testState(BukkitAdapter.adapt(location), WorldGuardPlugin.inst().wrapPlayer(player), flag);
+    }
+
+    /**
+     * Check if a StateFlag is enabled at a given location.
+     *
+     * @param flag     The flag being checked.
+     * @param location The location being checked.
+     * @return The flag is enabled.
+     * @Deprecated
+     */
+    @Deprecated
     public static boolean checkStateFlagAllows(final StateFlag flag, Location location) {
-        return !WorldGuardPlugin.inst().getRegionManager(location.getWorld()).getApplicableRegions(location).
-                getRegions().stream().anyMatch(region -> flag.marshal(region.getFlag(flag)).equals("deny"));
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        return query.testState(BukkitAdapter.adapt(location), null, flag);
     }
 
     /**
@@ -133,13 +173,17 @@ public class WorldGuardUtil implements Listener {
      * @return The flag-value does exist at the provided location.
      */
     public static boolean checkForFlagValue(final Flag flag, final String value, Location location) {
-        return Iterators.any(WorldGuardPlugin.inst().getRegionManager(location.getWorld()).getApplicableRegions(location).iterator(), region -> {
-            try {
-                return flag.marshal(region.getFlag(flag)).equals(value);
-            } catch (Exception ignored) {
-            }
-            return false;
-        });
+        return Iterators
+                .any(WorldGuard.getInstance().getPlatform().getRegionContainer()
+                        .get(BukkitAdapter.adapt(location.getWorld()))
+                        .getApplicableRegions(BukkitAdapter.asBlockVector(location))
+                        .iterator(), region -> {
+                    try {
+                        return flag.marshal(region.getFlag(flag)).equals(value);
+                    } catch (Exception ignored) {
+                    }
+                    return false;
+                });
     }
 
     /**
@@ -148,20 +192,28 @@ public class WorldGuardUtil implements Listener {
      * @return The player can build here.
      */
     public static boolean canBuild(Player player, Location location) {
-        return WorldGuardPlugin.inst().canBuild(player, location);
+        return checkStateFlagAllows(Flags.BUILD, location, player);
     }
 
     /**
      * @param location Given location.
      * @return PVP is allowed here.
      */
+    public static boolean canPVP(Player player, Location location) {
+        return checkStateFlagAllows(Flags.PVP, location, player);
+    }
+
+    @Deprecated
     public static boolean canPVP(Location location) {
-        return checkStateFlagAllows(DefaultFlag.PVP, location);
+        return checkStateFlagAllows(Flags.PVP, location);
     }
 
     public static void setWhenToOverridePVP(Plugin plugin, Predicate<Event> checkPVP) {
-        if (!worldGuardEnabled()) protoPVPListeners.put(plugin.getName(), new ProtoPVPListener(plugin, checkPVP));
-        else new WorldGuardPVPListener(plugin, checkPVP);
+        if (!worldGuardEnabled()) {
+            protoPVPListeners.put(plugin.getName(), new ProtoPVPListener(plugin, checkPVP));
+        } else {
+            new WorldGuardPVPListener(plugin, checkPVP);
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -183,8 +235,8 @@ public class WorldGuardUtil implements Listener {
     }
 
     static class ProtoPVPListener {
-        private Plugin plugin;
-        private Predicate<Event> checkPVP;
+        private final Plugin plugin;
+        private final Predicate<Event> checkPVP;
 
         ProtoPVPListener(Plugin plugin, Predicate<Event> checkPVP) {
             this.plugin = plugin;
@@ -197,7 +249,7 @@ public class WorldGuardUtil implements Listener {
     }
 
     public static class WorldGuardPVPListener implements Listener {
-        private Predicate<Event> checkPVP;
+        private final Predicate<Event> checkPVP;
 
         WorldGuardPVPListener(Plugin plugin, Predicate<Event> checkPVP) {
             this.checkPVP = checkPVP;

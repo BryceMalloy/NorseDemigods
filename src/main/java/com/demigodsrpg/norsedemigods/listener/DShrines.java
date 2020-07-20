@@ -42,7 +42,7 @@ public class DShrines implements Listener {
     public void createShrine(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (!DMisc.isFullParticipant(e.getPlayer())) return;
-        if ((e.getClickedBlock().getType() != Material.SIGN) && (e.getClickedBlock().getType() != Material.SIGN_POST))
+        if ((!e.getClickedBlock().getType().name().endsWith("SIGN")))
             return;
         Sign s = (Sign) e.getClickedBlock().getState();
         if (!s.getLines()[0].trim().equalsIgnoreCase("shrine")) return;
@@ -175,7 +175,7 @@ public class DShrines implements Listener {
             Iterator<Block> i = e.blockList().iterator();
             while (i.hasNext()) {
                 Block b = i.next();
-                if (!DMisc.canLocationPVP(b.getLocation())) i.remove();
+                if (!DMisc.canLocationPVPNoPlayer(b.getLocation())) i.remove();
                 for (LocationSaveable center : DMisc.getAllShrines()) {
                     if ((DMisc.toWriteLocation(b.getLocation())).equalsApprox(center)) i.remove();
                 }
@@ -218,18 +218,18 @@ public class DShrines implements Listener {
                     // Check for world errors
                     if (!DMisc.toLocation(center).getWorld().equals(e.getPlayer().getWorld())) return;
                     if (e.getFrom().getWorld() != DMisc.toLocation(center).getWorld()) return;
-                /*
-                 * Outside coming in
-				 */
+                    /*
+                     * Outside coming in
+                     */
                     if (e.getFrom().distance(DMisc.toLocation(center)) > RADIUS) {
                         if (DMisc.toLocation(center).distance(e.getTo()) <= RADIUS) {
                             e.getPlayer().sendMessage(ChatColor.GRAY + "You have entered " + DMisc.getLastKnownName(player) + "'s shrine to " + ChatColor.YELLOW + center.getDeity() + ChatColor.GRAY + ".");
                             return;
                         }
                     }
-                /*
-                 * Leaving
-				 */
+                    /*
+                     * Leaving
+                     */
                     else if (e.getFrom().distance(DMisc.toLocation(center)) <= RADIUS) {
                         if (DMisc.toLocation(center).distance(e.getTo()) > RADIUS) {
                             e.getPlayer().sendMessage(ChatColor.GRAY + "You have left a shrine.");
@@ -246,7 +246,7 @@ public class DShrines implements Listener {
         Player p = (Player) e.getPlayer();
         if (!DMisc.isFullParticipant(p)) return;
         // continue if tribute chest
-        if (!e.getInventory().getName().equals("Tributes")) return;
+        if (!e.getView().getTitle().contains("Tributes")) return;
         // get which deity tribute goes to
         String togive = null;
         String creatorId = null;

@@ -86,55 +86,54 @@ public class Dis implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (DMisc.hasDeity(p, getName())) {
-            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+        if (DMisc.hasDeity(P, getName())) {
+            PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
             if (str.equalsIgnoreCase(skillname)) {
                 if (bind) {
                     if (!save.getBind(skillname).isPresent()) {
-                        if (DMisc.isBound(p, p.getItemInHand().getType()))
-                            p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                        if (p.getItemInHand().getType() == Material.AIR)
-                            p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                        if (DMisc.isBound(P, P.getItemInHand().getType()))
+                            P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                        if (P.getItemInHand().getType() == Material.AIR)
+                            P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                         else {
-                            save.setBind(skillname, p.getItemInHand().getType());
-                            p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + p.getItemInHand().getType().name() + ".");
+                            save.setBind(skillname, P.getItemInHand().getType());
+                            P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now bound to " + P.getItemInHand().getType().name() + ".");
                         }
                     } else {
-                        p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + save.getBind(skillname).get().name() + ".");
+                        P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer bound to " + save.getBind(skillname).get().name() + ".");
                         save.removeBind(skillname);
                     }
                     return;
                 }
                 if (save.getAbilityData(skillname, AD.ACTIVE, false)) {
                     save.setAbilityData(skillname, AD.ACTIVE, false);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is no longer active.");
                 } else {
                     save.setAbilityData(skillname, AD.ACTIVE, true);
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " is now active.");
                 }
             } else if (str.equalsIgnoreCase(ult)) {
                 double TIME = save.getAbilityData(ult, AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
-                    p.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                    p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+                    P.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                    P.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMisc.getFavor(p) >= ULTIMATECOST) {
-                    for (Player pl : p.getWorld().getPlayers()) {
+                if (DMisc.getFavor(P) >= ULTIMATECOST) {
+                    for (Player pl : P.getWorld().getPlayers()) {
                         if (DMisc.isFullParticipant(pl) && DMisc.getActiveEffectsList(pl.getUniqueId()).contains("Congregate")) {
-                            p.sendMessage(ChatColor.YELLOW + "Congregate is already in effect.");
+                            P.sendMessage(ChatColor.YELLOW + "Congregate is already in effect.");
                             return;
                         }
                     }
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(P) / 100)));
                     save.setAbilityData(ult, AD.TIME, System.currentTimeMillis() + (t * 1000));
-                    int n = congregate(p);
+                    int n = congregate(P);
                     if (n > 0) {
-                        p.sendMessage(ChatColor.GOLD + "A dís has called upon " + n + " players to assemble at your location.");
-                        DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                    } else p.sendMessage(ChatColor.YELLOW + "There are no players to assemble.");
-                } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
+                        P.sendMessage(ChatColor.GOLD + "A dís has called upon " + n + " players to assemble at your location.");
+                        DMisc.setFavor(P, DMisc.getFavor(P) - ULTIMATECOST);
+                    } else P.sendMessage(ChatColor.YELLOW + "There are no players to assemble.");
+                } else P.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
         }
     }

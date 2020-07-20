@@ -26,17 +26,17 @@ public class DChatCommands implements Listener {
 
     private void qd(Player p, AsyncPlayerChatEvent e) {
         if ((e.getMessage().charAt(0) == 'q') && (e.getMessage().charAt(1) == 'd')) {
-            String str = "";
+            StringBuilder str = new StringBuilder();
             if (e.getMessage().split(" ").length < 2) {
                 ChatColor color = ChatColor.GREEN;
                 if ((p.getHealth() / p.getMaxHealth()) < 0.25) color = ChatColor.RED;
                 else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
-                str = "-- Your HP " + color + "" + p.getHealth() + "/" + p.getMaxHealth() + ChatColor.YELLOW + " Favor " + DMisc.getFavor(p) + "/" + DMisc.getFavorCap(p);
+                str = new StringBuilder("-- Your HP " + color + "" + p.getHealth() + "/" + p.getMaxHealth() + ChatColor.YELLOW + " Favor " + DMisc.getFavor(p) + "/" + DMisc.getFavorCap(p));
                 if (DMisc.getActiveEffects(p.getUniqueId()).size() > 0) {
                     Map<String, Double> effects = DMisc.getActiveEffects(p.getUniqueId());
-                    str += ChatColor.WHITE + " Active effects:";
+                    str.append(ChatColor.WHITE + " Active effects:");
                     for (Map.Entry<String, Double> stt : effects.entrySet())
-                        str += " " + stt.getKey() + "[" + ((stt.getValue() - System.currentTimeMillis()) / 1000) + "s]";
+                        str.append(" ").append(stt.getKey()).append("[").append((stt.getValue() - System.currentTimeMillis()) / 1000).append("s]");
                 }
             }
             try {
@@ -47,25 +47,25 @@ public class DChatCommands implements Listener {
                     if (otherPlayer != null) {
                         p.sendMessage(other + " -- " + DMisc.getAllegiance(otherPlayer));
                         if (DMisc.hasDeity(p, "Heimdallr") || DMisc.hasDeity(p, "Dis")) {
-                            String st = ChatColor.GRAY + "Deities:";
+                            StringBuilder st = new StringBuilder(ChatColor.GRAY + "Deities:");
                             for (Deity d : DMisc.getDeities(otherPlayer))
-                                st += " " + d.getName();
-                            p.sendMessage(st);
+                                st.append(" ").append(d.getName());
+                            p.sendMessage(st.toString());
                             p.sendMessage(ChatColor.GRAY + "HP " + otherPlayer.getHealth() + "/" +
                                     otherPlayer.getMaxHealth() + " Favor " + DMisc.getFavor(otherPlayer) + "/" +
                                     DMisc.getFavorCap(otherPlayer));
                             if (DMisc.getActiveEffects(otherPlayer.getUniqueId()).size() > 0) {
                                 Map<String, Double> fx = DMisc.getActiveEffects(otherPlayer.getUniqueId());
-                                str += ChatColor.GRAY + " Active effects:";
+                                str.append(ChatColor.GRAY + " Active effects:");
                                 for (Map.Entry<String, Double> stt : fx.entrySet())
-                                    str += " " + stt.getKey() + "[" + ((stt.getValue() - System.currentTimeMillis()) / 1000) + "s]";
+                                    str.append(" ").append(stt.getKey()).append("[").append((stt.getValue() - System.currentTimeMillis()) / 1000).append("s]");
                             }
                         }
                     }
                 }
             } catch (Exception ignored) {
             }
-            p.sendMessage(str);
+            p.sendMessage(str.toString());
             e.getRecipients().clear();
             e.setCancelled(true);
         }
@@ -80,9 +80,9 @@ public class DChatCommands implements Listener {
             alliances.get(DMisc.getAllegiance(pl).toUpperCase()).add(pl.getName());
         });
         for (Map.Entry<String, ArrayList<String>> alliance : alliances.entrySet()) {
-            String names = "";
+            StringBuilder names = new StringBuilder();
             for (String name : alliance.getValue())
-                names += " " + name;
+                names.append(" ").append(name);
             p.sendMessage(ChatColor.YELLOW + alliance.getKey() + ": " + ChatColor.WHITE + names);
         }
         e.getRecipients().clear();

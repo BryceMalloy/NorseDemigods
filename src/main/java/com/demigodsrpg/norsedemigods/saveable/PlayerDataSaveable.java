@@ -278,7 +278,7 @@ public class PlayerDataSaveable implements Saveable {
     }
 
     public void addDeity(String deity) {
-        if (!DEITIES.keySet().contains(deity)) {
+        if (!DEITIES.containsKey(deity)) {
             DEITIES.put(deity, 0D);
         }
 

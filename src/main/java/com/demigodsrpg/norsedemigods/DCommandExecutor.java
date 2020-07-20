@@ -35,7 +35,7 @@ public class DCommandExecutor implements CommandExecutor {
 
     /*
      * definePlayer : Defines the player from (CommandSender)sender.
-	 */
+     */
     private static Player definePlayer(CommandSender sender) {
         // Define player
         Player player = null;
@@ -66,7 +66,6 @@ public class DCommandExecutor implements CommandExecutor {
             else if (c.getName().equalsIgnoreCase("adddevotion")) return addDevotion(args);
             else if (c.getName().equalsIgnoreCase("addunclaimeddevotion")) return addUnclaimedDevotion(args);
 
-            return false;
         } else {
             // Non-deity-specific Player commands
             if (c.getName().equalsIgnoreCase("dg")) return infoDG(p, args);
@@ -111,13 +110,13 @@ public class DCommandExecutor implements CommandExecutor {
                     d.onCommand(p, c.getName(), args, bind);
             }
 
-            return false;
         }
+        return false;
     }
 
-	/*
+    /*
      * Every command gets it's own method below.
-	 */
+     */
 
     private boolean setFavor(String[] args) {
         if (args.length != 2) return false;
@@ -488,28 +487,28 @@ public class DCommandExecutor implements CommandExecutor {
                 }
                 /*
                  * Print data
-				 */
+                 */
                 p.sendMessage(ChatColor.GRAY + "----Stats----");
-                String str1 = "";
+                StringBuilder str1 = new StringBuilder();
                 if (onlinegods.size() > 0) {
                     for (UUID g : onlinegods) {
-                        str1 += DMisc.getLastKnownName(g) + ", ";
+                        str1.append(DMisc.getLastKnownName(g)).append(", ");
                     }
-                    str1 = str1.substring(0, str1.length() - 2);
+                    str1 = new StringBuilder(str1.substring(0, str1.length() - 2));
                 }
-                String str2 = "";
+                StringBuilder str2 = new StringBuilder();
                 if (onlinetitans.size() > 0) {
                     for (UUID t : onlinetitans) {
-                        str2 += DMisc.getLastKnownName(t) + ", ";
+                        str2.append(DMisc.getLastKnownName(t)).append(", ");
                     }
-                    str2 = str2.substring(0, str2.length() - 2);
+                    str2 = new StringBuilder(str2.substring(0, str2.length() - 2));
                 }
-                String str3 = "";
+                StringBuilder str3 = new StringBuilder();
                 if (onlineother.size() > 0) {
                     for (UUID o : onlineother) {
-                        str3 += DMisc.getLastKnownName(o) + ", ";
+                        str3.append(DMisc.getLastKnownName(o)).append(", ");
                     }
-                    str3 = str3.substring(0, str3.length() - 2);
+                    str3 = new StringBuilder(str3.substring(0, str3.length() - 2));
                 }
                 p.sendMessage("There are " + ChatColor.GREEN + onlinegods.size() + "/" + ChatColor.YELLOW + godcount + ChatColor.WHITE + " AEsir online: " + ChatColor.GOLD + str1);
                 p.sendMessage("There are " + ChatColor.GREEN + onlinetitans.size() + "/" + ChatColor.YELLOW + titancount + ChatColor.WHITE + " Jotunn online: " + ChatColor.GOLD + str2);
@@ -758,11 +757,11 @@ public class DCommandExecutor implements CommandExecutor {
         else if ((p.getHealth() / p.getMaxHealth()) < 0.5) color = ChatColor.YELLOW;
         p.sendMessage("HP: " + color + p.getHealth() + "/" + p.getMaxHealth());
         // List deities
-        String send = "You are empowered by:";
+        StringBuilder send = new StringBuilder("You are empowered by:");
         for (Deity d : DMisc.getDeities(p)) {
-            send += " " + d.getName() + " " + ChatColor.YELLOW + (d.canTribute() ? "<" + DMisc.getDevotion(p, d) + ">" : "") + ChatColor.WHITE;
+            send.append(" ").append(d.getName()).append(" ").append(ChatColor.YELLOW).append(d.canTribute() ? "<" + DMisc.getDevotion(p, d) + ">" : "").append(ChatColor.WHITE);
         }
-        p.sendMessage(send);
+        p.sendMessage(send.toString());
         // Display Favor/Ascensions and K/D
         // float percentage = (DMiscUtil.getDevotion(p)-DMiscUtil.costForNextAscension(DMiscUtil.getAscensions(p)-1))/(float)(DMiscUtil.costForNextAscension(p)-DMiscUtil.costForNextAscension(DMiscUtil.getAscensions(p)-1))*100;
         String op = ChatColor.YELLOW + "   |   " + (DMisc.costForNextAscension(DMisc.getAscensions(p)) - DMisc.getDevotion(p)) + " until next Ascension";
@@ -779,12 +778,12 @@ public class DCommandExecutor implements CommandExecutor {
         }
         // Effects
         if (DMisc.getActiveEffects(p.getUniqueId()).size() > 0) {
-            String printout = ChatColor.YELLOW + "Active effects:";
+            StringBuilder printout = new StringBuilder(ChatColor.YELLOW + "Active effects:");
             Map<String, Double> fx = DMisc.getActiveEffects(p.getUniqueId());
             for (Map.Entry<String, Double> str : fx.entrySet()) {
-                printout += " " + str.getKey() + "[" + (Math.round(str.getValue() - System.currentTimeMillis()) / 1000) + "s]";
+                printout.append(" ").append(str.getKey()).append("[").append(Math.round(str.getValue() - System.currentTimeMillis()) / 1000).append("s]");
             }
-            p.sendMessage(printout);
+            p.sendMessage(printout.toString());
         }
         return true;
     }
@@ -872,11 +871,11 @@ public class DCommandExecutor implements CommandExecutor {
             if (DMisc.isFullParticipant(target)) {
                 p.sendMessage(ChatColor.YELLOW + "--" + target + "--");
                 // List deities
-                String send = target + "'s deities are:";
+                StringBuilder send = new StringBuilder(target + "'s deities are:");
                 for (Deity d : DMisc.getDeities(target)) {
-                    send += " " + d.getName() + " " + ChatColor.YELLOW + "<" + DMisc.getDevotion(target, d) + ">" + ChatColor.WHITE;
+                    send.append(" ").append(d.getName()).append(" ").append(ChatColor.YELLOW).append("<").append(DMisc.getDevotion(target, d)).append(">").append(ChatColor.WHITE);
                 }
-                p.sendMessage(send);
+                p.sendMessage(send.toString());
                 // HP
                 ChatColor color = ChatColor.GREEN;
                 if (ptarget != null) {
@@ -897,10 +896,10 @@ public class DCommandExecutor implements CommandExecutor {
                 }
                 // Effects
                 if (DMisc.getActiveEffectsList(target).size() > 0) {
-                    String printout = ChatColor.YELLOW + "Active effects:";
+                    StringBuilder printout = new StringBuilder(ChatColor.YELLOW + "Active effects:");
                     for (String str : DMisc.getActiveEffectsList(target))
-                        printout += " " + str;
-                    p.sendMessage(printout);
+                        printout.append(" ").append(str);
+                    p.sendMessage(printout.toString());
                 }
             } else {
                 p.sendMessage(ChatColor.YELLOW + "--" + ptarget.getName() + "--Human--");
@@ -915,23 +914,23 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean shrine(Player p) {
         if (!DMisc.isFullParticipant(p)) return true;
         // player has shrines for these deities
-        String str1 = "Shrines:";
+        StringBuilder str1 = new StringBuilder("Shrines:");
         for (ShrineSaveable shrine : DMisc.getShrines(p.getUniqueId())) {
-            str1 += " " + shrine.getDeity();
+            str1.append(" ").append(shrine.getDeity());
         }
         // player's named shrines
-        String str2 = "Named shrines:";
+        StringBuilder str2 = new StringBuilder("Named shrines:");
         for (ShrineSaveable shrine : DMisc.getShrines(p.getUniqueId())) {
-            str2 += " " + shrine.getName();
+            str2.append(" ").append(shrine.getName());
         }
         // player can warp to these shrines
-        String str3 = "Other shrines you may warp to:";
+        StringBuilder str3 = new StringBuilder("Other shrines you may warp to:");
         for (ShrineSaveable shrine : DMisc.getAccessibleShrines(p.getUniqueId())) {
-            str3 += " " + shrine.getName();
+            str3.append(" ").append(shrine.getName());
         }
-        p.sendMessage(ChatColor.YELLOW + str1);
-        p.sendMessage(ChatColor.YELLOW + str2);
-        p.sendMessage(ChatColor.LIGHT_PURPLE + str3);
+        p.sendMessage(ChatColor.YELLOW + str1.toString());
+        p.sendMessage(ChatColor.YELLOW + str2.toString());
+        p.sendMessage(ChatColor.LIGHT_PURPLE + str3.toString());
         return true;
     }
 
@@ -1155,13 +1154,13 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean listShrines(Player p) {
         if (!(p.hasPermission("demigods.listshrines") || p.hasPermission("demigods.admin")))
             return true;
-        String str = "";
+        StringBuilder str = new StringBuilder();
         for (ShrineSaveable w : DMisc.getAllShrines()) {
             String toadd = w.getName();
-            if (!str.contains(toadd)) str += toadd + ", ";
+            if (!str.toString().contains(toadd)) str.append(toadd).append(", ");
         }
-        if (str.length() > 3) str = str.substring(0, str.length() - 2);
-        if (str.length() > 0) p.sendMessage(str);
+        if (str.length() > 3) str = new StringBuilder(str.substring(0, str.length() - 2));
+        if (str.length() > 0) p.sendMessage(str.toString());
         else p.sendMessage(ChatColor.YELLOW + "No shrines found.");
         return true;
     }
@@ -1586,7 +1585,7 @@ public class DCommandExecutor implements CommandExecutor {
     private boolean claim(Player p) {
         /*
          * Check for a new player first
-		 */
+         */
         if ((DMisc.getDeities(p) == null) || (DMisc.getDeities(p).size() == 0)) {
             Deity choice = null;
             switch (p.getItemInHand().getType()) {
@@ -1596,8 +1595,10 @@ public class DCommandExecutor implements CommandExecutor {
                 case IRON_INGOT:
                     choice = Deities.THOR;
                     break;
-                case RED_ROSE:
-                case YELLOW_FLOWER:
+                case ROSE_BUSH:
+                case SUNFLOWER:
+                case CORNFLOWER:
+                case CHORUS_FLOWER:
                     choice = Deities.BALDR;
                     break;
                 //
@@ -1641,8 +1642,8 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         }
         /*
-		 * Otherwise
-		 */
+         * Otherwise
+         */
         if (!DMisc.isFullParticipant(p)) return true;
         if (DMisc.getAscensions(p) < DMisc.costForNextDeity(p)) {
             p.sendMessage(ChatColor.YELLOW + "You must have " + DMisc.costForNextDeity(p) + " Ascensions to claim another deity.");
@@ -1653,7 +1654,7 @@ public class DCommandExecutor implements CommandExecutor {
             case IRON_INGOT:
                 choice = Deities.THOR;
                 break;
-            case GOLD_SWORD:
+            case GOLDEN_SWORD:
                 choice = Deities.VIDAR;
                 break;
             case SOUL_SAND:
@@ -1668,8 +1669,10 @@ public class DCommandExecutor implements CommandExecutor {
             case JUKEBOX:
                 choice = Deities.BRAGI;
                 break;
-            case RED_ROSE:
-            case YELLOW_FLOWER:
+            case ROSE_BUSH:
+            case SUNFLOWER:
+            case CORNFLOWER:
+            case CHORUS_FLOWER:
                 choice = Deities.BALDR;
                 break;
             //
@@ -1744,10 +1747,10 @@ public class DCommandExecutor implements CommandExecutor {
             return true;
         List<Material> items = DMisc.getBindings(p);
         if ((items != null) && (items.size() > 0)) {
-            String disp = ChatColor.YELLOW + "Bound items:";
+            StringBuilder disp = new StringBuilder(ChatColor.YELLOW + "Bound items:");
             for (Material m : items)
-                disp += " " + m.name().toLowerCase();
-            p.sendMessage(disp);
+                disp.append(" ").append(m.name().toLowerCase());
+            p.sendMessage(disp.toString());
         } else p.sendMessage(ChatColor.YELLOW + "You have no bindings.");
         return true;
     }
@@ -1805,11 +1808,11 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.sendMessage(ChatColor.RED + "Max Favor is missing/null.");
             }
             try {
-                String s = "";
+                StringBuilder s = new StringBuilder();
                 for (Deity d : DMisc.getDeities(p)) {
                     String name = d.getName();
                     try {
-                        s += " " + name + ";" + DMisc.getDevotion(p, name);
+                        s.append(" ").append(name).append(";").append(DMisc.getDevotion(p, name));
                     } catch (Exception e) {
                         cm.sendMessage(ChatColor.RED + "Error loading " + name + ".");
                     }
@@ -1901,11 +1904,11 @@ public class DCommandExecutor implements CommandExecutor {
                 cm.warning(ChatColor.RED + "Max Favor is missing/null.");
             }
             try {
-                String s = "";
+                StringBuilder s = new StringBuilder();
                 for (Deity d : DMisc.getDeities(p)) {
                     String name = d.getName();
                     try {
-                        s += " " + name + ";" + DMisc.getDevotion(p, name);
+                        s.append(" ").append(name).append(";").append(DMisc.getDevotion(p, name));
                     } catch (Exception e) {
                         cm.warning(ChatColor.RED + "Error loading " + name + ".");
                     }

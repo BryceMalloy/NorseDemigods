@@ -20,10 +20,7 @@ public class PlayerDataRegistry extends AbstractRegistry<PlayerDataSaveable> {
 
     public PlayerDataSaveable fromPlayer(Player player) {
         Optional<PlayerDataSaveable> opData = fromKey(player.getUniqueId().toString());
-        if (opData.isPresent()) {
-            return opData.get();
-        }
-        return put(player.getUniqueId().toString(), new PlayerDataSaveable(player));
+        return opData.orElseGet(() -> put(player.getUniqueId().toString(), new PlayerDataSaveable(player)));
     }
 
     public void purgeTempData() {

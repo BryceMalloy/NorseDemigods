@@ -7,7 +7,6 @@ import com.demigodsrpg.norsedemigods.registry.ShrineRegistry;
 import com.demigodsrpg.norsedemigods.saveable.LocationSaveable;
 import com.demigodsrpg.norsedemigods.saveable.PlayerDataSaveable;
 import com.demigodsrpg.norsedemigods.saveable.ShrineSaveable;
-import com.demigodsrpg.norsedemigods.util.ChitchatUtil;
 import com.demigodsrpg.norsedemigods.util.WorldGuardUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -68,7 +67,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
             if (bw.getOwner().equals(this)) c++;
         for (BukkitTask bt : getServer().getScheduler().getPendingTasks())
             if (bt.getOwner().equals(this)) c++;
-        this.getServer().getScheduler().cancelAllTasks();
+        //this.getServer().getScheduler().cancelAllTasks();
 
         // Clear temp data
         PLAYER_DATA.purgeTempData();
@@ -95,7 +94,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
 
     void loadDependencies() {
         if (getServer().getPluginManager().isPluginEnabled("WorldGuard")) {
-            new WorldGuardUtil();
+            new WorldGuardUtil(this);
 
             getLogger().info("Attempting to hook into WorldGuard.");
             if (WorldGuardUtil.worldGuardEnabled()) {
@@ -111,22 +110,15 @@ public class NorseDemigods extends JavaPlugin implements Listener {
                 getLogger().info("WorldGuard hook successful. Skills are disabled in no-PvP zones.");
             }
         }
-
-        if (Bukkit.getPluginManager().isPluginEnabled("Chitchat")) {
-            new ChitchatUtil();
-            if (ChitchatUtil.hook()) {
-                getLogger().info("Chitchat detected. Custom chat tags enabled.");
-            }
-        }
     }
 
     void loadCommands() {
         // Register the command manager
         DCommandExecutor ce = new DCommandExecutor(this);
 
-		/*
+        /*
          * General commands
-		 */
+         */
         getCommand("dg").setExecutor(ce);
         getCommand("check").setExecutor(ce);
         getCommand("claim").setExecutor(ce);
@@ -136,9 +128,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getCommand("forsake").setExecutor(ce);
         getCommand("adddevotion").setExecutor(ce);
 
-		/*
+        /*
          * Admin Commands
-		 */
+         */
         getCommand("checkplayer").setExecutor(ce);
         getCommand("removeplayer").setExecutor(ce);
         getCommand("debugplayer").setExecutor(ce);
@@ -164,9 +156,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getCommand("setdeaths").setExecutor(ce);
         getCommand("exportdata").setExecutor(ce);
 
-		/*
+        /*
          * Shrine commands
-		 */
+         */
         getCommand("shrine").setExecutor(ce);
         getCommand("shrinewarp").setExecutor(ce);
         getCommand("forceshrinewarp").setExecutor(ce);
@@ -176,9 +168,9 @@ public class NorseDemigods extends JavaPlugin implements Listener {
         getCommand("listshrines").setExecutor(ce);
         getCommand("nameshrine").setExecutor(ce);
 
-		/*
+        /*
          * Deity Commands
-		 */
+         */
         // Thor
         getCommand("slam").setExecutor(ce);
         getCommand("lightning").setExecutor(ce);
@@ -316,7 +308,7 @@ public class NorseDemigods extends JavaPlugin implements Listener {
     private void cleanUp() {
         // Clean things that may cause glitches
         for (PlayerDataSaveable saveable : PLAYER_DATA.getFromDb().values()) {
-            saveable.getDeityList().stream().filter(d -> saveable.getActiveEffects().keySet().contains(d.toUpperCase() + "_TRIBUTE_")).forEach(d -> {
+            saveable.getDeityList().stream().filter(d -> saveable.getActiveEffects().containsKey(d.toUpperCase() + "_TRIBUTE_")).forEach(d -> {
                 saveable.removeEffect(d.toUpperCase() + "_TRIBUTE_");
             });
         }

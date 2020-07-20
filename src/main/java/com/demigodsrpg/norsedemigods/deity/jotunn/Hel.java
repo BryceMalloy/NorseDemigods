@@ -52,7 +52,7 @@ public class Hel implements Deity {
             int devotion = DMisc.getDevotion(p, "Hel");
             /*
              * Calculate special values first
-			 */
+             */
             // chain
             int damage = (int) (Math.round(5 * Math.pow(devotion, 0.20688)));
             int blindpower = (int) Math.round(1.26985 * Math.pow(devotion, 0.13047));
@@ -64,8 +64,8 @@ public class Hel implements Deity {
             int ultduration = (int) Math.round(30 * Math.pow(DMisc.getDevotion(p, getName()), 0.09));
             int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
-			 * The printed text
-			 */
+             * The printed text
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Hel" + ChatColor.GRAY + " [" + devotion + "]");
             p.sendMessage(":Immune to skeleton and zombie attacks.");
             p.sendMessage(":Entomb an entity in obsidian. " + ChatColor.GREEN + "/entomb");
@@ -149,80 +149,79 @@ public class Hel implements Deity {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (!DMisc.isFullParticipant(p)) return;
-        if (!DMisc.hasDeity(p, "Hel")) return;
-        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+        if (!DMisc.isFullParticipant(P)) return;
+        if (!DMisc.hasDeity(P, "Hel")) return;
+        PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
         if (str.equalsIgnoreCase("chain")) {
             if (bind) {
                 if (!save.getBind("chain").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand().getType() == Material.AIR)
-                        p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand().getType() == Material.AIR)
+                        P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("chain", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Dark chain is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("chain", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Dark chain is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer bound to " + save.getBind("chain").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Dark chain is no longer bound to " + save.getBind("chain").get().name() + ".");
                     save.removeBind("chain");
                 }
                 return;
             }
             if (save.getAbilityData("chain", AD.ACTIVE, false)) {
                 save.setAbilityData("chain", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Dark chain is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Dark chain is no longer active.");
             } else {
                 save.setAbilityData("chain", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Dark chain is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Dark chain is now active.");
             }
         } else if (str.equalsIgnoreCase("entomb")) {
             if (bind) {
                 if (!save.getBind("entomb").isPresent()) {
-                    if (DMisc.isBound(p, p.getItemInHand().getType()))
-                        p.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
-                    if (p.getItemInHand().getType() == Material.AIR)
-                        p.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
+                    if (DMisc.isBound(P, P.getItemInHand().getType()))
+                        P.sendMessage(ChatColor.YELLOW + "That item is already bound to a skill.");
+                    if (P.getItemInHand().getType() == Material.AIR)
+                        P.sendMessage(ChatColor.YELLOW + "You cannot bind a skill to air.");
                     else {
-                        save.setBind("entomb", p.getItemInHand().getType());
-                        p.sendMessage(ChatColor.YELLOW + "Entomb is now bound to " + p.getItemInHand().getType().name() + ".");
+                        save.setBind("entomb", P.getItemInHand().getType());
+                        P.sendMessage(ChatColor.YELLOW + "Entomb is now bound to " + P.getItemInHand().getType().name() + ".");
                     }
                 } else {
-                    p.sendMessage(ChatColor.YELLOW + "Entomb is no longer bound to " + save.getBind("entomb").get().name() + ".");
+                    P.sendMessage(ChatColor.YELLOW + "Entomb is no longer bound to " + save.getBind("entomb").get().name() + ".");
                     save.removeBind("entomb");
                 }
                 return;
             }
             if (save.getAbilityData("entomb", AD.ACTIVE, false)) {
                 save.setAbilityData("entomb", AD.ACTIVE, false);
-                p.sendMessage(ChatColor.YELLOW + "Entomb is no longer active.");
+                P.sendMessage(ChatColor.YELLOW + "Entomb is no longer active.");
             } else {
                 save.setAbilityData("entomb", AD.ACTIVE, true);
-                p.sendMessage(ChatColor.YELLOW + "Entomb is now active.");
+                P.sendMessage(ChatColor.YELLOW + "Entomb is now active.");
             }
         } else if (str.equalsIgnoreCase("curse")) {
             double TIME = save.getAbilityData("curse", AD.TIME, (double) System.currentTimeMillis());
             if (System.currentTimeMillis() < TIME) {
-                p.sendMessage(ChatColor.YELLOW + "You cannot use curse again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+                P.sendMessage(ChatColor.YELLOW + "You cannot use curse again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                P.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                 return;
             }
-            if (DMisc.getFavor(p) >= ULTIMATECOST) {
-                if (!DMisc.canTarget(p, p.getLocation())) {
-                    p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
+            if (DMisc.getFavor(P) >= ULTIMATECOST) {
+                if (!DMisc.canTarget(P, P.getLocation())) {
+                    P.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                     return;
                 }
-                int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
-                int amt = tartarus(p);
+                int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(P) / 100)));
+                int amt = tartarus(P);
                 if (amt > 0) {
-                    p.sendMessage(ChatColor.DARK_RED + "Hel" + ChatColor.GRAY + " curses " + amt + " enemies.");
-                    DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                    p.getWorld().setTime(18000);
+                    P.sendMessage(ChatColor.DARK_RED + "Hel" + ChatColor.GRAY + " curses " + amt + " enemies.");
+                    DMisc.setFavor(P, DMisc.getFavor(P) - ULTIMATECOST);
+                    P.getWorld().setTime(18000);
                     save.setAbilityData("curse", AD.TIME, System.currentTimeMillis() + t * 1000);
                 } else
-                    p.sendMessage(ChatColor.YELLOW + "There were no valid targets or the ultimate could not be used.");
-            } else p.sendMessage(ChatColor.YELLOW + "Curse requires " + ULTIMATECOST + " Favor.");
+                    P.sendMessage(ChatColor.YELLOW + "There were no valid targets or the ultimate could not be used.");
+            } else P.sendMessage(ChatColor.YELLOW + "Curse requires " + ULTIMATECOST + " Favor.");
         }
     }
 

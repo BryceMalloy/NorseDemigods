@@ -92,7 +92,7 @@ public class Heimdallr implements Deity {
                     go.setY(go.getBlockY() + 1);
                     go.setPitch(pitch);
                     go.setYaw(yaw);
-                    if ((go.getBlock().isLiquid() || go.getBlock().isEmpty()) && DMisc.canLocationPVP(go)) {
+                    if ((go.getBlock().isLiquid() || go.getBlock().isEmpty()) && DMisc.canLocationPVP(p, go)) {
                         save.setTempData("temp_flash", true);
                         DMisc.horseTeleport(p, go);
                         DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);

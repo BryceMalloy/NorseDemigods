@@ -23,6 +23,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
+@SuppressWarnings("ALL")
 public class DPvP implements Listener {
     private static final int pvpkillreward = 1500; // Devotion
 
@@ -148,13 +149,14 @@ public class DPvP implements Listener {
         PlayerDataSaveable save = ndg.getPlayerDataRegistry().fromPlayer(player);
         if (save.getTempStatus("temp_flash") || event.getCause() == TeleportCause.ENDER_PEARL) {
             onPlayerLineJump(player, save, to, from, delayTime);
-        } else if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from)) {
+        } else if (!DMisc.canLocationPVP(player, to) && DMisc.canLocationPVP(player, from)) {
             save.removeTempData("temp_was_PVP");
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
-        } else if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
+        } else if (!DMisc.canLocationPVP(player, from) && DMisc.canLocationPVP(player, to))
             player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
     }
 
+    @SuppressWarnings("deprecation")
     void onPlayerLineJump(final Player player, PlayerDataSaveable save, Location to, Location from, int delayTime) {
         // NullPointer Check
         if (to == null || from == null) return;
@@ -162,22 +164,22 @@ public class DPvP implements Listener {
         if (save.getTempStatus("temp_was_PVP") || !DMisc.isFullParticipant(player)) return;
 
         // No Spawn Line-Jumping
-        if (!DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from) && delayTime > 0 && !player.hasPermission("demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
+        if (!DMisc.canLocationPVP(player, to) && DMisc.canLocationPVP(player, from) && delayTime > 0 && !player.hasPermission("demigods.bypasspvpdelay") && !DFixes.isNoob(player)) {
             save.setTempData("temp_was_PVP", true);
             save.removeTempData("temp_flash");
 
             DMisc.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMisc.getPlugin(), () -> {
                 PlayerDataSaveable newSave = ndg.getPlayerDataRegistry().fromPlayer(player);
                 newSave.removeTempData("temp_was_PVP");
-                if (!DMisc.canLocationPVP(player.getLocation()))
+                if (!DMisc.canLocationPVP(player, player.getLocation()))
                     player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
             }, (delayTime * 20));
-        } else if (!save.getTempStatus("temp_was_PVP") && !DMisc.canLocationPVP(to) && DMisc.canLocationPVP(from))
+        } else if (!save.getTempStatus("temp_was_PVP") && !DMisc.canLocationPVP(player, to) && DMisc.canLocationPVP(player, from))
             player.sendMessage(ChatColor.YELLOW + "You are now safe from all PVP!");
 
         // Let players know where they can PVP
-        if (!save.getTempStatus("temp_was_PVP") && DMisc.canLocationPVP(to) && !DMisc.canLocationPVP(from)) {
-            if (!DMisc.canLocationPVP(from) && DMisc.canLocationPVP(to))
+        if (!save.getTempStatus("temp_was_PVP") && DMisc.canLocationPVP(player, to) && !DMisc.canLocationPVP(player, from)) {
+            if (!DMisc.canLocationPVP(player, from) && DMisc.canLocationPVP(player, to))
                 player.sendMessage(ChatColor.YELLOW + "You can now PVP!");
         }
     }

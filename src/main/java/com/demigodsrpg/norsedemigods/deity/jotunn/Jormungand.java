@@ -56,7 +56,7 @@ public class Jormungand implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             // heal amount
             int healamt = (int) Math.ceil(0.1 * Math.pow(devotion, 0.297));
             // heal interval
@@ -73,8 +73,8 @@ public class Jormungand implements Deity {
             // int t = (int)(ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN)*
             // ((double)DMiscUtil.getAscensions(p)/100)));
             /*
-			 * The printed text
-			 */
+             * The printed text
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Jormungand" + ChatColor.GRAY + " [" + devotion + "]");
             p.sendMessage(":Heal " + healamt + " every " + healinterval + " seconds while in contact with water.");
             p.sendMessage("Immune to drowning, sneak while in water to swim very fast!");
@@ -108,7 +108,7 @@ public class Jormungand implements Deity {
             if (!DMisc.isFullParticipant(p)) return;
             if (!DMisc.hasDeity(p, "Jormungand")) return;
             // PHELPS SWIMMING
-            if (p.getLocation().getBlock().getType().equals(Material.STATIONARY_WATER) || p.getLocation().getBlock().getType().equals(Material.WATER)) {
+            if (p.getLocation().getBlock().getType().equals(Material.WATER)) {
                 Vector dir = p.getLocation().getDirection().normalize().multiply(1.3D);
                 Vector vec = new Vector(dir.getX(), dir.getY(), dir.getZ());
                 if (p.isSneaking()) p.setVelocity(vec);
@@ -241,7 +241,7 @@ public class Jormungand implements Deity {
         if (!DMisc.canTarget(le, le.getLocation())) return false;
         if (le.getLocation().getBlock().getType() == Material.AIR) {
             le.getLocation().getBlock().setType(Material.WATER);
-            le.getLocation().getBlock().setData((byte) 0x8);
+            //le.getLocation().getBlock().setData((byte) 0x8);
         }
         int damage = (int) Math.ceil(0.37286 * Math.pow(DMisc.getDevotion(p, getName()), 0.371238));
         if (le instanceof Player) {
@@ -264,7 +264,7 @@ public class Jormungand implements Deity {
         int duration = (int) Math.ceil(2.80488 * Math.pow(devotion, 0.2689)); // seconds
         //
         Location target = DMisc.getTargetLocation(p);
-        if (!DMisc.canLocationPVP(target) || !DMisc.canWorldGuardBuild(p, target)) {
+        if (!DMisc.canLocationPVP(p, target) || !DMisc.canWorldGuardBuild(p, target)) {
             p.sendMessage(ChatColor.YELLOW + "That is a no-PVP zone.");
             return false;
         }
@@ -274,20 +274,20 @@ public class Jormungand implements Deity {
             return false;
         }
 
-        drown(target, radius, duration * 20);
+        drown(p, target, radius, duration * 20);
         return true;
     }
 
-    private void drown(Location target, int radius, int duration) {
+    private void drown(Player caster, Location target, int radius, int duration) {
         final ArrayList<Block> toreset = new ArrayList<Block>();
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     Block block = target.getWorld().getBlockAt(target.getBlockX() + x, target.getBlockY() + y, target.getBlockZ() + z);
                     if (block.getLocation().distance(target) <= radius) {
-                        if (DMisc.canLocationPVP(block.getLocation())) if (block.getType() == Material.AIR) {
+                        if (DMisc.canLocationPVP(caster, block.getLocation())) if (block.getType() == Material.AIR) {
                             block.setType(Material.WATER);
-                            block.setData((byte) (0x8));
+                            //block.setData((byte) (0x8));
                             toreset.add(block);
                         }
                     }
@@ -298,45 +298,45 @@ public class Jormungand implements Deity {
             @Override
             public void run() {
                 for (Block b : toreset)
-                    if ((b.getType() == Material.WATER) || (b.getType() == Material.STATIONARY_WATER))
+                    if ((b.getType() == Material.WATER))
                         b.setType(Material.AIR);
             }
         }, duration);
     }
-	/*
-	 * private int waterfall(Player p) {
-	 * int numtargets = (int)Math.round(15*Math.pow(DMiscUtil.getDevotion(p, getName()), 0.15));
-	 * final int ultduration = (int)Math.round(30*Math.pow(DMiscUtil.getDevotion(p, getName()), 0.09)*20);
-	 * ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
-	 * Vector ploc = p.getLocation().toVector();
-	 * for (LivingEntity anEntity : p.getWorld().getLivingEntities()){
-	 * if (anEntity instanceof Player)
-	 * if (DMiscUtil.isFullParticipant((Player)anEntity))
-	 * if (DMiscUtil.getAllegiance((Player)anEntity).equalsIgnoreCase(DMiscUtil.getAllegiance(p)))
-	 * continue;
-	 * if (!DMiscUtil.canPVP(anEntity.getLocation()))
-	 * continue;
-	 * if (anEntity.getLocation().toVector().isInSphere(ploc, 50.0) && (entitylist.size() < numtargets))
-	 * entitylist.add(anEntity);
-	 * }
-	 * for (LivingEntity le : entitylist) {
-	 * final LivingEntity fl = le;
-	 * for (int i=0;i<ultduration;i+=9) {
-	 * final int ii = i;
-	 * DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
-	 * 
-	 * @Override
-	 * public void run() {
-	 * if ((fl != null) && !fl.isDead()) {
-	 * drown(fl.getLocation(), 3, ultduration - ii);
-	 * }
-	 * }
-	 * }, i);
-	 * }
-	 * }
-	 * return entitylist.size();
-	 * }
-	 */
+    /*
+     * private int waterfall(Player p) {
+     * int numtargets = (int)Math.round(15*Math.pow(DMiscUtil.getDevotion(p, getName()), 0.15));
+     * final int ultduration = (int)Math.round(30*Math.pow(DMiscUtil.getDevotion(p, getName()), 0.09)*20);
+     * ArrayList<LivingEntity> entitylist = new ArrayList<LivingEntity>();
+     * Vector ploc = p.getLocation().toVector();
+     * for (LivingEntity anEntity : p.getWorld().getLivingEntities()){
+     * if (anEntity instanceof Player)
+     * if (DMiscUtil.isFullParticipant((Player)anEntity))
+     * if (DMiscUtil.getAllegiance((Player)anEntity).equalsIgnoreCase(DMiscUtil.getAllegiance(p)))
+     * continue;
+     * if (!DMiscUtil.canPVP(anEntity.getLocation()))
+     * continue;
+     * if (anEntity.getLocation().toVector().isInSphere(ploc, 50.0) && (entitylist.size() < numtargets))
+     * entitylist.add(anEntity);
+     * }
+     * for (LivingEntity le : entitylist) {
+     * final LivingEntity fl = le;
+     * for (int i=0;i<ultduration;i+=9) {
+     * final int ii = i;
+     * DMiscUtil.getPlugin().getServer().getScheduler().scheduleSyncDelayedTask(DMiscUtil.getPlugin(), new Runnable() {
+     *
+     * @Override
+     * public void run() {
+     * if ((fl != null) && !fl.isDead()) {
+     * drown(fl.getLocation(), 3, ultduration - ii);
+     * }
+     * }
+     * }, i);
+     * }
+     * }
+     * return entitylist.size();
+     * }
+     */
 
     @Override
     public boolean canTribute() {

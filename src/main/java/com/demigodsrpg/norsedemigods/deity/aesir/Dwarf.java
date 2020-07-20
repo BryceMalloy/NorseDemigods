@@ -73,44 +73,43 @@ public class Dwarf implements Deity, Listener {
 
     @Override
     public void onCommand(Player P, String str, String[] args, boolean bind) {
-        final Player p = P;
-        if (DMisc.hasDeity(p, getName())) {
+        if (DMisc.hasDeity(P, getName())) {
             if (str.equalsIgnoreCase(skillname)) {
-                if (DMisc.getFavor(p) < SKILLCOST) {
-                    p.sendMessage(ChatColor.YELLOW + "" + skillname + " requires " + SKILLCOST + " Favor to use.");
+                if (DMisc.getFavor(P) < SKILLCOST) {
+                    P.sendMessage(ChatColor.YELLOW + "" + skillname + " requires " + SKILLCOST + " Favor to use.");
                     return;
                 }
-                int durability = p.getItemInHand().getDurability();
+                int durability = P.getItemInHand().getDurability();
                 if (durability == 0) {
-                    p.sendMessage(ChatColor.YELLOW + "This item cannot be repaired.");
+                    P.sendMessage(ChatColor.YELLOW + "This item cannot be repaired.");
                     return;
                 }
-                double repairamt = Math.ceil(10 * Math.pow(DMisc.getDevotion(p, getName()), 0.09)) / 100;
-                short num = (short) (p.getItemInHand().getDurability() * (1 - repairamt));
-                p.sendMessage(ChatColor.RED + "Your dwarven powers" + ChatColor.WHITE + " have increased the item's durability by " + (p.getItemInHand().getDurability() - num) + ".");
-                p.getItemInHand().setDurability(num);
-                DMisc.setFavor(p, DMisc.getFavor(p) - SKILLCOST);
+                double repairamt = Math.ceil(10 * Math.pow(DMisc.getDevotion(P, getName()), 0.09)) / 100;
+                short num = (short) (P.getItemInHand().getDurability() * (1 - repairamt));
+                P.sendMessage(ChatColor.RED + "Your dwarven powers" + ChatColor.WHITE + " have increased the item's durability by " + (P.getItemInHand().getDurability() - num) + ".");
+                P.getItemInHand().setDurability(num);
+                DMisc.setFavor(P, DMisc.getFavor(P) - SKILLCOST);
             } else if (str.equalsIgnoreCase(ult)) {
-                PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
+                PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(P);
                 double TIME = save.getAbilityData(ult, AD.TIME, (double) System.currentTimeMillis());
                 if (System.currentTimeMillis() < TIME) {
-                    p.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
-                    p.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
+                    P.sendMessage(ChatColor.YELLOW + "You cannot use " + ult + " again for " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000))) / 60 + " minutes");
+                    P.sendMessage(ChatColor.YELLOW + "and " + ((((TIME) / 1000) - (System.currentTimeMillis() / 1000)) % 60) + " seconds.");
                     return;
                 }
-                if (DMisc.getFavor(p) >= ULTIMATECOST) {
-                    if (!DMisc.canTarget(p, p.getLocation())) {
-                        p.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
+                if (DMisc.getFavor(P) >= ULTIMATECOST) {
+                    if (!DMisc.canTarget(P, P.getLocation())) {
+                        P.sendMessage(ChatColor.YELLOW + "You can't do that from a no-PVP zone.");
                         return;
                     }
-                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
+                    int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(P) / Setting.ASCENSION_CAP)));
                     save.setAbilityData(ult, AD.TIME, System.currentTimeMillis() + (t * 1000));
-                    int num = shatter(p);
+                    int num = shatter(P);
                     if (num > 0) {
-                        p.sendMessage(ChatColor.RED + "Your dwarven powers" + ChatColor.WHITE + " have un-forged the equipment of " + num + " enemy players.");
-                        DMisc.setFavor(p, DMisc.getFavor(p) - ULTIMATECOST);
-                    } else p.sendMessage(ChatColor.YELLOW + "No targets found.");
-                } else p.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
+                        P.sendMessage(ChatColor.RED + "Your dwarven powers" + ChatColor.WHITE + " have un-forged the equipment of " + num + " enemy players.");
+                        DMisc.setFavor(P, DMisc.getFavor(P) - ULTIMATECOST);
+                    } else P.sendMessage(ChatColor.YELLOW + "No targets found.");
+                } else P.sendMessage(ChatColor.YELLOW + "" + ult + " requires " + ULTIMATECOST + " Favor.");
             }
         }
     }

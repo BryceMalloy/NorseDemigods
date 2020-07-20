@@ -49,7 +49,7 @@ public class Baldr implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             // starfall
             int damage = (int) (Math.round(1.4 * Math.pow(devotion, 0.3)));
             int range = (int) (Math.ceil(8 * Math.pow(devotion, 0.08)));
@@ -61,7 +61,7 @@ public class Baldr implements Deity {
             int t = (int) (ULTIMATECOOLDOWNMAX - ((ULTIMATECOOLDOWNMAX - ULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / Setting.ASCENSION_CAP)));
             /*
              * The printed text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + getName() + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Move with increased speed while in a well-lit area (use" + ChatColor.GREEN + " /sprint " + ChatColor.YELLOW + "to toggle).");
             p.sendMessage(":Left-click to call down an attack dealing " + damage + " in radius " + range + "." + ChatColor.GREEN + " /starfall " + ChatColor.YELLOW + "Costs " + SKILLCOST + " Favor.");
@@ -111,7 +111,7 @@ public class Baldr implements Deity {
             // KENYANS
             if (save.getAbilityData(passivename, AD.ACTIVE, false)) {
                 Block playerBlock = p.getLocation().getBlock();
-                if (!playerBlock.getType().equals(Material.STATIONARY_WATER) && !playerBlock.getType().equals(Material.WATER) && !playerBlock.getType().equals(Material.STATIONARY_LAVA) && !playerBlock.getType().equals(Material.LAVA) && !playerBlock.getRelative(BlockFace.DOWN).getType().equals(Material.AIR)) {
+                if (!playerBlock.getType().equals(Material.WATER) && !playerBlock.getType().equals(Material.LAVA) && !playerBlock.getRelative(BlockFace.DOWN).getType().equals(Material.AIR)) {
                     Vector dir = p.getLocation().getDirection().normalize().multiply(1.3D);
                     Vector vec = new Vector(dir.getX(), dir.getY(), dir.getZ());
                     if (p.isSneaking() && playerBlock.getLightLevel() > 12) p.setVelocity(vec);

@@ -49,7 +49,7 @@ public class Bragi implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Special values
-			 */
+             */
             // passive
             int duration = (int) Math.round(60 * Math.pow(devotion, 0.09)); // seconds
             // active
@@ -91,38 +91,40 @@ public class Bragi implements Deity {
             PlayerDataSaveable save = getBackend().getPlayerDataRegistry().fromPlayer(p);
             if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
                 if (e.getClickedBlock().getType() != Material.JUKEBOX) return;
-                if (p.getItemInHand() != null) switch (p.getItemInHand().getType()) {
-                    case GOLD_RECORD:
+                switch (p.getItemInHand().getType()) {
+                    case MUSIC_DISC_PIGSTEP:
+                    case MUSIC_DISC_13:
                         applyEffect(p, PotionEffectType.SPEED, "speed");
                         break;
-                    case GREEN_RECORD:
+                    case MUSIC_DISC_CAT:
                         applyEffect(p, PotionEffectType.FAST_DIGGING, "mining speed");
                         break;
-                    case RECORD_3:
+                    case MUSIC_DISC_BLOCKS:
                         applyEffect(p, null, "health regeneration");
                         break;
-                    case RECORD_4:
+                    case MUSIC_DISC_CHIRP:
+                    case MUSIC_DISC_WAIT:
                         applyEffect(p, null, "Favor regeneration");
                         break;
-                    case RECORD_5:
+                    case MUSIC_DISC_FAR:
                         applyEffect(p, PotionEffectType.INCREASE_DAMAGE, "strength");
                         break;
-                    case RECORD_6:
+                    case MUSIC_DISC_MALL:
                         applyEffect(p, PotionEffectType.JUMP, "jump");
                         break;
-                    case RECORD_7:
+                    case MUSIC_DISC_MELLOHI:
                         applyEffect(p, PotionEffectType.DAMAGE_RESISTANCE, "damage resistance");
                         break;
-                    case RECORD_8:
+                    case MUSIC_DISC_STAL:
                         applyEffect(p, PotionEffectType.FIRE_RESISTANCE, "fire resistance");
                         break;
-                    case RECORD_9:
+                    case MUSIC_DISC_STRAD:
                         applyEffect(p, PotionEffectType.WATER_BREATHING, "water breathing");
                         break;
-                    case RECORD_10:
+                    case MUSIC_DISC_WARD:
                         applyEffect(p, PotionEffectType.NIGHT_VISION, "night vision");
                         break;
-                    case RECORD_11:
+                    case MUSIC_DISC_11:
                         applyEffect(p, PotionEffectType.INVISIBILITY, "invisibility");
                         break;
                 }

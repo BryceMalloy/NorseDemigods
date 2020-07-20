@@ -45,7 +45,7 @@ public class Odin implements Deity {
             int devotion = DMisc.getDevotion(p, getName());
             /*
              * Calculate special values first
-			 */
+             */
             // cleave
             int damage = (int) Math.ceil(Math.pow(devotion, 0.35));
             int hungerdamage = (int) Math.ceil(Math.pow(devotion, 0.1776));
@@ -58,7 +58,7 @@ public class Odin implements Deity {
             int t = (int) (CRONUSULTIMATECOOLDOWNMAX - ((CRONUSULTIMATECOOLDOWNMAX - CRONUSULTIMATECOOLDOWNMIN) * ((double) DMisc.getAscensions(p) / 100)));
             /*
              * The printed text
-			 */
+             */
             p.sendMessage("--" + ChatColor.GOLD + "Odin" + ChatColor.GRAY + "[" + devotion + "]");
             p.sendMessage(":Slow your enemy when attacking with a spear (shovel).");
             p.sendMessage(":Attack with a spear (shovel) to deal " + damage + " damage and " + hungerdamage + " hunger. " + ChatColor.GREEN + "/stab");
@@ -101,9 +101,9 @@ public class Odin implements Deity {
 
                         Material STABITEM = p.getItemInHand().getType();
 
-						/*
+                        /*
                          * Passive ability (stop movement)
-						 */
+                         */
                         if (e.getEntity() instanceof Player) {
                             Player attacked = (Player) e.getEntity();
                             if (!DMisc.canTarget(attacked, attacked.getLocation())) return;
@@ -111,9 +111,9 @@ public class Odin implements Deity {
                                 attacked.setVelocity(new Vector(0, 0, 0));
                             }
                         }
-						/*
-						 * Cleave
-						 */
+                        /*
+                         * Cleave
+                         */
                         if (save.getAbilityData("stab", AD.ACTIVE, false)) {
                             if (DMisc.getFavor(p) >= STABCOST) {
                                 if (!(e.getEntity() instanceof LivingEntity)) return;
